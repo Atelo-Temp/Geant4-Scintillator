@@ -1,0 +1,5 @@
+# Ignore build dir in all subdirectories
+build/
+
+# Ignore cache dir
+.cache/
