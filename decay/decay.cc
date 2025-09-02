@@ -11,6 +11,8 @@
 #include "G4UImanager.hh"
 #include "G4VisExecutive.hh"
 
+#include "G4HadronicParameters.hh"
+
 // using namespace GEOMETRY;
 
 int main(int argc, char** argv) {
@@ -33,6 +35,9 @@ int main(int argc, char** argv) {
     // #else
     //     auto *runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::Default);
     // #endif
+    
+    // ...
+    G4HadronicParameters::Instance()->SetTimeThresholdForRadioactiveDecay(1.E+60 * CLHEP::year);
 
     // Mandatory initialisation classes
     //

@@ -27,3 +27,19 @@
 
 # Display the ID of each event
 /vis/scene/add/eventID
+
+# To disambiguate between gamma and other uncharged particles (neutrino/anti-neutrino), select colour by particle ID:
+/vis/modeling/trajectories/create/drawByParticleID
+# ... and add step points 
+#/vis/modeling/trajectories/drawByParticleID-0/default/setDrawStepPts true
+#
+# To draw only gammas:
+#/vis/filtering/trajectories/create/particleFilter
+#/vis/filtering/trajectories/particleFilter-0/add gamma
+#
+# To invert the above, drawing all particles except gammas,
+# keep the above two lines but also add:
+#/vis/filtering/trajectories/particleFilter-0/invert true
+
+# Radioactive decay module verbose level (3 max)
+# /process/had/rdm/verbose 3

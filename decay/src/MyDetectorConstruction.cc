@@ -34,9 +34,6 @@
 #include "MyDetectorConstruction.hh"
 
 #include "MySensitiveDetector.hh"
-#include <CLHEP/Units/SystemOfUnits.h>
-#include <G4ThreeVector.hh>
-#include <G4VPhysicalVolume.hh>
 
 #include "G4NistManager.hh"
 #include "G4Box.hh"
@@ -65,7 +62,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     G4bool checkOverlaps = true;
 
     /////////////
-    // MATERIALS:
+    // GEOMETRY MATERIALS:
     /////////////
 
     // Get a pointer to the material manager instance
@@ -79,6 +76,11 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
 
     // Shielding material (optional)
     G4Material* lead = nist->FindOrBuildMaterial("G4_Pb");
+    
+    
+    ////////////////////
+    // SOURCE MATERIALS:
+    ////////////////////
 
     // Source material (define Fluorine-18 isotope)
     auto F18 = new G4Isotope(
@@ -116,7 +118,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     G4double world_hz = 1.0*m;
 
     // Create a box named "World" with the specified dimensions, using the G4Box class
-    auto worldBox = new G4Box("World", world_hx, world_hy, world_hz);
+    auto worldBox = new G4Box("World", 0.5 * world_hx, 0.5 * world_hy, 0.5 * world_hz);
 
     // NOTE: The constructor takes its args as half of the total box size, hence this world extends from:
     // -3.0 to +3.0 along the X axis
@@ -186,7 +188,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Define the lead shielding
     auto shieldingLog = new G4LogicalVolume(shielding, lead, "Shielding");
 
-    // ...
+    // Define the radioactive source with the created material
     auto sourceLog = new G4LogicalVolume(solidSource, matF18, "Source");
 
     
@@ -245,7 +247,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
         checkOverlaps
     );
     
-    // ...
+    // Place the radioactive source (offset from origin by 1cm => so 11cm from detector)
     G4VPhysicalVolume* sourcePhys = new G4PVPlacement(
         nullptr,
         G4ThreeVector(0 * m, 0 * m, -0.01 * m),
@@ -265,7 +267,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Set visualiser colouring (R, G, B, opacity)
     // NOTE: I think these could also be set via the visualiser init macro script
 
-    // ...
+    // Assign colours to the detector geometry
     auto shieldingVisAtt = new G4VisAttributes(G4Color(1.0, 0., 0., 0.5)); // red
     shieldingVisAtt->SetForceSolid(true); // ...
     shieldingLog->SetVisAttributes(shieldingVisAtt); // assign to the logical volume
@@ -278,7 +280,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     worldVisAtt->SetForceSolid(true);
     worldLog->SetVisAttributes(worldVisAtt);
     
-    // ...
+    // Assign colour to the source geometry
     auto sourceVisAtt = new G4VisAttributes(G4Color(0.0, 1.0, 0.0, 0.5)); // green
     sourceVisAtt->SetForceSolid(true);
     sourceLog->SetVisAttributes(sourceVisAtt);

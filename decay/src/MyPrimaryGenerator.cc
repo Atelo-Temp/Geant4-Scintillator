@@ -1,8 +1,6 @@
 #include "MyPrimaryGenerator.hh"
 
 #include "G4ParticleGun.hh"
-// #include "G4ParticleDefinition.hh" // provides e-, e+, etc definitions // removed for decay physics
-// #include "G4ParticleTable.hh" // removed for decay physics
 #include "G4SystemOfUnits.hh" // cm, m, etc definition
 
 #include "G4IonTable.hh" // Get acces to predefinied ions (decay physics)
@@ -48,50 +46,86 @@ PrimaryGenerator::~PrimaryGenerator() {
 void PrimaryGenerator::GeneratePrimaries(G4Event* anEvent) {
     // NOTE: Particle definition is moved from constructor to this method with decay    
     
+    // Define the isotope
     
-    
-    // Define the isotope - 137Cs (cesium not working, due to 30y half life? doubt it but idk) (B-)
+    // Cesium (137Cs) (Half life ~30y) (B-)
     // G4int Z = 55; // Atomic number (num protons)
     // G4int A = 137; // Molecular mass (integer, not exact)
     
-    // Flourine (F18) works (109 minutes half life) (B+)
-    G4int Z = 9; // Atomic number (num protons)
-    G4int A = 18; // Molecular mass (integer, not exact)
+    // Xenon (137Xe) (t1/2 ~4 min) (B-)
+    // G4int Z = 54;
+    // G4int A = 137;
+    // NOTE: 137Cs precursor, can see e- and 455 keV gamma, then another e- and 662 keV gamma
     
-    // Titanium (44Ti) doesnt work (60y t1/2) (E)
-    // G4int Z = 22; // Atomic number (num protons)
-    // G4int A = 44; // Molecular mass (integer, not exact)
+    // Barium (137Ba) (stable)
+    // G4int Z = 56;
+    // G4int A = 137;
+    // NOTE: 137Cs daughter, no emission as expected
     
-    // Cobalt (60Co) doesnt work (5y t1/2) (B-)
-    // G4int Z = 27; // Atomic number (num protons)
-    // G4int A = 60; // Molecular mass (integer, not exact)
+    // Flourine (18F) (t1/2 ~109m) (B+)
+    G4int Z = 9;
+    G4int A = 18;
+    // NOTE: Works (positron annihilates)
     
-    // Scandium (44Sc) doesnt work (4h t1/2) (B+)
-    // G4int Z = 21; // Atomic number (num protons)
-    // G4int A = 44; // Molecular mass (integer, not exact)
+    // Titanium (44Ti) (t1/2 ~60y) (e- cap)
+    // G4int Z = 22;
+    // G4int A = 44;
     
-    // NOTE: Seems to be just B+ emitters that work
+    // Scandium (44Sc) (t1/2 ~4h) (B+)
+    // G4int Z = 21;
+    // G4int A = 44;
+    // NOTE: 44Ti daughter
     
-    // Xenon (137Xe) works (137Cs precursor) (4 min t1/2) (B-)
-    // G4int Z = 54; // Atomic number (num protons)
-    // G4int A = 137; // Molecular mass (integer, not exact)
+    // Cobalt (60Co) (t1/2 ~5y) (B-)
+    // G4int Z = 27;
+    // G4int A = 60;
+
+    // Sodium (22Na) (t1/2 ~2y) (B+)
+    // G4int Z = 11;
+    // G4int A = 22;
     
-    // NOTE: Is it due to J value ? Angular momentum ? GetIon can take 4th param ...
+    // Aluminium (26Al) (t1/2 ~700,000y) (B+)
+    // G4int Z = 13;
+    // G4int A = 26;
     
-    // NOTE: Is it the time elapsed in one event or something?
-    // ^ need to test some more longer lived isotopes
+    // Sodium (26Na) (t1/2 ~1s) (B-)
+    // G4int Z = 11;
+    // G4int A = 26;
+    // NOTE: Can see 1808 keV gamma, and B- electron
     
-    // NOTE: Is it related to physics list or such ?
+    // Neon (24Ne) (t1/2 ~3.38m) (B-)
+    // G4int Z = 10;
+    // G4int A = 24;
+    // NOTE: Can see 472 keV gamma, B- e-, but also the daughter 24Na 1368 keV & 2754 keV gammas
     
-    // Sodium (22Na) (t 1/2 2y) (B+)
-    // G4int Z = 11; // Atomic number (num protons)
-    // G4int A = 22; // Molecular mass (integer, not exact)
-    // NOTE: No annihilation photons seen (but can see positrons hitting lead shield)
+    // Germanium (68Ge) (t1/2 ~270d) (e- cap)
+    // G4int Z = 32;
+    // G4int A = 68;
     
-    // Aluminium (26Al) (t 1/2 700,000 y) (B+)
-    // G4int Z = 11; // Atomic number (num protons)
-    // G4int A = 26; // Molecular mass (integer, not exact)
-    // NOTE: No annihilation photons seen (but can see positrons interacting, and some gammas)
+    // Barium (133Ba) (t1/2 ~10.5y) (e- cap)
+    // G4int Z = 56;
+    // G4int A = 133;
+    
+    // Bismuth (207Bi) (t1/2 ~31y) (e- cap)
+    // G4int Z = 83;
+    // G4int A = 207;
+    
+    // Americium (241Am) (t1/2 ~432y) (alpha)
+    // G4int Z = 95;
+    // G4int A = 241;
+    
+    // Europium (152Eu) (t1/2 ~13.5y) (B- && e- cap)
+    // G4int Z = 63;
+    // G4int A = 152;
+    
+    // Metastable silver (108mAg) (t1/2 ~438y) (IT && e- cap)
+    // G4int Z = 32;
+    // G4int A = 108;
+    // TODO: Probably need to set e level, havent tested but wouldnt work as intended as is
+    
+    // NOTE: For isotopes with t 1/2 > 1 year, the time threshold for radioactive decay of ions
+    // must be adjusted, currently set in main() prior to initialisation,
+    // can also be set in physics list or via macro
     
     
     // Define the particle charge (positive/negative due to losing/gaining electrons)
@@ -99,7 +133,7 @@ void PrimaryGenerator::GeneratePrimaries(G4Event* anEvent) {
     // NOTE: The G4 unit "eplus" is the elementary charge
     
     // Define the kinetic energy of the atom
-    G4double energy = 0. * keV; // Zero initial kinetic energy (static source)
+    G4double energy = 0. * eV; // Zero initial kinetic energy (static source)
     
     // Get a pointer to the ion table instance
     auto ionTable = G4IonTable::GetIonTable();
