@@ -1,0 +1,10 @@
+# For batch mode
+
+# Use multithreaded mode, 4 cores
+/run/numberOfThreads 4
+
+# Initialise kernel
+/run/initialize
+
+# 10,000 events
+/run/beamOn 100000
