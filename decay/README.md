@@ -6,8 +6,6 @@ Basic gamma spectroscopy scintillator detector, with output spectrum, and simula
 
 - An world volume filled with air, and a 3' sodium iodide scintillator crystal (and optional lead shielding)
 
-- A gamma-ray photon as the default particle (662 keV - 137 Cs), emitted along z-axis
-
 - Electromagnetic physics
 
 - Basic visualisation macro

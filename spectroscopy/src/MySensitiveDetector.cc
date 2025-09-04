@@ -14,10 +14,10 @@ SensitiveDetector::SensitiveDetector(G4String name) : G4VSensitiveDetector(name)
     fTotalEdep = 0.;
 }
 
-// Initialise method implementation
+// Initialise method implementation (This method is invoked at the beginning of each event)
 void SensitiveDetector::Initialize(G4HCofThisEvent*) {
-    // At initialisation, reset energy deposited to zero (NOTE: Is this necessary w/ constructor? For between runs or something?)
-    fTotalEdep = 0.; // NOTE: When a new event starts?
+    // Between events, reset energy deposited to zero
+    fTotalEdep = 0.;
 }
 
 // Event completion implementation

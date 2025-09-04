@@ -26,7 +26,8 @@ RunAction::RunAction() {
         "eDep", // Name
         "Energy Deposit", // Title
         100, // Number of bins
-        0., // Lower bounds
+        // 0., // Lower bounds
+        1. * eV, // Lower bounds
         1. * MeV // Upper bounds
     );
     // NOTE: 100 bins from 0->1 MeV

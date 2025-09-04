@@ -6,5 +6,9 @@
 # Initialise kernel
 /run/initialize
 
-# 10,000 events
+# Does this print progress bar?
+# /run/printProgress 100000
+
+# 100,000 events
 /run/beamOn 100000
+

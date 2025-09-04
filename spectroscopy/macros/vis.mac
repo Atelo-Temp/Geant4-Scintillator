@@ -1,8 +1,8 @@
 # Initialise Geant4 framework
 /run/initialize
 
-# Initialise graphical output (qt window)
-/vis/open OGL 600x600-0+0 # OpenGL - 600 window
+# Initialise graphical output (qt window) OpenGL - 600 window
+/vis/open OGL 600x600-0+0
 
 # Set the viewer to designated viewpoint
 /vis/viewer/set/viewpointVector 1 1 1 # look at (1, 1, 1)
@@ -13,7 +13,7 @@
 # Draw the volumes (will be empty otherwise)
 /vis/drawVolume
 
-# Show particle trajectories (wont be shown by default)
+# Show particle trajectories at end of event, 2 pixels wide (wont be shown by default)
 /vis/scene/add/trajectories smooth
 
 # Allow more than one particle to be seen in the viewer (accumulates sequentially)

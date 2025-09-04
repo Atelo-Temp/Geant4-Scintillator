@@ -36,21 +36,30 @@ PrimaryGenerator::PrimaryGenerator() {
     fParticleGun->SetParticleMomentumDirection(mom);
 }
 
-// Define the class destructor
+// Define the class destructor (must delete primary generator object initialised in constructor)
 PrimaryGenerator::~PrimaryGenerator() {
     // Delete the particle gun to free up memory
     delete fParticleGun;
 }
 
-// Define the method which takes over events
+// Define the method which takes over events (called at the beginning of each event)
 void PrimaryGenerator::GeneratePrimaries(G4Event* anEvent) {
+    /*
+     * In this method, the primary generator (particle gun) must be invoked.
+     * 
+     * NOTE: More than one generator can be invoked per event. Similarly, the same generator
+     * can be invoked more than once. This allows more complicated primary events to be produced.
+     */
+    
     // NOTE: Particle definition is moved from constructor to this method with decay    
     
     // Define the isotope
     
+    // NOTE: Should ion really be defined at the start of every event ... seems bad
+    
     // Cesium (137Cs) (Half life ~30y) (B-)
-    // G4int Z = 55; // Atomic number (num protons)
-    // G4int A = 137; // Molecular mass (integer, not exact)
+    G4int Z = 55; // Atomic number (num protons)
+    G4int A = 137; // Molecular mass (integer, not exact)
     
     // Xenon (137Xe) (t1/2 ~4 min) (B-)
     // G4int Z = 54;
@@ -63,8 +72,8 @@ void PrimaryGenerator::GeneratePrimaries(G4Event* anEvent) {
     // NOTE: 137Cs daughter, no emission as expected
     
     // Flourine (18F) (t1/2 ~109m) (B+)
-    G4int Z = 9;
-    G4int A = 18;
+    // G4int Z = 9;
+    // G4int A = 18;
     // NOTE: Works (positron annihilates)
     
     // Titanium (44Ti) (t1/2 ~60y) (e- cap)

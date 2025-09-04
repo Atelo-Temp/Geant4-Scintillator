@@ -34,13 +34,11 @@
 #include "MyDetectorConstruction.hh"
 
 #include "MySensitiveDetector.hh"
-#include <G4ThreeVector.hh>
-#include <G4VPhysicalVolume.hh>
 
 #include "G4NistManager.hh"
 #include "G4Box.hh"
 #include "G4LogicalVolume.hh"
-// #include "G4VPhysicalVolume.hh"
+#include "G4VPhysicalVolume.hh"
 #include "G4PVPlacement.hh"
 #include "G4SystemOfUnits.hh"
 
@@ -102,19 +100,19 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
         9, // num protons (Z)
         18, // Atomic mass (num nucleons) (A),
         18.000938 * g / mole // Molar mass (grams per molecule) (~18g per mol)
-    );
+    ); // NOTE: 1 mol contains avogadros number of particles (6.022 x 10^23)
     
     // Define an element from the isotope
-    auto elF18 = new G4Element("Fluorine-18", "F18", 1); // name, symbol, num isotopes
+    auto elF18 = new G4Element("Fluorine-18", "18F", 1); // name, symbol, num isotopes
     
-    // Assign
+    // Assign the defined isotope to the element
     elF18->AddIsotope(F18, 100.0 * perCent); // isotope, no other isotopes so 100%
     
     // Because isotope and element have no direct interaction in G4
-    // to assign to logical volume, we need to create a G4 material
+    // to assign to logical volume, need to create a G4 material
     auto matF18 = new G4Material("F18Source", 1.51 * g / cm3, 1); // name, density (g/cm^3), phase (solid, liquid, gas)
     
-    // ..
+    // Assign the element to the G4 material
     matF18->AddElement(elF18, 100.0 * perCent); // element, amount of element in material (100%)
 
     
@@ -304,7 +302,6 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     );
     
     
-    
     /////////////
     // SHIELDING:
     /////////////
@@ -318,8 +315,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
         "Shielding",
         // 0.5 * shieldHeight,
         // 0.5 * shieldHeight,
-        crystalOuterRad + canThick,
-        crystalOuterRad + canThick,
+        outerCanRad,
+        outerCanRad,
         0.5 * shieldThickness
     );
     // NOTE: Multiplying by 0.5 in args will ensure values match those listed above
@@ -365,16 +362,16 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     auto sourceLog = new G4LogicalVolume(solidSource, matF18, "Source");
     
     // Place the radioactive source (offset from origin by 1cm => so 11cm from detector)
-    G4VPhysicalVolume* sourcePhys = new G4PVPlacement(
-        nullptr,
-        G4ThreeVector(0 * m, 0 * m, -0.01 * m),
-        sourceLog,
-        "Source",
-        worldLog,
-        false,
-        0,
-        checkOverlaps
-    );
+    // G4VPhysicalVolume* sourcePhys = new G4PVPlacement(
+    //     nullptr,
+    //     G4ThreeVector(0 * m, 0 * m, -0.01 * m),
+    //     sourceLog,
+    //     "Source",
+    //     worldLog,
+    //     false,
+    //     0,
+    //     checkOverlaps
+    // );
     
     
     /////////////////
