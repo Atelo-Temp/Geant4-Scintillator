@@ -34,6 +34,7 @@
 #include "MyDetectorConstruction.hh"
 
 #include "MySensitiveDetector.hh"
+#include <G4ThreeVector.hh>
 
 #include "G4NistManager.hh"
 #include "G4Box.hh"
@@ -74,20 +75,23 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Scintillator material
     G4Material* NaI = nist->FindOrBuildMaterial("G4_SODIUM_IODIDE");
 
-    // Shielding material (optional)
+    // Shielding material (lead) (optional)
     G4Material* lead = nist->FindOrBuildMaterial("G4_Pb");
     
-    // Scintillator can material
-    G4Material* Al = nist ->FindOrBuildMaterial("G4_Al");
+    // Scintillator can material (aluminium)
+    G4Material* Al = nist->FindOrBuildMaterial("G4_Al");
     
     // Optical window material
-    // G4Material* ? = nist ->FindOrBuildMaterial("");
+    // G4Material* ? = nist->FindOrBuildMaterial("");
+    
+    // Scintillation light reflector material (Al2O3)
+    G4Material* Al2O3 = nist->FindOrBuildMaterial("G4_ALUMINUM_OXIDE");
     
     // Tabletop material
-    // G4Material* wood = nist ->FindOrBuildMaterial("");
+    // G4Material* wood = nist->FindOrBuildMaterial("");
     
     // Source casing material
-    // G4Material* plastic? = nist ->FindOrBuildMaterial("");
+    // G4Material* plastic? = nist->FindOrBuildMaterial("");
     
     
     ////////////////////
@@ -175,7 +179,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     // Dimensions for cylindrical scintillator crystal (radii, height, span)
     G4double crystalInnerRad = 0.*m; // No centre hole
-    G4double crystalOuterRad = 7.62*cm * 0.5; // 3 inch = 7.62 cm diameter => diameter / 2 = radius
+    G4double crystalOuterRad = 7.62*cm * 0.5; // 3 inch = 7.62 cm diameter => (diameter / 2) = 3.81 cm outer radius
     G4double crystalHeight = 7.62*cm * 0.5; // 3 inch height (this arg will be doubled)
     G4double startAngle = 0.*deg;
     G4double endAngle = 360.*deg; // Full circumference cylinder
@@ -199,11 +203,14 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     G4double crystalX = 0.*m;
     G4double crystalY = 0.*m;
     G4double crystalZ = 0.1*m; // 10cm (maybe 3cm as i have a lot of data for that distance)
+    
+    // Define translation vector (relative to mother origin)
+    auto crystalTrans = G4ThreeVector(crystalX, crystalY, crystalZ);
 
     // Place the sodium iodide scintillator crystal (inside of the world)
     G4VPhysicalVolume* scintillatorPhys = new G4PVPlacement(
         nullptr, // No rotation
-        G4ThreeVector(crystalX, crystalY, crystalZ), // Translation
+        crystalTrans, // Translation
         scintillatorLog, // The logical volume
         "Scintillator", // Name
         worldLog, // Mother volume (logical)
@@ -219,18 +226,34 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     /////////////////
     
     // Define the thickness of the can
-    G4double canThick = 1.*mm;
-    G4double outerCanRad = crystalOuterRad + canThick;
+    // G4double canThick = 1.*mm;
+    // G4double canOuterRad = crystalOuterRad + canThick;
     // G4double overHang = 0.*mm; // this will be added to both sides in Z direction to fit window
+    
+    // G4double inchToCM = 2.54;
+    
+    G4double canThick = 0.0508 * cm; // NOTE: Is 0.02' => 0.508 mm, according to ortec spec
+    G4double canInnerRad = (((3.225 * 2.54) / 2) * cm) - canThick; // 3.225' dia => 8.1915cm dia => 4.09575 cm outer rad => 4.04495 cm inner rad
+    G4double canOuterRad = ((3.225 * 2.54) / 2) * cm; // NOTE: Can is 3.225' diameter according to ortec spec
+    // Radially there is a gap between crystal and can
+    
+    // NOTE: The face of the crystal seems to be in direct contact with the can though
+    // G4double overHang = 0.*mm; // this will be added to both sides in Z direction to fit window
+    // NOTE: This will = canThick * 2 (or at least the face will = canThick, may have to translate along Z if needed)
+    G4double canLength = crystalHeight + canThick;
+    // NOTE: Could also just leave can length as crystal length and place window on top, rather than slot it in
     
     // Solid
     auto can = new G4Tubs(
         "Can",
-        crystalOuterRad, // Inner rad = outer rad of crystal
-        outerCanRad, // Outer rad = inner rad + can thickness
-        crystalHeight, // TODO: Leaving same as crystal for now, but will want a lip for window
-        startAngle,
-        endAngle
+        // crystalOuterRad, // Inner rad = outer rad of crystal
+        // canOuterRad, // Outer rad = inner rad + can thickness
+        // crystalHeight, // TODO: Leaving same as crystal for now, but will want a lip for window
+        canInnerRad,
+        canOuterRad,
+        canLength, // height
+        startAngle, // 0 deg
+        endAngle // 360 deg span
     );
     
     // Logical
@@ -243,7 +266,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Physical
     G4VPhysicalVolume* canPhys = new G4PVPlacement(
         nullptr, // no rotation
-        G4ThreeVector(crystalX, crystalY, crystalZ), // same position as crystal
+        crystalTrans, // same position as crystal
         canLog, // logical volume to place
         "Can", // name
         worldLog, // mother volume (logical)
@@ -261,6 +284,75 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // G4Tubs, same radius as crystal, height matching lip of can,
     // translated to end of crystal
     
+    // NOTE: It seems to be aluminium for ortec 3' NaI, may be wrong though, cant see otherwise
+    
+    // Solid
+    auto window = new G4Tubs(
+        "Window",
+        0.*m,
+        canInnerRad,
+        canThick,
+        startAngle,
+        endAngle
+    );
+    
+    // Logical
+    auto windowLog = new G4LogicalVolume(
+        window,
+        Al, // Aluminium material
+        "Window"
+    );
+    
+    // Physical
+    G4VPhysicalVolume* windowPhys = new G4PVPlacement(
+        nullptr, // no rotation
+        G4ThreeVector(crystalX, crystalY, crystalZ - crystalHeight), // Translated along z by half crystal height
+        windowLog, // logical volume to place
+        "Window", // name
+        worldLog, // mother volume (logical)
+        false, // no boolean ops
+        0, // One copy
+        checkOverlaps
+    );
+    
+    
+    /////////////
+    // REFLECTOR:
+    /////////////
+    
+    // The scintillation photons are emitted in all directions, so a high efficiency reflector
+    // is used to surround the crystal (Al_{2}O_{3} and teflon)
+    
+    // Inner rad can (4.04495 cm) - outer rad crystal (3.81 cm) => 0.23495 cm reflector thickness
+    
+    // ...
+    auto reflector = new G4Tubs(
+        "Reflector",
+        crystalOuterRad, // inner rad
+        canInnerRad, // outer rad
+        crystalHeight, // height
+        startAngle, // 0 deg
+        endAngle // 360 deg (full span)
+    );
+    
+    // ...
+    auto reflectorLog = new G4LogicalVolume(
+        reflector,
+        Al2O3,
+        "Reflector"
+    );
+    
+    // ...
+    G4VPhysicalVolume* reflectorPhys = new G4PVPlacement(
+        nullptr, // no rotation
+        crystalTrans, // same position as crystal
+        reflectorLog, // logical volume
+        "Reflector", // name
+        worldLog, // mother volume (logical)
+        false, // no boolean ops
+        0, // one copy
+        checkOverlaps
+    );
     
     ////////////////////////
     // PHOTOMULTIPLIER TUBE:
@@ -287,7 +379,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     tableRot->rotateX(90. * deg);
     
     // Translate in -y direction by radius of can + half thickness of table
-    G4double tableTransY = -1. * (outerCanRad + (tableHeight * 0.5));
+    G4double tableTransY = -1. * (canOuterRad + (tableHeight * 0.5));
     
     G4VPhysicalVolume* tablePhys = new G4PVPlacement(
         tableRot, // Rotated 90 degrees in Z direction
@@ -315,8 +407,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
         "Shielding",
         // 0.5 * shieldHeight,
         // 0.5 * shieldHeight,
-        outerCanRad,
-        outerCanRad,
+        canOuterRad,
+        canOuterRad,
         0.5 * shieldThickness
     );
     // NOTE: Multiplying by 0.5 in args will ensure values match those listed above
@@ -330,16 +422,16 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     G4double shieldingZ = 0.05*m; // 5cm
 
     // Place the lead shielding between the origin and the scintillator
-    G4VPhysicalVolume* shieldingPhys = new G4PVPlacement(
-        nullptr,
-        G4ThreeVector(shieldingX, shieldingY, shieldingZ),
-        shieldingLog,
-        "Shielding",
-        worldLog,
-        false,
-        0,
-        checkOverlaps
-    );
+    // G4VPhysicalVolume* shieldingPhys = new G4PVPlacement(
+    //     nullptr,
+    //     G4ThreeVector(shieldingX, shieldingY, shieldingZ),
+    //     shieldingLog,
+    //     "Shielding",
+    //     worldLog,
+    //     false,
+    //     0,
+    //     checkOverlaps
+    // );
     
     
     //////////
@@ -388,11 +480,13 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Set visualiser colouring (R, G, B, opacity), and assign colours to the detector geometry
     // NOTE: I think these could also be set via the visualiser init macro script
    
+    // World
     auto worldVisAtt = new G4VisAttributes(G4Color(0., 0., 1., 0.1)); // blue (opaque)
     worldVisAtt->SetForceSolid(true); // ... (think this can be called w/ no arg for same effect)
     worldLog->SetVisAttributes(worldVisAtt); // assign to the logical volume
 
-    auto scintillatorVisAtt = new G4VisAttributes(G4Color(1.0, 1.0, 0., 0.5)); // yellow
+    // Scintillator geometry
+    auto scintillatorVisAtt = new G4VisAttributes(G4Color(1.0, 1.0, 0., 0.75)); // yellow
     scintillatorVisAtt->SetForceSolid(true);
     scintillatorLog->SetVisAttributes(scintillatorVisAtt);
     
@@ -400,6 +494,15 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     canVisAtt->SetForceSolid(true);
     canLog->SetVisAttributes(canVisAtt);
     
+    auto reflectorVisAtt = new G4VisAttributes(G4Color(0., 0., 1.0, 0.25)); // blue
+    reflectorVisAtt->SetForceSolid(true);
+    reflectorLog->SetVisAttributes(reflectorVisAtt);
+    
+    auto windowVisAtt = new G4VisAttributes(G4Color(0.5, 0.5, 0.5, 0.5)); // gray
+    windowVisAtt->SetForceSolid(true);
+    windowLog->SetVisAttributes(windowVisAtt);
+    
+    // ...
     auto tableVisAtt = new G4VisAttributes(G4Color()); // white
     tableVisAtt->SetForceSolid(true);
     tableLog->SetVisAttributes(tableVisAtt);

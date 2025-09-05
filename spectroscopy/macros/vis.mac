@@ -43,3 +43,8 @@
 
 # Radioactive decay module verbose level (3 max)
 # /process/had/rdm/verbose 3
+
+# Snap to axis 
+# /vis/viewer/set/viewpointThetaPhi 90. 0.
+#
+# /vis/viewer/set/viewpointThetaPhi 180. 0.

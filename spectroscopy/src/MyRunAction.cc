@@ -25,7 +25,10 @@ RunAction::RunAction() {
     analysisManager->CreateH1(
         "eDep", // Name
         "Energy Deposit", // Title
-        100, // Number of bins
+        // 100, // Number of bins
+        256,
+        // 512, // 
+        // 1024, // Number of bins
         // 0., // Lower bounds
         1. * eV, // Lower bounds
         1. * MeV // Upper bounds

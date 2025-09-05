@@ -31,6 +31,12 @@ Basic gamma spectroscopy scintillator detector, with output spectrum, and simula
 
 - Consider the definition of the source material (does a portion need to be set as the daughter product)
 
+## Relevant Examples
+
+- basic/B3
+
+- ...
+
 ## Components
 
 ...
@@ -47,7 +53,13 @@ NaI is hygroscopic (absorbs water from atmosphere) so must be sealed in airtight
 
 ...
 
-This also serves the purpose of preventing electrons from interacting with the crystal ...
+This also serves the purpose of preventing electrons (and alpha/beta particles as a whole) from interacting with the crystal ...
+
+### Optical Photon Reflector
+
+The pulse height resolution of the detection system depens upon collecting as many of the photons created by the incident gamma-ray as possible.
+
+The scintillation photons are emitted by the thallium ions in all directions, so a high efficiency reflector is used to surround the crystal (Al_{2}O_{3} and teflon), in order to reflect as much light as possible towards the photocathode (and subsequently PMT).
 
 ### Photocathode
 

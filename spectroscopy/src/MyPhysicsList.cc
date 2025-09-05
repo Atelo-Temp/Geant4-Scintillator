@@ -19,10 +19,13 @@
 #include "G4RadioactiveDecayPhysics.hh" // physics list
 #include "G4DecayPhysics.hh" // handling different decay models
 
+// #include "G4EmStandardPhysics_option4.hh" // TODO: See below
+
 // Define the class constructor
 PhysicsList::PhysicsList() {
     // Register EM Physics
     RegisterPhysics(new G4EmStandardPhysics());
+    // TODO: Consider G4EmStandardPhysics_option4 better but more computationally expensive EM modelling
     
     // Register radioactive decay physics
     RegisterPhysics(new G4RadioactiveDecayPhysics());
