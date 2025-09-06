@@ -61,9 +61,31 @@ The pulse height resolution of the detection system depens upon collecting as ma
 
 The scintillation photons are emitted by the thallium ions in all directions, so a high efficiency reflector is used to surround the crystal (Al_{2}O_{3} and teflon), in order to reflect as much light as possible towards the photocathode (and subsequently PMT).
 
+### Photomultipler Tube (PMT)
+
+Window materials:
+
+- Borosilicate glass
+
+The most common window material, containing silica (SiO2) and boron trioxide (B2O3).
+
+... ratio, density, etc, needed (TODO)
+
+Transmits radiation from 300 nm to infrared (IR).
+
+Doesnt transmit ultraviolet (UV) light effectively.
+
+- Quartz glass
+
+Also known as fused silica (SiO2).
+
+Transmits radiation from deep UV to near IR (NIR) wavelengths.
+
+Is used for applications demanding UV sensitivity.
+
 ### Photocathode
 
-The Photomultipler Tube (PMT) is evacuated glass vessel, with light entering through glass window, and inside surface of glass window is coated with an electropositive material - the photocathode.
+The Photomultipler Tube is evacuated glass vessel, with light entering through glass window, and inside surface of glass window is coated with an electropositive material - the photocathode.
 
 Since scintillation photons are typically low energy (~10-15 eV for NaI), the photocathode must be comprised of a mixture of alkali metals (Li/Na/K/Cs), so that the photoelectric effect can take place, producing photoelectrons in the PMT.
 

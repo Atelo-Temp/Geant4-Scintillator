@@ -1,0 +1,50 @@
+# Initialise Geant4 framework
+/run/initialize
+
+# Initialise graphical output (qt window) OpenGL - 600 window
+/vis/open OGL 600x600-0+0
+
+# Set the viewer to designated viewpoint
+/vis/viewer/set/viewpointVector 1 1 1 # look at (1, 1, 1)
+
+# If changes are made, viewer will automatically be updated
+/vis/viewer/set/autoRefresh true
+
+# Draw the volumes (will be empty otherwise)
+/vis/drawVolume
+
+# Show particle trajectories at end of event, 2 pixels wide (wont be shown by default)
+/vis/scene/add/trajectories smooth
+
+# Allow more than one particle to be seen in the viewer (accumulates sequentially)
+/vis/scene/endOfEventAction accumulate
+
+# Display a scale for the scene
+/vis/scene/add/scale 10 cm
+
+# Display coordinate system
+/vis/scene/add/axes
+
+# Display the ID of each event
+/vis/scene/add/eventID
+
+# To disambiguate between gamma and other uncharged particles (neutrino/anti-neutrino), select colour by particle ID:
+/vis/modeling/trajectories/create/drawByParticleID
+# ... and add step points 
+#/vis/modeling/trajectories/drawByParticleID-0/default/setDrawStepPts true
+#
+# To draw only gammas:
+#/vis/filtering/trajectories/create/particleFilter
+#/vis/filtering/trajectories/particleFilter-0/add gamma
+#
+# To invert the above, drawing all particles except gammas,
+# keep the above two lines but also add:
+#/vis/filtering/trajectories/particleFilter-0/invert true
+
+# Radioactive decay module verbose level (3 max)
+# /process/had/rdm/verbose 3
+
+# Snap to axis 
+# /vis/viewer/set/viewpointThetaPhi 90. 0.
+#
+# /vis/viewer/set/viewpointThetaPhi 180. 0.
