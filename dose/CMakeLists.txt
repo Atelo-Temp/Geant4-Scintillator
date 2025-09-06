@@ -2,7 +2,7 @@
 # Setup the project
 #
 cmake_minimum_required(VERSION 3.16...3.27)
-project(scintillator)
+project(dose)
 
 #----------------------------------------------------------------------------
 # Create compile_commands.json for C++ LSP
@@ -25,25 +25,25 @@ file(GLOB headers ${PROJECT_SOURCE_DIR}/include/*.hh)
 #----------------------------------------------------------------------------
 # Add the executable, use our local headers, and link it to the Geant4 libraries
 #
-add_executable(scintillator scintillator.cc ${sources} ${headers})
-target_include_directories(scintillator PRIVATE include)
-target_link_libraries(scintillator PRIVATE ${Geant4_LIBRARIES})
+add_executable(dose dose.cc ${sources} ${headers})
+target_include_directories(dose PRIVATE include)
+target_link_libraries(dose PRIVATE ${Geant4_LIBRARIES})
 
 #----------------------------------------------------------------------------
 # Copy all scripts to the build directory, i.e. the directory in which we
 # build B1. This is so that we can run the executable directly because it
 # relies on these scripts being in the current working directory.
 #
-set(SCINTILLATOR_SCRIPTS
-  scintillator.in
-  scintillator.out
+set(DOSE_SCRIPTS
+  dose.in
+  dose.out
   init_vis.mac
   run1.mac
   run2.mac
   vis.mac
   )
 
-foreach(_script ${SCINTILLATOR_SCRIPTS})
+foreach(_script ${DOSE_SCRIPTS})
   configure_file(
     ${PROJECT_SOURCE_DIR}/${_script}
     ${PROJECT_BINARY_DIR}/${_script}
