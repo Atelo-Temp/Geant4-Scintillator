@@ -354,6 +354,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
         checkOverlaps
     );
     
+    
     ////////////////////////
     // PHOTOMULTIPLIER TUBE:
     ////////////////////////

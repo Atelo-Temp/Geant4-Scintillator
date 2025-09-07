@@ -48,3 +48,6 @@
 # /vis/viewer/set/viewpointThetaPhi 90. 0.
 #
 # /vis/viewer/set/viewpointThetaPhi 180. 0.
+
+# Check for overlaps (the overlap warning doesnt abort sim, and the normal warning is lost in stdout)
+/geometry/test/run

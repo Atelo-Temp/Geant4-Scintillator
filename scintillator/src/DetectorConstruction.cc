@@ -50,6 +50,8 @@
 #include "G4MaterialPropertiesTable.hh" // for optical photons
 // #include "G4MaterialPropertyVector.hh" // can use instead of 2x std::vector
 
+#include "G4SubtractionSolid.hh"
+
 
 // namespace GEOMETRY {
 
@@ -73,99 +75,81 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Scintillator material
     G4Material* NaI = nist->FindOrBuildMaterial("G4_SODIUM_IODIDE");
     
+    // Scintillation light reflector material (Al2O3)
+    G4Material* Al2O3 = nist->FindOrBuildMaterial("G4_ALUMINUM_OXIDE");
+    
+    
     /////////////////
     // SCINTILLATION:
     /////////////////
     
-    // ...
-    // std::vector<G4double> energy = {2.034*eV, 3.*eV, 4.136*eV};
-    // std::vector<G4double> rindex = {1.3435, 1.351, 1.3608};
-    // std::vector<G4double> absorption = {344.8*cm, 850.*cm, 1450.*cm};
-    // auto x = new G4MaterialPropertyVector(); // can use instead of std::vector
-    // x->InsertValues(); 
-    
-    // From online source
-    // std::vector<G4double> energy = {1.239841939*eV/0.9, 1.239841939*eV/0.2}; // 900 nm, 200 nm
-    // std::vector<G4double> rindex = {1.3435, 1.351, 1.3608};
-    /*std::vector<G4double> rindex = {1.78, 1.78};*/ // TODO: Should be a function of wavelength though, not const
-    // have seeen 1.85 @emission max
-    
-    // std::vector<G4double> energy = {2*eV, 2.8*eV};    
-    // std::vector<G4double> rindex = {1.78, 1.836}; // refractiveindex.info
-    
-    // std::vector<G4double> energy = {1.9587*eV, 2.8437*eV};
-    // std::vector<G4double> rindex = {1.778, 1.8391}; // refractiveindex.info
-    // NOTE: This may be inferred as linear (but its not)
-    
-    // NOTE: Added a central curve value to show non-linear trend
-    std::vector<G4double> energy = {1.9587*eV, 2.3991*eV, 2.8437*eV};
-    std::vector<G4double> rindex = {1.7779, 1.8043, 1.8391}; // refractiveindex.info
-    
-    // ...
+    // Instantiate a new material properties table, to be assigned to the scintillator material
     auto MPT = new G4MaterialPropertiesTable();
+    // NOTE: Need at least: refractive index, emission spectrum, absorption length, yield, decay time
     
-    // Property independent of energy (const property)
+    // Wavelength range listed for NaI (refractiveindex.info)
+    std::vector<G4double> energy = {1.9587*eV, 2.3991*eV, 2.8437*eV}; // Wavelength (~436nm - 633nm)
+    // std::vector<G4double> energy = {1.239841939*eV/0.633, 1.239841939*eV/0.436}; // 436 nm - 633 nm (smallest must go first)
+    // NOTE: Visible light ranges from ~400 nm (violet) to ~700 nm (red)
+    
+    // Refractive index (n) - The ratio of speed of light in air/vaccum (c) to SOL in medium (v) (NOTE: n = (c / v))
+    std::vector<G4double> rindex = {1.7779, 1.8043, 1.8391}; // A function of wavelength (~436nm - 633nm)
+    // NOTE: Added a central curve value to show non-linear trend
+
+    // Properties that depend on energy
+    // NOTE: Vector lengths must be the same, 1st vector is energy, 2nd is property value at that energy
+    //
+    // Refractive index as a function of wavelength
+    MPT->AddProperty("RINDEX", energy, rindex);
+    
+    // The energy spectrum of the emitted scintillation photons
+    // NOTE: This is essential to generate the correct number of photons (25156 for 662 keV, instead of 5-10)
+    std::vector<G4double> emi = {1., 1., 1.};
+    MPT->AddProperty("SCINTILLATIONCOMPONENT1", energy, emi); // "Fast component"
+    // NOTE: Tells Geant4 how many photons for each wavelength (or energy)
+    
+    // Absorption length is the average distance travelled by a photon before being absorbed by the medium 
+    // (i.e. it is the mean free path returned by the GetMeanFreePath method)
+    std::vector<G4double> absorption = {30.*cm, 30.*cm, 30.*cm};
+    MPT->AddProperty("ABSLENGTH", energy, absorption); // NOTE: Trivial in that the process merely kills the particle
+    // NOTE: This has effect on air too (WITHOUT SPECIFYING THIS, SIM WILL HANG INDEFINITELY, WHEN AIR RINDEX SPECIFIED)
+    
+    // Properties independent of energy (const property)
     //
     // The number of scintillation photons generated per unit energy deposited in the medium
     MPT->AddConstProperty("SCINTILLATIONYIELD", 38000. / MeV); // 38 photons per keV deposited
     // MPT->AddConstProperty("SCINTILLATIONYIELD", 10. / MeV); // 38 photons per keV deposited
-    
-    // Properties that depend on energy
-    // NOTE: Vector lengths must be the same, 1st vector is energy, 2nd is property value at that energy
-    //
-    // Refractive index ...
-    MPT->AddProperty("RINDEX", energy, rindex);
-    // NOTE: ...
-    //
-    // Absorption length is the average distance travelled by a photon before being absorbed by the medium 
-    // (i.e. it is the mean free path returned by the GetMeanFreePath method)
-    // MPT->AddProperty("ABSLENGTH", energy, absorption);
-    
+        
     // Rise time (defaults to zero)
     // MPT->AddConstProperty("SCINTILLATIONRISETIME1", 0. * ns);
     // NOTE: If a non-zero rise time is wanted, set the optical parameter "setFiniteRiseTime" to true
     
-    // ~250ns decay time constant (some say 230-250) (at room temperature, increasing at lower temps)
+    // Exponential decay time constant (some say 230-250) (at room temperature, increasing at lower temps)
     MPT->AddConstProperty("SCINTILLATIONTIMECONSTANT1", 250. * ns);
-    // NOTE: Number of photons emitted follows an exponential function
+    // NOTE: Number of photons emitted follows an exponential function,
     // creation time of photons is chosen from a distribution with these characterisics
     
     // Factor to vary width of yield distribution
     MPT->AddConstProperty("RESOLUTIONSCALE", 1.); // 1. to start, tune later
     // NOTE: val > 1. broadens intrinsic Poisson stats (captures non-proportionality-ish behaviour)
     
-    
-    // The energy spectrum of the emitted photons is specified using the energy-dependent material property "SCINTILLATIONCOMPONENT1"
-    // NOTE: This is essential to generate the correct number of photons (25156 for 662 keV, instead of 5-10)
-    std::vector<G4double> emi = {1., 1., 1.};
-    MPT->AddProperty("SCINTILLATIONCOMPONENT1", energy, emi); // "Fast component"
-    // NOTE: Tells Geant4 how many photons for each wavelength (or energy)
-    
-    
+    // ...
     // MPT->AddConstProperty("SCINTILLATIONYIELD1", 1.); // 100% in the single component (NOTE: idk what this is)
-    
-    
-    // Absorption length ...
-    std::vector<G4double> absorption = {30.*cm, 30.*cm, 30.*cm};
-    MPT->AddProperty("ABSLENGTH", energy, absorption);
-    // NOTE: This has effect on air too (WITHOUT SPECIFYING THIS, SIM WILL HANG INDEFINITELY, WHEN AIR RINDEX SPECIFIED)
-    
-    
-    // NOTE: Need at least: refractive index, emission spectrum, yield, decay time, absorption length
-    
-    
+
     // TODO: Rayleigh Scattering ?
     // MPT->AddConstProperty("RAYLEIGH", ...)
     
+    // Assign the defined material properties to the sodium iodide material
     NaI->SetMaterialPropertiesTable(MPT);
     
     
-    // NOTE: This literally kills the visualiser ... (WAS DUE TO NOT SPECIFYING ABSLENGTH)
+    // Assign a refractive index to air 
+    // NOTE: Scintillation photons will not attempt to leave the crystal otherwise, hiding need for reflector material
     auto MPT2 = new G4MaterialPropertiesTable();
-    // // MPT2->AddProperty("RINDEX", "Air");
-    std::vector<G4double> rindexAir = {1., 1., 1.};
+    std::vector<G4double> rindexAir = {1., 1., 1.}; // MPT2->AddProperty("RINDEX", "Air") NOTE: Default available
     MPT2->AddProperty("RINDEX", energy, rindexAir);
     air->SetMaterialPropertiesTable(MPT2);
+    // NOTE: If absorption length is not specified above, giving air a rindex will cause sim to hang indefinitely
     
     
     // TODO: Add reflector ? Al203 (rindex available on refractiveindex.info)
@@ -276,6 +260,143 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
 
     
     /////////////
+    // REFLECTOR:
+    /////////////
+    
+    // The scintillation photons are emitted in all directions, so a high efficiency reflector
+    // is used to surround the crystal (Al_{2}O_{3} and teflon)
+    
+    // Inner rad can (4.04495 cm) - outer rad crystal (3.81 cm) => 0.23495 cm reflector thickness
+//     G4double reflectorThickness = 0.23495 * cm;
+//     G4double reflectorOuterRad = crystalOuterRad + reflectorThickness;
+//     
+//     // ...
+//     auto reflector = new G4Tubs(
+//         "Reflector",
+//         crystalOuterRad, // inner rad
+//         reflectorOuterRad, // outer rad
+//         crystalHeight, // height
+//         startAngle, // 0 deg
+//         endAngle // 360 deg (full span)
+//     );
+//     
+//     // ...
+//     auto reflectorLog = new G4LogicalVolume(
+//         reflector,
+//         Al2O3,
+//         "Reflector"
+//     );
+//     
+//     // ...
+//     G4VPhysicalVolume* reflectorPhys = new G4PVPlacement(
+//         nullptr, // no rotation
+//         crystalTrans, // same position as crystal
+//         reflectorLog, // logical volume
+//         "Reflector", // name
+//         worldLog, // mother volume (logical)
+//         false, // no boolean ops
+//         0, // one copy
+//         checkOverlaps
+//     );
+//     
+//     
+//     // Could also use subtraction solid, but i think it ends up similar amount of code ...
+//     
+//     // ...
+//     auto reflectorFace = new G4Tubs(
+//         "ReflectorFace",
+//         0. * cm, // inner rad
+//         reflectorOuterRad, // outer rad
+//         reflectorThickness * 0.5, // height
+//         startAngle, // 0 deg
+//         endAngle // 360 deg (full span)
+//     );
+//     
+//     // ...
+//     auto reflectorFaceLog = new G4LogicalVolume(
+//         reflectorFace,
+//         Al2O3,
+//         "ReflectorFace"
+//     );
+//     
+//     // ...
+//     G4VPhysicalVolume* reflectorFacePhys = new G4PVPlacement(
+//         nullptr, // no rotation
+//         G4ThreeVector(crystalX, crystalY, crystalZ - (crystalHeight + (reflectorThickness * 0.5))), // same position as crystal
+//         reflectorFaceLog, // logical volume
+//         "ReflectorFace", // name
+//         worldLog, // mother volume (logical)
+//         false, // no boolean ops
+//         0, // one copy
+//         checkOverlaps
+//     );
+    
+    
+    
+    
+    // Inner rad can (4.04495 cm) - outer rad crystal (3.81 cm) => 0.23495 cm reflector thickness
+    G4double reflectorThickness = 0.23495 * cm;
+    G4double reflectorOuterRad = crystalOuterRad + reflectorThickness;
+    
+    // ...
+    auto reflectorSolid = new G4Tubs(
+        "ReflectorSolid",
+        0. * cm, // inner rad (no hole, as cut will handle it in this case)
+        reflectorOuterRad, // outer rad
+        crystalHeight + reflectorThickness, // height 
+        startAngle, // 0 deg
+        endAngle // 360 deg (full span)
+    );
+    
+    // ...
+    auto reflectorCut = new G4Tubs(
+        "ReflectorCut",
+        0. * cm, // inner rad (no hole, solid cut)
+        crystalOuterRad, // outer rad (cut a section with same rad as crystal)
+        crystalHeight + reflectorThickness, // height (cut has same height base)
+        startAngle, // 0 deg
+        endAngle // 360 deg (full span)
+    );
+    // NOTE: To be a "perfect cut", could do +0.5*thickness & translate by same amount too,
+    // currently after translation part of this solid is cutting nothing, but tbh thats fine,
+    // i think this approach is more readable
+    
+    // ...
+    auto reflector = new G4SubtractionSolid(
+        "Reflector", // name
+        reflectorSolid, // the solid to subtract from
+        reflectorCut, // the volume to subtract
+        nullptr, // no rotation
+        G4ThreeVector(0., 0., reflectorThickness) // cut translation (relative to base solid)
+    );
+    
+    // ...
+    auto reflectorLog = new G4LogicalVolume(
+        reflector, // subtraction solid acts same as any other geometry here
+        Al2O3, // reflector material
+        "Reflector"
+    );
+    
+    // ...
+    G4VPhysicalVolume* reflectorPhys = new G4PVPlacement(
+        nullptr, // no rotation
+        crystalTrans, // same position as crystal
+        reflectorLog, // logical volume
+        "Reflector", // name
+        worldLog, // mother volume (logical)
+        false, // no boolean ops
+        0, // one copy
+        checkOverlaps
+    );
+    
+    
+    // NOTE: This current setup works, but leaves an overhang of reflector,
+    // this isnt really an issue and maybe worth keeping,
+    // but may also want reflector to stop in line with back of crystal,
+    // just need to give "ReflectorSolid" (crystalheight + 0.5 * reflectorThick)
+    
+    
+    /////////////
     // COLOURING:
     /////////////
 
@@ -291,7 +412,13 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     auto scintillatorVisAtt = new G4VisAttributes(G4Color(1.0, 1.0, 0., 0.75)); // yellow
     scintillatorVisAtt->SetForceSolid(true);
     scintillatorLog->SetVisAttributes(scintillatorVisAtt);
-
+    
+    // Aluminium oxide reflector
+    auto reflectorVisAtt = new G4VisAttributes(G4Color(0., 0., 1.0, 0.25)); // blue
+    reflectorVisAtt->SetForceSolid(true);
+    reflectorLog->SetVisAttributes(reflectorVisAtt);
+    
+    // reflectorFaceLog->SetVisAttributes(reflectorVisAtt);
     
     ///////////
     // SCORING:
@@ -309,23 +436,5 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Always return world
     return worldPhys;
 }
-
-
-// Construct the sensitive detector, assign it to the logical scoring volume, and register it with the SD manager
-// void DetectorConstruction::ConstructSDandField() {
-//     // Instantiate the sensitive detector class we defined (Supplying a name for the detector)
-//     auto sd = new SensitiveDetector("SD");
-// 
-//     // Access the detector construction class property storing the scoring volume and set SD
-//     fScoringVolume->SetSensitiveDetector(sd);
-// 
-//     // Get pointer for sensitive detector manager, and register the detector
-//     G4SDManager::GetSDMpointer()->AddNewDetector(sd);
-// 
-//     // NOTE: Registering "sd" will ensure the energy deposit methods in "Sensitive Detector" class:
-//     // - Initialise()
-//     // - endOfEvent()
-//     // ... are called when needed
-// }
 
 // }
