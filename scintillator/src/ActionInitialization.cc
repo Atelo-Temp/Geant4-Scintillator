@@ -15,9 +15,14 @@
 #include "ActionInitialization.hh"
 
 // The particle generation defined will be handled by the "build" method
+
 #include "PrimaryGenerator.hh"
 // NOTE: PrimaryGenerator is derived from G4VUserPrimaryGeneratorAction
 // In this class the initial state of the primary event must be described
+
+
+#include "EventAction.hh"
+#include "SteppingAction.hh"
 
 // #include "RunAction.hh"
 
@@ -57,4 +62,12 @@ void ActionInitialization::Build() const {
     
     // Instantiate the run handler (start/end of run handlers for histogramming)
     // SetUserAction(new RunAction());
+    
+    
+    
+    
+    auto events = new EventAction();
+    SetUserAction(events);
+    
+    SetUserAction(new SteppingAction(events));
 }

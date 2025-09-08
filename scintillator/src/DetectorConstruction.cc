@@ -33,9 +33,9 @@
 // #include "DetectorConstruction.hh" // When leaving it as named here, causes errors (only in vscode), in scintillator/ no errors ...
 #include "DetectorConstruction.hh"
 
-#include <G4ThreeVector.hh>
-
 #include "G4NistManager.hh"
+#include "G4ThreeVector.hh"
+
 #include "G4Box.hh"
 #include "G4LogicalVolume.hh"
 #include "G4VPhysicalVolume.hh"
@@ -51,6 +51,10 @@
 // #include "G4MaterialPropertyVector.hh" // can use instead of 2x std::vector
 
 #include "G4SubtractionSolid.hh"
+
+#include "G4OpticalSurface.hh"
+#include "G4LogicalBorderSurface.hh"
+#include <G4SurfaceProperty.hh>
 
 
 // namespace GEOMETRY {
@@ -78,6 +82,10 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Scintillation light reflector material (Al2O3)
     G4Material* Al2O3 = nist->FindOrBuildMaterial("G4_ALUMINUM_OXIDE");
     
+    // Scoring material
+    // G4Material* SiO2 = nist->FindOrBuildMaterial("G4_SILICON_DIOXIDE"); // silicon gel
+    G4Material* Li = nist->FindOrBuildMaterial("G4_Li"); // lithium photocathode
+    
     
     /////////////////
     // SCINTILLATION:
@@ -104,13 +112,16 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     // The energy spectrum of the emitted scintillation photons
     // NOTE: This is essential to generate the correct number of photons (25156 for 662 keV, instead of 5-10)
-    std::vector<G4double> emi = {1., 1., 1.};
+    std::vector<G4double> emi = {1., 1., 1.}; // same amount of photons for each wavelength
     MPT->AddProperty("SCINTILLATIONCOMPONENT1", energy, emi); // "Fast component"
     // NOTE: Tells Geant4 how many photons for each wavelength (or energy)
+    // The scintillation photons will have a spectrum, depending on wavelength,
+    // may have more photons in red spectrum than blue spectrum
     
     // Absorption length is the average distance travelled by a photon before being absorbed by the medium 
     // (i.e. it is the mean free path returned by the GetMeanFreePath method)
-    std::vector<G4double> absorption = {30.*cm, 30.*cm, 30.*cm};
+    // std::vector<G4double> absorption = {30.*cm, 30.*cm, 30.*cm};
+        std::vector<G4double> absorption = {100.*cm, 100.*cm, 100.*cm};
     MPT->AddProperty("ABSLENGTH", energy, absorption); // NOTE: Trivial in that the process merely kills the particle
     // NOTE: This has effect on air too (WITHOUT SPECIFYING THIS, SIM WILL HANG INDEFINITELY, WHEN AIR RINDEX SPECIFIED)
     
@@ -152,11 +163,83 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // NOTE: If absorption length is not specified above, giving air a rindex will cause sim to hang indefinitely
     
     
-    // TODO: Add reflector ? Al203 (rindex available on refractiveindex.info)
-    // ... and aluminium can/beta blocker ? (maybe not if reflector covers crystal face)
-    // ... and borosilicate PMT glass window
-    // ^ or make another project to avoid overcrowding this one with new features ?
-
+    
+    
+    // Reflector MPT
+    auto MPT3 = new G4MaterialPropertiesTable();
+    
+    // Reflector refractive index
+    std::vector<G4double> energyAl203 = {0.24797*eV, 0.36487*eV, 1.02210*eV, 3.70430*eV, 6.19920*eV};
+    std::vector<G4double> rindexAl203 = {1.6240, 1.6990, 1.7519, 1.8015, 1.9127};
+    MPT3->AddProperty("RINDEX", energyAl203, rindexAl203); 
+    // NOTE: Not sure if i can use new energy vector here
+    
+    // ....
+    auto reflectorSurface = new G4OpticalSurface("ReflectorSurface");
+    // reflectorSurface->SetType(dielectric_dielectric);
+    // reflectorSurface->SetModel(unified);
+    // reflectorSurface->SetFinish(polished);
+    
+    // Reflector reflectivity 
+    std::vector<G4double> energyAl203Reflector = {1.239841939*eV * 1.10, 1.239841939*eV / 0.350}; // 1100 nm - 350 nm (smallest must go first)
+    std::vector<G4double> reflectivity = {1., 1.}; // all photons will be reflected (reflectance of 0.3% in practice)
+    
+    // ...
+    MPT3->AddProperty("REFLECTIVITY", energyAl203Reflector, reflectivity);
+    
+    // ...
+    reflectorSurface->SetMaterialPropertiesTable(MPT3);
+    
+    // NOTE: There could be things wrong here, but visually it appears to work
+    
+    
+    
+    
+    // Scoring MPT (silicon dioxide)
+    // auto MPT4 = new G4MaterialPropertiesTable();
+    // // ...
+    // auto scoringSurface = new G4OpticalSurface("ScoringSurface");
+    // std::vector<G4double> energyScoring = {1.239841939*eV / 0.700, 1.239841939*eV / 0.400}; // 400 nm - 700 nm (visible range)
+    // std::vector<G4double> rindexScoring = {1.5406, 1.5574};
+    // std::vector<G4double> reflectivityScoring = {0.08, 0.08}; // TODO: This is leting less through than i thought
+    // // std::vector<G4double> reflectivityScoring = {1., 1.}; // NOTE: This lets all (or most) through, kinda backwards, need to go over docs again
+    // MPT4->AddProperty("RINDEX", energyScoring, rindexScoring);
+    // MPT4->AddProperty("REFLECTIVITY", energyScoring, reflectivityScoring);
+    // SiO2->SetMaterialPropertiesTable(MPT4);
+    // scoringSurface->SetMaterialPropertiesTable(MPT4);
+    
+    
+    
+    // Scoring MPT (Lithium Photocathode)
+    auto MPT4 = new G4MaterialPropertiesTable();
+//     auto scoringSurface = new G4OpticalSurface("Photocathode");
+//     
+//     scoringSurface->SetType(dielectric_metal); // Reflection or absorption (no refraction) -> absorption = detection
+//     scoringSurface->SetModel(unified);
+//     scoringSurface->SetFinish(polished); // ground or polish (only options for dielectric_metal)
+    
+    auto photocathodeSurface = new G4OpticalSurface("Photocathode", glisur, polished, dielectric_metal); // NOTE: more convinent really
+    
+    std::vector<G4double> energyScoring = {1.239841939*eV / 0.700, 1.239841939*eV / 0.551, 1.239841939*eV / 0.400}; // 400 nm - 700 nm (visible range)
+    // std::vector<G4double> rindexScoring = {0.16159, 0.14359, 0.26258}; // NOTE: May not be needed as dielectric_metal only reflect/absorb
+    // std::vector<G4double> reflectivityScoring = {0.9, 0.9, 0.9}; // Li apparently 90% reflectivity between 400-700 nm
+    std::vector<G4double> reflectivityScoring = {0.05, 0.05, 0.05}; // NOTE: But that massively decreases efficiency ...
+    // NOTE: There must be a methodology used to decrease reflectivity in this application
+    std::vector<G4double> efficiency = {0.25, 0.25, 0.25}; // 25% QE starter (flat efficiency)
+    
+    // MPT4->AddProperty("RINDEX", energyScoring, rindexScoring); // NOTE: MAY BE ABLE TO REMOVE THIS .. ?? (Just reflectivity & efficiency)
+    // NOTE: RINDEX would be assigned to Li itself
+    MPT4->AddProperty("REFLECTIVITY", energyScoring, reflectivityScoring); // 1 minus the absorption coeffcient
+    MPT4->AddProperty("EFFICIENCY", energyScoring, efficiency); // Chance of an absorbed photon to be detected
+    // NOTE: Must specificy efficiency
+    
+    // Li->SetMaterialPropertiesTable(MPT4); // NOTE: Do i need to set it to both the material (like scintillator) and surface (for logical border) ?
+    photocathodeSurface->SetMaterialPropertiesTable(MPT4); // NOTE: I think in this case its just the surface (it does not work if solely applied to the Li)
+    // NOTE: Also, its only applied to the surface in "examples/extended/optical/LXe"
+    
+    // NOTE: Only seeing ~1% of the total optical photons being "DETECTED" on full energy deposition
+    // NOTE: Actually ranges from ~1% to 7% seemingly
+    
     
     /////////
     // WORLD:
@@ -218,7 +301,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Dimensions for cylindrical scintillator crystal (radii, height, span)
     G4double crystalInnerRad = 0.*m; // No centre hole
     G4double crystalOuterRad = 7.62*cm * 0.5; // 3 inch = 7.62 cm diameter => (diameter / 2) = 3.81 cm outer radius
-    G4double crystalHeight = 7.62*cm * 0.5; // 3 inch height (this arg will be doubled)
+    G4double crystalHeight = 7.62*cm; // 3 inch height (this arg will be doubled, so will need to * 0.5)
     G4double startAngle = 0.*deg;
     G4double endAngle = 360.*deg; // Full circumference cylinder
 
@@ -227,7 +310,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
         "Scintillator",
         crystalInnerRad,
         crystalOuterRad,
-        crystalHeight,
+        crystalHeight * 0.5,
         startAngle,
         endAngle
     );
@@ -246,7 +329,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     auto crystalTrans = G4ThreeVector(crystalX, crystalY, crystalZ);
 
     // Place the sodium iodide scintillator crystal (inside of the world)
-    G4VPhysicalVolume* scintillatorPhys = new G4PVPlacement(
+    G4VPhysicalVolume* crystalPhys = new G4PVPlacement(
         nullptr, // No rotation
         crystalTrans, // Translation
         scintillatorLog, // The logical volume
@@ -275,7 +358,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
 //         "Reflector",
 //         crystalOuterRad, // inner rad
 //         reflectorOuterRad, // outer rad
-//         crystalHeight, // height
+//         crystalHeight * 0.5, // height
 //         startAngle, // 0 deg
 //         endAngle // 360 deg (full span)
 //     );
@@ -322,7 +405,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
 //     // ...
 //     G4VPhysicalVolume* reflectorFacePhys = new G4PVPlacement(
 //         nullptr, // no rotation
-//         G4ThreeVector(crystalX, crystalY, crystalZ - (crystalHeight + (reflectorThickness * 0.5))), // same position as crystal
+//         G4ThreeVector(crystalX, crystalY, crystalZ - ((crystalHeight * 0.5) + (reflectorThickness * 0.5))), // same position as crystal
 //         reflectorFaceLog, // logical volume
 //         "ReflectorFace", // name
 //         worldLog, // mother volume (logical)
@@ -332,28 +415,26 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
 //     );
     
     
-    
-    
     // Inner rad can (4.04495 cm) - outer rad crystal (3.81 cm) => 0.23495 cm reflector thickness
     G4double reflectorThickness = 0.23495 * cm;
     G4double reflectorOuterRad = crystalOuterRad + reflectorThickness;
     
-    // ...
+    // Base volume which will be cut
     auto reflectorSolid = new G4Tubs(
         "ReflectorSolid",
         0. * cm, // inner rad (no hole, as cut will handle it in this case)
         reflectorOuterRad, // outer rad
-        crystalHeight + reflectorThickness, // height 
+        (crystalHeight * 0.5) + reflectorThickness, // height 
         startAngle, // 0 deg
         endAngle // 360 deg (full span)
     );
     
-    // ...
+    // The section to cut from the base volume
     auto reflectorCut = new G4Tubs(
         "ReflectorCut",
         0. * cm, // inner rad (no hole, solid cut)
         crystalOuterRad, // outer rad (cut a section with same rad as crystal)
-        crystalHeight + reflectorThickness, // height (cut has same height base)
+        (crystalHeight * 0.5) + reflectorThickness, // height (cut has same height base)
         startAngle, // 0 deg
         endAngle // 360 deg (full span)
     );
@@ -361,23 +442,23 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // currently after translation part of this solid is cutting nothing, but tbh thats fine,
     // i think this approach is more readable
     
-    // ...
+    // Create new solid with cut subtracted from base
     auto reflector = new G4SubtractionSolid(
         "Reflector", // name
         reflectorSolid, // the solid to subtract from
         reflectorCut, // the volume to subtract
         nullptr, // no rotation
-        G4ThreeVector(0., 0., reflectorThickness) // cut translation (relative to base solid)
+        G4ThreeVector(0., 0., reflectorThickness) // cut translation (relative to base solid, not world)
     );
     
-    // ...
+    // Assign a material to the reflector solid
     auto reflectorLog = new G4LogicalVolume(
         reflector, // subtraction solid acts same as any other geometry here
         Al2O3, // reflector material
         "Reflector"
     );
     
-    // ...
+    // Place the reflector
     G4VPhysicalVolume* reflectorPhys = new G4PVPlacement(
         nullptr, // no rotation
         crystalTrans, // same position as crystal
@@ -389,11 +470,78 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
         checkOverlaps
     );
     
-    
     // NOTE: This current setup works, but leaves an overhang of reflector,
     // this isnt really an issue and maybe worth keeping,
     // but may also want reflector to stop in line with back of crystal,
     // just need to give "ReflectorSolid" (crystalheight + 0.5 * reflectorThick)
+    
+    
+    ///////////
+    // SCORING:
+    ///////////
+    
+    // Silicon gel
+//     // ...
+//     auto scoring = new G4Tubs(
+//         "Scoring",
+//         crystalInnerRad,
+//         crystalOuterRad,
+//         reflectorThickness * 0.5,
+//         startAngle,
+//         endAngle
+//     );
+//     
+//     
+//     // ...
+//     auto scoringLog = new G4LogicalVolume(scoring, SiO2, "Scoring");
+//     
+//     // ...
+//     G4VPhysicalVolume* scoringPhys = new G4PVPlacement(
+//         nullptr, // No rotation
+//         G4ThreeVector(crystalX, crystalY, crystalZ + (0.5 * crystalHeight) + (0.5 * reflectorThickness)), // Translation
+//         scoringLog, // The logical volume
+//         "Scoring", // Name
+//         worldLog, // Mother volume (logical)
+//         false, // No boolean ops
+//         0, // Copy number
+//         checkOverlaps
+//     );
+    
+    // ...
+    auto scoring = new G4Tubs(
+        "Scoring",
+        crystalInnerRad,
+        crystalOuterRad,
+        reflectorThickness * 0.5, // NOTE: Probably want much thinner photocathode
+        startAngle,
+        endAngle
+    );
+    
+    
+    // ...
+    auto scoringLog = new G4LogicalVolume(scoring, Li, "Scoring");
+    
+    // ...
+    G4VPhysicalVolume* scoringPhys = new G4PVPlacement(
+        nullptr, // No rotation
+        G4ThreeVector(crystalX, crystalY, crystalZ + (0.5 * crystalHeight) + (0.5 * reflectorThickness)), // Translation
+        scoringLog, // The logical volume
+        "Scoring", // Name
+        worldLog, // Mother volume (logical)
+        false, // No boolean ops
+        0, // Copy number
+        checkOverlaps
+    );
+    
+    
+    ////////////
+    // SURFACES:
+    ////////////
+    
+    // ...
+    auto crystalReflectorBorder = new G4LogicalBorderSurface("CrystalToReflector", crystalPhys, reflectorPhys, reflectorSurface);
+    
+    auto crystalScoringBorder = new G4LogicalBorderSurface("CrystalToPhotocathode", crystalPhys, scoringPhys, photocathodeSurface);
     
     
     /////////////
@@ -414,11 +562,17 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     scintillatorLog->SetVisAttributes(scintillatorVisAtt);
     
     // Aluminium oxide reflector
-    auto reflectorVisAtt = new G4VisAttributes(G4Color(0., 0., 1.0, 0.25)); // blue
+    auto reflectorVisAtt = new G4VisAttributes(G4Color(0., 0., 1.0, 0.5)); // blue
     reflectorVisAtt->SetForceSolid(true);
     reflectorLog->SetVisAttributes(reflectorVisAtt);
     
     // reflectorFaceLog->SetVisAttributes(reflectorVisAtt);
+    
+    // Scoring region
+    auto scoringVisAtt = new G4VisAttributes(G4Color(1., 0., 0., 0.5)); // red
+    scoringVisAtt->SetForceSolid(true);
+    scoringLog->SetVisAttributes(scoringVisAtt);
+    
     
     ///////////
     // SCORING:
@@ -427,6 +581,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Will need to access logical scintillator volume outside of this methods scope (for scoring)
     // fScoringVolume = scintillatorLog;
     // NOTE: Assigned to the class property defined in header file
+    
+    // fScoringVolume = scoringLog;
 
 
     ///////

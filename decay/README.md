@@ -101,6 +101,13 @@ NOTE: Should also identify the interaction mechanism,
 photoelectric effect (full deposition in one step),
 or compton scattering (partial deposition in one step)
 
+> NOTE: A 3D heatmap of detector interactions can also be seen by typing the following in the root stdin with a TBrowser open:
+
+```C++
+// compare (x,y,z), no cut, surface plot
+Photons->Draw("fX:fY:fZ", "", "surf");
+```
+
 - Global Time: 
 
 Time of interaction, typically peaks similarly to Z position chart,

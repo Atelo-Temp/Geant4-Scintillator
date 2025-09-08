@@ -34,7 +34,8 @@
 #include "MyDetectorConstruction.hh"
 
 #include "MySensitiveDetector.hh"
-#include <G4ThreeVector.hh>
+#include "G4SubtractionSolid.hh"
+#include "G4ThreeVector.hh"
 
 #include "G4NistManager.hh"
 #include "G4Box.hh"
@@ -279,6 +280,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     //////////////////
     // OPTICAL WINDOW:
     //////////////////
+    
+    // TODO: Rename to "Beta Absorber", optical window probably more apt for crystal->pmt interface
 
     // TODO ...
     // G4Tubs, same radius as crystal, height matching lip of can,
@@ -304,16 +307,18 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     );
     
     // Physical
-    G4VPhysicalVolume* windowPhys = new G4PVPlacement(
-        nullptr, // no rotation
-        G4ThreeVector(crystalX, crystalY, crystalZ - crystalHeight), // Translated along z by half crystal height
-        windowLog, // logical volume to place
-        "Window", // name
-        worldLog, // mother volume (logical)
-        false, // no boolean ops
-        0, // One copy
-        checkOverlaps
-    );
+    // G4VPhysicalVolume* windowPhys = new G4PVPlacement(
+    //     nullptr, // no rotation
+    //     G4ThreeVector(crystalX, crystalY, crystalZ - crystalHeight), // Translated along z by half crystal height
+    //     windowLog, // logical volume to place
+    //     "Window", // name
+    //     worldLog, // mother volume (logical)
+    //     false, // no boolean ops
+    //     0, // One copy
+    //     checkOverlaps
+    // );
+    
+    // TODO: This could probably just be a subtraction solid too
     
     
     /////////////
@@ -326,23 +331,78 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Inner rad can (4.04495 cm) - outer rad crystal (3.81 cm) => 0.23495 cm reflector thickness
     
     // ...
-    auto reflector = new G4Tubs(
-        "Reflector",
-        crystalOuterRad, // inner rad
-        canInnerRad, // outer rad
-        crystalHeight, // height
+//     auto reflector = new G4Tubs(
+//         "Reflector",
+//         crystalOuterRad, // inner rad
+//         canInnerRad, // outer rad
+//         crystalHeight, // height
+//         startAngle, // 0 deg
+//         endAngle // 360 deg (full span)
+//     );
+//     
+//     // ...
+//     auto reflectorLog = new G4LogicalVolume(
+//         reflector,
+//         Al2O3,
+//         "Reflector"
+//     );
+//     
+//     // ...
+//     G4VPhysicalVolume* reflectorPhys = new G4PVPlacement(
+//         nullptr, // no rotation
+//         crystalTrans, // same position as crystal
+//         reflectorLog, // logical volume
+//         "Reflector", // name
+//         worldLog, // mother volume (logical)
+//         false, // no boolean ops
+//         0, // one copy
+//         checkOverlaps
+//     );
+    
+    // Inner rad can (4.04495 cm) - outer rad crystal (3.81 cm) => 0.23495 cm reflector thickness
+    G4double reflectorThickness = canInnerRad - crystalOuterRad; // 0.23495 * cm;
+    G4double reflectorOuterRad = crystalOuterRad + reflectorThickness;
+    
+    // Base volume which will be cut
+    auto reflectorSolid = new G4Tubs(
+        "ReflectorSolid",
+        0. * cm, // inner rad (no hole, as cut will handle it in this case)
+        reflectorOuterRad, // outer rad
+        crystalHeight + reflectorThickness, // height 
         startAngle, // 0 deg
         endAngle // 360 deg (full span)
     );
     
-    // ...
+    // The section to cut from the base volume
+    auto reflectorCut = new G4Tubs(
+        "ReflectorCut",
+        0. * cm, // inner rad (no hole, solid cut)
+        crystalOuterRad, // outer rad (cut a section with same rad as crystal)
+        crystalHeight + reflectorThickness, // height (cut has same height base)
+        startAngle, // 0 deg
+        endAngle // 360 deg (full span)
+    );
+    // NOTE: To be a "perfect cut", could do +0.5*thickness & translate by same amount too,
+    // currently after translation part of this solid is cutting nothing, but tbh thats fine,
+    // i think this approach is more readable
+    
+    // Create new solid with cut subtracted from base
+    auto reflector = new G4SubtractionSolid(
+        "Reflector", // name
+        reflectorSolid, // the solid to subtract from
+        reflectorCut, // the volume to subtract
+        nullptr, // no rotation
+        G4ThreeVector(0., 0., reflectorThickness) // cut translation (relative to base solid, not world)
+    );
+    
+    // Assign a material to the reflector solid
     auto reflectorLog = new G4LogicalVolume(
-        reflector,
-        Al2O3,
+        reflector, // subtraction solid acts same as any other geometry here
+        Al2O3, // reflector material
         "Reflector"
     );
     
-    // ...
+    // Place the reflector
     G4VPhysicalVolume* reflectorPhys = new G4PVPlacement(
         nullptr, // no rotation
         crystalTrans, // same position as crystal

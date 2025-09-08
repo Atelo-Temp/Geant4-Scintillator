@@ -64,4 +64,7 @@ Implements scintillation light (optical photons), in response to energy depositi
 
 ## Final Project
 
-- Spectroscopy: Brings all of the former concepts together to simulate gamma-ray spectroscopy using a scintillator detector
+- Spectroscopy: Brings all of the former concepts together to simulate gamma-ray spectroscopy using a scintillator detector (TODO: May leave this as a more comprehensive version of decay, with no optical photon generation)
+^may rename as just "detector"
+
+TODO: follow on project from scintillator, introducing histogramming, decay, and full geometry
