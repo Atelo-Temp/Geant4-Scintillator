@@ -83,7 +83,6 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     G4Material* Al2O3 = nist->FindOrBuildMaterial("G4_ALUMINUM_OXIDE");
     
     // Scoring material
-    // G4Material* SiO2 = nist->FindOrBuildMaterial("G4_SILICON_DIOXIDE"); // silicon gel
     G4Material* Li = nist->FindOrBuildMaterial("G4_Li"); // lithium photocathode
     
     
@@ -157,43 +156,12 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Assign a refractive index to air 
     // NOTE: Scintillation photons will not attempt to leave the crystal otherwise, hiding need for reflector material
     auto MPTAir = new G4MaterialPropertiesTable();
-    std::vector<G4double> rindexAir = {1., 1., 1.}; // MPTAir->AddProperty("RINDEX", "Air") NOTE: Default available
+    std::vector<G4double> rindexAir = {1., 1., 1.}; // MPT2->AddProperty("RINDEX", "Air") NOTE: Default available
     MPTAir->AddProperty("RINDEX", energy, rindexAir);
     air->SetMaterialPropertiesTable(MPTAir);
     // NOTE: If absorption length is not specified above, giving air a rindex will cause sim to hang indefinitely
     
     
-    
-    
-    // Reflector MPT
-//     auto MPT3 = new G4MaterialPropertiesTable();
-//     
-//     // Reflector refractive index
-//     std::vector<G4double> energyAl203 = {0.24797*eV, 0.36487*eV, 1.02210*eV, 3.70430*eV, 6.19920*eV};
-//     std::vector<G4double> rindexAl203 = {1.6240, 1.6990, 1.7519, 1.8015, 1.9127};
-//     MPT3->AddProperty("RINDEX", energyAl203, rindexAl203); 
-//     // NOTE: Not sure if i can use new energy vector here
-//     
-//     // ....
-//     auto reflectorSurface = new G4OpticalSurface("ReflectorSurface");
-//     // reflectorSurface->SetType(dielectric_dielectric);
-//     // reflectorSurface->SetModel(unified);
-//     // reflectorSurface->SetFinish(polished);
-//     
-//     // Reflector reflectivity 
-//     std::vector<G4double> energyAl203Reflector = {1.239841939*eV * 1.10, 1.239841939*eV / 0.350}; // 1100 nm - 350 nm (smallest must go first)
-//     std::vector<G4double> reflectivity = {1., 1.}; // all photons will be reflected (reflectance of 0.3% in practice)
-//     
-//     // ...
-//     MPT3->AddProperty("REFLECTIVITY", energyAl203Reflector, reflectivity);
-//     
-//     // ...
-//     reflectorSurface->SetMaterialPropertiesTable(MPT3);
-    
-    // NOTE: There could be things wrong here, but visually it appears to work
-    
-    // TODO: The use of a default "polished" surface here, without giving the material itself a refractive index,
-    // means optical photons were being killed instead of reflected (i think potentially zero are reflected with current setup)
     
     
     // Reflector MPT
@@ -222,7 +190,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // TODO: Test "unified" with above
     // auto reflectorSurface = new G4OpticalSurface("ReflectorSurface", unified, polished, dielectric_dielectric); // NOTE: Doesnt reflect!
     // auto reflectorSurface = new G4OpticalSurface("ReflectorSurface", unified, ground, dielectric_dielectric); // NOTE: Doesnt reflect!
-    auto reflectorSurface = new G4OpticalSurface("ReflectorSurface", unified, polishedfrontpainted, dielectric_dielectric); // NOTE: Relects! (will be specular spike reflection)
+    // auto reflectorSurface = new G4OpticalSurface("ReflectorSurface", unified, polishedfrontpainted, dielectric_dielectric); // NOTE: Relects! (will be specular spike reflection)
     // auto reflectorSurface = new G4OpticalSurface("ReflectorSurface", unified, groundfrontpainted, dielectric_dielectric); // NOTE: Reflects! (will be lambertian reflection)
     // auto reflectorSurface = new G4OpticalSurface("ReflectorSurface", unified, polishedbackpainted, dielectric_dielectric); // NOTE: Reflects! But not sure if back painted suitable
     // auto reflectorSurface = new G4OpticalSurface("ReflectorSurface", unified, groundbackpainted, dielectric_dielectric); // NOTE: Reflects! But not sure if back painted suitable
@@ -236,21 +204,18 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // std::vector<G4double> reflectivity = {0.9, 0.9}; // all photons will be reflected (reflectance of 0.3% in practice)
     // std::vector<G4double> reflectivity = {0.9, 0.9, 0.9, 0.9, 0.9}; // all photons will be reflected (reflectance of 0.3% in practice)
     // std::vector<G4double> reflectivity = {1., 1., 1., 1., 1.}; // all photons will be reflected (reflectance of 0.3% in practice)
-    std::vector<G4double> reflectivity = {0.9, 0.9, 0.9}; // all photons will be reflected (reflectance of 0.3% in practice)
     
     // ...
     // MPT3->AddProperty("REFLECTIVITY", energyAl203Reflector, reflectivity);
     // MPT3->AddProperty("REFLECTIVITY", energyAl203, reflectivity);
-    auto MPTReflectorSurf = new G4MaterialPropertiesTable();
+    // auto MPTReflectorSurf = new G4MaterialPropertiesTable();
     // MPTReflectorSurf->AddProperty("REFLECTIVITY", energyAl203, reflectivity);
-    // MPTReflectorSurf->AddProperty("RINDEX", energyAl203, rindexAl203);
-    MPTReflectorSurf->AddProperty("REFLECTIVITY", energy, reflectivity);
     // MPTReflectorSurf->AddProperty("RINDEX", energyAl203, rindexAl203);
     
     // ...
     // reflectorSurface->SetMaterialPropertiesTable(MPT3);
  
-    reflectorSurface->SetMaterialPropertiesTable(MPTReflectorSurf);
+    // reflectorSurface->SetMaterialPropertiesTable(MPTReflectorSurf);
     
     // NOTE: There could be things wrong here, but visually it appears to work
     
@@ -260,29 +225,33 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     
     
+    // WORKS, ALBEIT COMPTON REGION SMALL, AND SMALL EXPONENTIAL TAIL ON PHOTOPEAK
+    // std::vector<G4double> energyAl203 = {0.24797*eV, 0.36487*eV, 1.02210*eV, 3.70430*eV, 6.19920*eV};
+    // std::vector<G4double> rindexAl203 = {1.6240, 1.6990, 1.7519, 1.8015, 1.9127};
+    // MPTReflector->AddProperty("RINDEX", energyAl203, rindexAl203); 
+    // auto reflectorSurface = new G4OpticalSurface("ReflectorSurface", unified, polishedfrontpainted, dielectric_dielectric);
+    // std::vector<G4double> reflectivity = {0.9, 0.9, 0.9, 0.9, 0.9};
+    // auto MPTReflectorSurf = new G4MaterialPropertiesTable();
+    // MPTReflectorSurf->AddProperty("REFLECTIVITY", energyAl203, reflectivity);
+    // MPTReflectorSurf->AddProperty("RINDEX", energyAl203, rindexAl203);
+    // reflectorSurface->SetMaterialPropertiesTable(MPTReflectorSurf);
     
     
+    // REMOVING RINDEX, USING SAME ENERGY AS CRYSTAL PHOTONS
+    auto reflectorSurface = new G4OpticalSurface("ReflectorSurface", unified, polishedfrontpainted, dielectric_dielectric);
+    std::vector<G4double> reflectivity = {0.9, 0.9, 0.9};
+    auto MPTReflectorSurf = new G4MaterialPropertiesTable();
+    MPTReflectorSurf->AddProperty("REFLECTIVITY", energy, reflectivity);
+    reflectorSurface->SetMaterialPropertiesTable(MPTReflectorSurf);
     
     
-    // Scoring MPT (silicon dioxide)
-    // auto MPT4 = new G4MaterialPropertiesTable();
-    // // ...
-    // auto scoringSurface = new G4OpticalSurface("ScoringSurface");
-    // std::vector<G4double> energyScoring = {1.239841939*eV / 0.700, 1.239841939*eV / 0.400}; // 400 nm - 700 nm (visible range)
-    // std::vector<G4double> rindexScoring = {1.5406, 1.5574};
-    // std::vector<G4double> reflectivityScoring = {0.08, 0.08}; // TODO: This is leting less through than i thought
-    // // std::vector<G4double> reflectivityScoring = {1., 1.}; // NOTE: This lets all (or most) through, kinda backwards, need to go over docs again
-    // MPT4->AddProperty("RINDEX", energyScoring, rindexScoring);
-    // MPT4->AddProperty("REFLECTIVITY", energyScoring, reflectivityScoring);
-    // SiO2->SetMaterialPropertiesTable(MPT4);
-    // scoringSurface->SetMaterialPropertiesTable(MPT4);
     
     
     
     // Scoring MPT (Lithium Photocathode)
-    auto MPT4 = new G4MaterialPropertiesTable();
+    auto MPTPhotocathode = new G4MaterialPropertiesTable();
+    
 //     auto scoringSurface = new G4OpticalSurface("Photocathode");
-//     
 //     scoringSurface->SetType(dielectric_metal); // Reflection or absorption (no refraction) -> absorption = detection
 //     scoringSurface->SetModel(unified);
 //     scoringSurface->SetFinish(polished); // ground or polish (only options for dielectric_metal)
@@ -300,14 +269,18 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // NOTE: There must be a methodology used to decrease reflectivity in this application
     std::vector<G4double> efficiency = {0.25, 0.25, 0.25}; // 25% QE starter (flat efficiency)
     
-    // MPT4->AddProperty("RINDEX", energyScoring, rindexScoring); // NOTE: MAY BE ABLE TO REMOVE THIS .. ?? (Just reflectivity & efficiency)
+    // MPTPhotocathode->AddProperty("RINDEX", energyScoring, rindexScoring); // NOTE: MAY BE ABLE TO REMOVE THIS .. ?? (Just reflectivity & efficiency)
     // NOTE: RINDEX would be assigned to Li itself
-    MPT4->AddProperty("REFLECTIVITY", energyScoring, reflectivityScoring); // 1 minus the absorption coeffcient
-    MPT4->AddProperty("EFFICIENCY", energyScoring, efficiency); // Chance of an absorbed photon to be detected
+    // MPTPhotocathode->AddProperty("REFLECTIVITY", energyScoring, reflectivityScoring); // 1 minus the absorption coeffcient
+    // MPTPhotocathode->AddProperty("EFFICIENCY", energyScoring, efficiency); // Chance of an absorbed photon to be detected
     // NOTE: Must specificy efficiency
     
-    // Li->SetMaterialPropertiesTable(MPT4); // NOTE: Do i need to set it to both the material (like scintillator) and surface (for logical border) ?
-    photocathodeSurface->SetMaterialPropertiesTable(MPT4); // NOTE: I think in this case its just the surface (it does not work if solely applied to the Li)
+    // NOTE: Using same energy as other MPTS has no effect on output spectrum at all 
+    MPTPhotocathode->AddProperty("REFLECTIVITY", energy, reflectivityScoring); // 1 minus the absorption coeffcient
+    MPTPhotocathode->AddProperty("EFFICIENCY", energy, efficiency); // Chance of an absorbed photon to be detected
+    
+    // Li->SetMaterialPropertiesTable(MPTPhotocathode); // NOTE: Do i need to set it to both the material (like scintillator) and surface (for logical border) ?
+    photocathodeSurface->SetMaterialPropertiesTable(MPTPhotocathode); // NOTE: I think in this case its just the surface (it does not work if solely applied to the Li)
     // NOTE: Also, its only applied to the surface in "examples/extended/optical/LXe"
     
     // NOTE: Only seeing ~1% of the total optical photons being "DETECTED" on full energy deposition
@@ -614,6 +587,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // ...
     auto crystalReflectorBorder = new G4LogicalBorderSurface("CrystalToReflector", crystalPhys, reflectorPhys, reflectorSurface);
     
+    // ...
     auto crystalScoringBorder = new G4LogicalBorderSurface("CrystalToPhotocathode", crystalPhys, scoringPhys, photocathodeSurface);
     
     

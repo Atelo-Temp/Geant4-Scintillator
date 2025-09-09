@@ -16,13 +16,13 @@ Defining an empty world (filled with air) with no nested geometry, a minimalist 
 
 Assignment of the aforementioned classes to the "G4RunManager" will allow the visualiser to display the world, and observe the particle being shot in an event.
 
-> NOTE: The main() function is not as comprehensive as subsequent "analysis", "decay", "scintillator" projects.
+> NOTE: The main() function is not as comprehensive as subsequent "analysis" project and those that come after it.
 
 - 3) Geometry
 
 Same as template, with a nested cylindrical tracker volume.
 
-> NOTE: The main() function is not as comprehensive as subsequent "analysis", "decay", "scintillator" projects.
+> NOTE: The main() function is not as comprehensive as subsequent "analysis" project and those that come after it.
 
 - 4) Sensitive
 
@@ -30,7 +30,7 @@ Implements a scoring region to track energy deposited in a medium, for each step
 
 The positron from previous examples is changed to a 662 keV gamma-ray photon.
 
-> NOTE: The main() function is not as comprehensive as subsequent "analysis", "decay", "scintillator" projects.
+> NOTE: The main() function is not as comprehensive as subsequent "analysis" project and those that come after it.
 
 - 5) Analysis
 
@@ -48,13 +48,27 @@ Features addition to main() function, to allow longer lived (>1y) isotopes to de
 
 > NOTE: May also wish to model the particle as a volume source, assigned to the spherical geometry.
 
-- 7) Scintillator
+- 7) Scintillator -> Scintillation ? -> Optics ? -> Optical
 
-Implements scintillation light (optical photons), in response to energy deposition in a scintillator crystal medium.
+Implements scintillation light (optical photons), in response to energy deposition in a scintillator crystal medium, also defines reflective and detection (absorption) surfaces.
 
-> NOTE: Reverts back to a simple 662 keV gamma shot from the particle gun, to keep the focus on the scintillation process.
+> NOTE: Reverts back to a simple 662 keV gamma shot from the particle gun, to keep the focus on the scintillation process, also no radioactive decay or histogramming.
 
-- ...
+- 8) ... ? Scintilllator ? SPECTROSCOPY ? (CURRENTLY NAMED WIP)
+
+Same as scintillator, but reintroduces histogramming, radioactive decay, and full geometry (Or just histogramming, or just histo + decay)
+
+TODO: count edep from gammas, to see how many optical photons generated (as well as detected, absorbed, etc - SEE: LXeHistoManager.cc)
+
+- 7 ) ... Detector ? Deposition ? TODO (CURRENTLY NAMED SPECTROSCOPY)
+
+Same as decay, but introduces complete detector geometry beyond just the crstal. 
+
+(TODO: Also swaps sensitive detector for stepping action and event action ? Or do this in a subsequent one)
+
+TODO: Also use subtraction solids
+
+> NOTE: Will remain as is, simulating gamma-ray spectroscopy via energy deposition, and not by counting scintillation photons.
 
 ## Other
 
@@ -67,4 +81,4 @@ Implements scintillation light (optical photons), in response to energy depositi
 - Spectroscopy: Brings all of the former concepts together to simulate gamma-ray spectroscopy using a scintillator detector (TODO: May leave this as a more comprehensive version of decay, with no optical photon generation)
 ^may rename as just "detector"
 
-TODO: follow on project from scintillator, introducing histogramming, decay, and full geometry
+TODO: follow on project from scintillator, 
