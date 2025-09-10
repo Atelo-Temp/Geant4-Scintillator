@@ -68,6 +68,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     // Count one optical photon (for total generated, not absorbed, detected, etc)
     fEventAction->CountPhoton();
     // TODO: If a photon reflects it will be counted twice !!!
+    // could subtract reflections from this value, but probably a cleaner way
     
     // Get the post step point object for the particle
     auto endPoint = step->GetPostStepPoint();
@@ -84,13 +85,23 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         // Photon is absorbed but status was detection, manually track it in event tally
         fEventAction->CountDetectedPhoton();
         
+        // TODO: May be worth double checking the boundary is the photocathode
+        // although since its only one with efficiency vector, it will be
+        
+        // G4cout << endPoint->GetTouchable()->GetVolume()->GetName() << G4endl; // "Scoring"
+        auto x = endPoint->GetTouchable()->GetVolume()->GetName();
+        if (x != "Photocathode") G4cout << x << G4endl;
+        
         // TODO: Get (x, y, z) coordinates
+        // endPoint->GetPosition();
+        
     } else if (boundaryStatus == Absorption) {
         // Photon was absorbed without detection
         fEventAction->CountAbsorbedPhoton();
         
         // TODO: Get (x, y, z) coordinates
-    }
+    } 
+    // else if (boundaryStatus == LambertianReflection) {}
     // TODO: Maybe switch case here ^
     
     // Check if photocathode boundary somehow ...
