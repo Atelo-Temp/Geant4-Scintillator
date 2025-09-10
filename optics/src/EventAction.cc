@@ -1,6 +1,7 @@
-// ...
+// User classes
 #include "EventAction.hh" // class interface
 
+// G4 Lib
 #include "G4Event.hh" // event object
 #include "G4ios.hh" // for G4cout
 #include "G4AnalysisManager.hh" // histogramming
@@ -29,11 +30,6 @@ void EventAction::EndOfEventAction(const G4Event*) {
     
     // NOTE: ^ Removed to save time during batch processing, may want an logic statement that 
     // checks whether in visualisation or batch, as this nice for vis
-    
-    
-    // TODO: Could get photon (x, y, z) on detection AND absorption
-    // will get 3D heatmap of where detection on photocathode occuring,
-    // but also will see where in the detector photons being lost to absorption
     
     /////////////////
     // HISTOGRAMMING:

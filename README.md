@@ -56,9 +56,13 @@ Implements scintillation light (optical photons), in response to energy depositi
 
 - 8) Optics (RENAME: -> Scintilllator ? SPECTROSCOPY ?)
 
-Same as scintillator, but reintroduces histogramming, radioactive decay, and full geometry (Or just histogramming, or just histo + decay)
+Same as scintillator, but reintroduces histogramming (and optical photon detection/absorption positions)
 
-TODO: count edep from gammas, to see how many optical photons generated (as well as detected, absorbed, etc - SEE: LXeHistoManager.cc)
+TODO: Count edep from gammas, compare with how many optical photons generated (as well as detected, absorbed, etc - SEE: LXeHistoManager.cc)
+
+- 9) XYZ
+
+Same as optics, but reintroduces radioactive decay, and full geometry
 
 - 9) Spectroscopy (RENAME: Deposition ? TODO) (TECHNICALLY THE FIRST DRAFTING OF THIS CAME AFTER DECAY ...)
 

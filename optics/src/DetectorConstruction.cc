@@ -140,7 +140,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // creation time of photons is chosen from a distribution with these characterisics
     
     // Factor to vary width of yield distribution
-    MPTCrystal->AddConstProperty("RESOLUTIONSCALE", 10.); // 1. to start, tune later
+    MPTCrystal->AddConstProperty("RESOLUTIONSCALE", 0.); // 1. to start, tune later
+    // MPTCrystal->AddConstProperty("RESOLUTIONSCALE", 10.);
     // NOTE: A resolution scale of ZERO produces no fluctuation in optical photons generated
     // (sigma = sqrt of mean photons for step * RESOLUTIONSCALE)
     // NOTE: val > 0. broadens intrinsic Poisson stats (captures non-proportionality-ish behaviour)
@@ -385,7 +386,6 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
         endAngle
     );
     // NOTE: Cylinder has radius of 3.81 cm and height of 7.62 cm (the "height" param is also a half length)
-    
     
     // Define the scintillator crystal material as sodium iodide
     auto scintillatorLog = new G4LogicalVolume(scintillator, NaI, "Scintillator");

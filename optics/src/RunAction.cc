@@ -1,16 +1,16 @@
-// ..
+// User classes
 #include "RunAction.hh"
 #include "AnalysisManager.hh"
 
+// G4 lib
 #include "G4AnalysisManager.hh"
-
-// ..
 
 // Define the class constructor
 RunAction::RunAction() {
     auto fAnalysis = new AnalysisManager();
 }
 
+// Class destructor frees up local storage
 RunAction::~RunAction() {
     delete fAnalysis;
 }

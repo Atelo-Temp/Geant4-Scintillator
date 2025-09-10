@@ -22,9 +22,6 @@ Basic gamma spectroscopy scintillator detector, with output spectrum, and simula
 
 ## Not Implemented
 
-- Not currently seeing any x-rays in 137Cs spectrum (originating from 32 keV 137-Barium Ka transition - conversion electron) (NOTE: Can see x-rays for 207Bi as it undergoes electron capture, leading to shell transition to fill the gap left by the electron)
-^ this is also related to detector efficiency actually (as lower energy photons have higher chance of interaction => lower energy, better efficiency, vice versa) ... may need to explore if i need to implement this (to make spectrum more realistic)
-
 - Scintillation photons & photocathode
 
 - Volumetric source (instead of point source)

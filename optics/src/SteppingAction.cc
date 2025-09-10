@@ -1,20 +1,20 @@
-// ...
+// User classes
 #include "SteppingAction.hh"
 #include "DetectorConstruction.hh"
-#include <G4OpBoundaryProcess.hh>
-#include <G4ProcessVector.hh>
-#include <G4StepStatus.hh>
-#include <G4VProcess.hh>
-#include <G4ios.hh>
+
+// G4 Lib
+#include "G4OpBoundaryProcess.hh"
+#include "G4ProcessVector.hh"
+#include "G4StepStatus.hh"
+#include "G4VProcess.hh"
+#include "G4ios.hh"
 #include "G4LogicalVolume.hh"
 #include "G4RunManager.hh"
-
 #include "G4OpticalPhoton.hh"
-
 #include "G4Step.hh"
+#include "G4AnalysisManager.hh"
 
-
-// ...
+// Step handler, will excute on each step
 void SteppingAction::UserSteppingAction(const G4Step* step) {
     // ...
     auto track = step->GetTrack();
@@ -24,34 +24,20 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         return;
     }
     
-    
-    // TEST
-    // auto x = step->GetPostStepPoint()->GetProcessDefinedStep()->GetProcessName();
-    // if (x != "Transportation" && x != "OpAbsorption") G4cout << x << G4endl;
-    // return;
-    // ...
-    
-    
     // Find the boundary process only once (cache the pointer)
     // NOTE: Is there a cleaner way to do this?
     // NOTE: May wanna make this its own method, if this is cleanest way, and call if == nullptr
     if (fBoundary == nullptr) {
         // Get pointer to the process list (for optical photons)
-        // auto pv = track->GetDefinition()->GetProcessManager()->GetProcessList();
         G4ProcessVector* pv = track->GetDefinition()->GetProcessManager()->GetProcessList();
         
         // Iterate over list of process objects
         for (int i = 0; i < pv->size(); ++i) {
             // Pointer to current non-null process
-            // auto process = (*pv)[i];
             G4VProcess* process = (*pv)[i];
           
             // Prevent attempted access to non-existent method
             if (process == nullptr) continue;
-            
-            // TEST
-            // G4cout << process->GetProcessName() << G4endl;
-            // ...
             
             // If the boundary process is found
             // NOTE: i.e. "Transportation", "OpAbsorption", "OpRayleigh", "OpMieHG", "OpBoundary"
@@ -64,11 +50,11 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
             }
         }
     }
-
+ 
     // Count one optical photon (for total generated, not absorbed, detected, etc)
-    fEventAction->CountPhoton();
-    // TODO: If a photon reflects it will be counted twice !!!
-    // could subtract reflections from this value, but probably a cleaner way
+    // NOTE: Without if clause, when a photon reflects it will be counted twice,
+    // could subtract interactions from this value, but this probably a cleaner way
+    if (track->GetCurrentStepNumber() == 1) fEventAction->CountPhoton();
     
     // Get the post step point object for the particle
     auto endPoint = step->GetPostStepPoint();
@@ -89,24 +75,65 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         // although since its only one with efficiency vector, it will be
         
         // G4cout << endPoint->GetTouchable()->GetVolume()->GetName() << G4endl; // "Scoring"
-        auto x = endPoint->GetTouchable()->GetVolume()->GetName();
-        if (x != "Photocathode") G4cout << x << G4endl;
+        // auto x = endPoint->GetTouchable()->GetVolume()->GetName();
+        // if (x != "Photocathode") G4cout << x << G4endl;
         
-        // TODO: Get (x, y, z) coordinates
-        // endPoint->GetPosition();
+        // if (endPoint->GetTouchable()->GetVolume() == fScoringVolume)
+        // NOTE: Get fScoringVolume via public method on DetectorConstruction
         
+        // Get (x, y, z) coordinates at point where optical photon detected by photocathode
+        auto detectionPosition = endPoint->GetPosition();
+        auto x = detectionPosition[0];
+        auto y = detectionPosition[1];
+        auto z = detectionPosition[2];
+        
+        // Get pointer to analysis manager singleton
+        auto analysisManager = G4AnalysisManager::Instance();
+        
+        // Store this data in the nTuples (create a few rows) (IColumn = int, DColumn = double)
+        analysisManager->FillNtupleDColumn(0, 0, detectionPosition[0]); // 0th column, x
+        analysisManager->FillNtupleDColumn(0, 1, detectionPosition[1]); // 1st column, y
+        analysisManager->FillNtupleDColumn(0, 2, detectionPosition[2]); // 2nd column, z
+        // NOTE: Takes tuple ID (0 as we only made one), column number in this row, and the entry
+        
+        // Mark this row as complete
+        analysisManager->AddNtupleRow(0);
+        
+        // For every photon that enters the detector and interacts, each interaction will call "ProcessHits()",
+        // producing a new row (linked to the event ID) for each interaction,
+        // i.e. multiple compton scatters inside the detector, for a given photon, will produce rows pertaining to each energy deposit
+        
+        // NOTE: Likely just make this a method of analysis class (as absorption xyz very similar)
     } else if (boundaryStatus == Absorption) {
         // Photon was absorbed without detection
         fEventAction->CountAbsorbedPhoton();
         
-        // TODO: Get (x, y, z) coordinates
+        // TODO: Can get absorption volume via same process as above,
+        // counts absorptions in crystal vs reflector, vs photocathode
+        
+        // Get (x, y, z) coordinates at point where optical photon absorbed by reflector or photocathode
+        auto absorptionPosition = endPoint->GetPosition();
+        auto x = absorptionPosition[0];
+        auto y = absorptionPosition[1];
+        auto z = absorptionPosition[2];
+        
+        // Get pointer to analysis manager singleton
+        auto analysisManager = G4AnalysisManager::Instance();
+        
+        // Store this data in the nTuples (create a few rows) (IColumn = int, DColumn = double)
+        analysisManager->FillNtupleDColumn(0, 3, absorptionPosition[0]); // 3rd column, x
+        analysisManager->FillNtupleDColumn(0, 4, absorptionPosition[1]); // 4th column, y
+        analysisManager->FillNtupleDColumn(0, 5, absorptionPosition[2]); // 5th column, z
+        // NOTE: Takes tuple ID (0 as we only made one), column number in this row, and the entry
+        
+        // Mark this row as complete
+        analysisManager->AddNtupleRow(0);
+        
+        // For every photon that enters the detector and interacts, each interaction will call "ProcessHits()",
+        // producing a new row (linked to the event ID) for each interaction,
+        // i.e. multiple compton scatters inside the detector, for a given photon, will produce rows pertaining to each energy deposit
     } 
     // else if (boundaryStatus == LambertianReflection) {}
     // TODO: Maybe switch case here ^
-    
-    // Check if photocathode boundary somehow ...
-    
-    // NOTE: Is there alternative approach to finding process in list ?
-    // auto x = endPoint->GetProcessDefinedStep()->GetProcessName();
-    // G4cout << x << G4endl;
+    // Can also do xyz of reflection position, etc
 }

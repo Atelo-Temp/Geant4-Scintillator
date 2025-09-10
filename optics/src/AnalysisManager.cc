@@ -1,5 +1,7 @@
+// Class interfacce
 #include "AnalysisManager.hh"
 
+// G4 lib
 #include "G4AnalysisManager.hh"
 
 // Define the constructor
@@ -32,13 +34,18 @@ void AnalysisManager::CreateHistogram() {
     analysisManager->CreateNtuple("Photons", "Photons"); // name, title
     
     // Define columns and rows iniside the tuple
-    analysisManager->CreateNtupleIColumn("iEvent"); // I = integer (event number)
+    // analysisManager->CreateNtupleIColumn("iEvent"); // I = integer (event number)
     analysisManager->CreateNtupleDColumn("fX"); // D = double (float maybe fine, but double gives increased precision) // store x position (may not need for now but in future may be useful)
     analysisManager->CreateNtupleDColumn("fY"); // y position of the photon
     analysisManager->CreateNtupleDColumn("fZ"); // y position of the photon
-    analysisManager->CreateNtupleDColumn("fGlobalTime"); // store the global time at the start of each event
-    analysisManager->CreateNtupleDColumn("fWlen"); // wavelength
+    // analysisManager->CreateNtupleDColumn("fGlobalTime"); // store the global time at the start of each event
+    // analysisManager->CreateNtupleDColumn("fWlen"); // wavelength
     // NOTE: Could also define momentum, energy, etc ...
+    
+    // Absorption positions
+    analysisManager->CreateNtupleDColumn("aX"); // D = double (float maybe fine, but double gives increased precision) // store x position (may not need for now but in future may be useful)
+    analysisManager->CreateNtupleDColumn("aY"); // y position of the photon
+    analysisManager->CreateNtupleDColumn("aZ"); // y position of the photon
     
     // Mark the definition of the tuple columns as completed
     analysisManager->FinishNtuple(0);
