@@ -48,19 +48,19 @@ Features addition to main() function, to allow longer lived (>1y) isotopes to de
 
 > NOTE: May also wish to model the particle as a volume source, assigned to the spherical geometry.
 
-- 7) Scintillator -> Scintillation ? -> Optics ? -> Optical
+- 7) Scintillator (RENAME: -> Scintillation ? -> Optics ? -> Optical)
 
 Implements scintillation light (optical photons), in response to energy deposition in a scintillator crystal medium, also defines reflective and detection (absorption) surfaces.
 
 > NOTE: Reverts back to a simple 662 keV gamma shot from the particle gun, to keep the focus on the scintillation process, also no radioactive decay or histogramming.
 
-- 8) ... ? Scintilllator ? SPECTROSCOPY ? (CURRENTLY NAMED WIP)
+- 8) Optics (RENAME: -> Scintilllator ? SPECTROSCOPY ?)
 
 Same as scintillator, but reintroduces histogramming, radioactive decay, and full geometry (Or just histogramming, or just histo + decay)
 
 TODO: count edep from gammas, to see how many optical photons generated (as well as detected, absorbed, etc - SEE: LXeHistoManager.cc)
 
-- 7 ) ... Detector ? Deposition ? TODO (CURRENTLY NAMED SPECTROSCOPY)
+- 9) Spectroscopy (RENAME: Deposition ? TODO) (TECHNICALLY THE FIRST DRAFTING OF THIS CAME AFTER DECAY ...)
 
 Same as decay, but introduces complete detector geometry beyond just the crstal. 
 

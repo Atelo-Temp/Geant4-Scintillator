@@ -14,60 +14,6 @@
 #include "G4Step.hh"
 
 
-// Simple count all particles matching optical photon definition implementation
-// void SteppingAction::UserSteppingAction(const G4Step* step) {
-//     // ...
-//     auto track = step->GetTrack();
-//     
-//     // If particle is not optical photon, break
-//     if (track->GetDefinition() != G4OpticalPhoton::OpticalPhotonDefinition()) {
-//         return;
-//     }
-//     
-//     // Count one
-//     fEventAction->countPhoton();
-// }
-
-
-// Count optical photons that take a step inside scoring region (NOTE: May count multiple steps, and miss photons which pass through)
-// void SteppingAction::UserSteppingAction(const G4Step* step) {
-    // If scoring volume is nullptr
-//     if (!fScoringVolume) {
-//         // Get a pointer to the detector construction registered with the run manager
-//         
-//         // auto detConst = G4RunManager::GetRunManager()->GetUserDetectorConstruction();
-//         // const auto detConst = G4RunManager::GetRunManager()->GetUserDetectorConstruction();
-//         
-//         // NOTE: I have no idea why its implemeted this way and not one of the above
-//         const auto detConst = static_cast<const DetectorConstruction*>(
-//             G4RunManager::GetRunManager()->GetUserDetectorConstruction()
-//         );
-//         
-//         // Assign scoring volume pointer to class property
-//         fScoringVolume = detConst->GetScoringVolume();
-//     }
-    
-    // ...
-    // auto track = step->GetTrack();
-    
-    // If particle is not optical photon, break
-    // if (track->GetDefinition() != G4OpticalPhoton::OpticalPhotonDefinition()) {
-    //     return;
-    // }
-    
-    // Get volume of current step
-    // G4LogicalVolume* currVolume = step->GetPreStepPoint()->GetTouchableHandle()->GetVolume()->GetLogicalVolume();
-    
-    // // Check if we are in the scoring volume
-    // if (currVolume != fScoringVolume) {
-    //     return;
-    // }
-    
-    // Count one
-    // fEventAction->countPhoton();
-// }
-
-
 // ...
 void SteppingAction::UserSteppingAction(const G4Step* step) {
     // ...
