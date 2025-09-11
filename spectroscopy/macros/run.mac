@@ -13,5 +13,8 @@
 # /run/beamOn 100000
 
 # 100,000 events (5000 takes ~135s with direct 662 keV gamma, but decay means much fewer interactions, 100,000 with isotropic source took ~2 mins)
-/run/beamOn 100000 # with decay, since less gammas interact with detector, need more events
+# /run/beamOn 100000 # with decay, since less gammas interact with detector, need more events (256 bins)
 # due to decay, and optical photons, sim time could fluctuate a lot for same amount of events
+# /run/beamOn 200000 # for 1024 bins
+# /run/beamOn 300000 # for 1024 bins
+/run/beamOn 400000 # for 1024 bins (~25 mins)

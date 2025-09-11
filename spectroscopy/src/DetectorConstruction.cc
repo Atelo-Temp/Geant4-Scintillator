@@ -59,6 +59,9 @@
 #include "G4Sphere.hh"
 
 
+// TODO: Probably wanna use consistent units throughout
+
+
 // namespace GEOMETRY {
 
 // Define the geometry to be created when run manager intialises
@@ -83,6 +86,12 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     // Scintillation light reflector material (Al2O3)
     G4Material* Al2O3 = nist->FindOrBuildMaterial("G4_ALUMINUM_OXIDE");
+    
+    // Scintillator can material (Al2O3)
+    G4Material* Al = nist->FindOrBuildMaterial("G4_Al");
+    
+    // Optical grease (Silicon gel)
+    G4Material* Si = nist->FindOrBuildMaterial("G4_Si"); // TODO: Grease probably has different density
     
     // Scoring material
     G4Material* Li = nist->FindOrBuildMaterial("G4_Li"); // lithium photocathode
@@ -457,13 +466,15 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Inner rad can (4.04495 cm) - outer rad crystal (3.81 cm) => 0.23495 cm reflector thickness
     G4double reflectorThickness = 0.23495 * cm;
     G4double reflectorOuterRad = crystalOuterRad + reflectorThickness;
+    G4double reflectorHeight = (crystalHeight * 0.5) + reflectorThickness; 
+    // NOTE: Same as crystal height, with reflector thickness added to both ends (will be multiplied by two)
     
     // Base volume which will be cut
     auto reflectorSolid = new G4Tubs(
         "ReflectorSolid",
         0. * cm, // inner rad (no hole, as cut will handle it in this case)
         reflectorOuterRad, // outer rad
-        (crystalHeight * 0.5) + reflectorThickness, // height 
+        reflectorHeight, // height 
         startAngle, // 0 deg
         endAngle // 360 deg (full span)
     );
@@ -473,7 +484,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
         "ReflectorCut",
         0. * cm, // inner rad (no hole, solid cut)
         crystalOuterRad, // outer rad (cut a section with same rad as crystal)
-        (crystalHeight * 0.5) + reflectorThickness, // height (cut has same height base)
+        reflectorHeight, // height (cut has same height base)
         startAngle, // 0 deg
         endAngle // 360 deg (full span)
     );
@@ -515,9 +526,142 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // just need to give "ReflectorSolid" (crystalheight + 0.5 * reflectorThick)
     
     
-    ///////////
-    // SCORING:
-    ///////////
+    ///////////////////////
+    // ALUMINIUM ENCLOSURE:
+    ///////////////////////
+    
+    // TODO: Double check this geometry
+    
+    // Define the thickness of the can
+    // G4double canThick = 1.*mm;
+    // G4double canOuterRad = crystalOuterRad + canThick;
+    // G4double overHang = 0.*mm; // this will be added to both sides in Z direction to fit window
+    
+    // G4double inchToCM = 2.54;
+    
+    // G4double canThick = 0.0508 * cm; // NOTE: Is 0.02' => 0.508 mm, according to ortec spec
+    // G4double canInnerRad = (((3.225 * 2.54) / 2) * cm) - canThick; // 3.225' dia => 8.1915cm dia => 4.09575 cm outer rad => 4.04495 cm inner rad
+    // G4double canOuterRad = ((3.225 * 2.54) / 2) * cm; // NOTE: Can is 3.225' diameter according to ortec spec
+    // Radially there is a gap between crystal and can
+    
+    // NOTE: The face of the crystal seems to be in direct contact with the can though
+    // G4double overHang = 0.*mm; // this will be added to both sides in Z direction to fit window
+    // NOTE: This will = canThick * 2 (or at least the face will = canThick, may have to translate along Z if needed)
+    // G4double canLength = crystalHeight + canThick;
+    // NOTE: Could also just leave can length as crystal length and place window on top, rather than slot it in
+    
+    // Enclosure is 3.225' outer diameter according to ortec spec, and 0.2' thickness
+    G4double enclosureThick = 0.0508 * cm; // NOTE: 0.02' => 0.508 mm
+    // G4double enclosureInnerRad = (((3.225 * 2.54) / 2) * cm) - enclosureThick; // 3.225' dia => 8.1915cm dia => 4.09575 cm outer rad => 4.04495 cm inner rad (NOTE: Unused)
+    G4double enclosureOuterRad = ((3.225 * 2.54) / 2) * cm; // NOTE: 3.225' dia => 8.1915cm dia => 4.09575 cm outer rad
+    G4double enclosureLength = reflectorHeight + enclosureThick; // NOTE: Reflector height is 1/2 height, so only (1 * enclosure thickness)
+    
+    // Base volume which will be cut
+    auto enclosureSolid = new G4Tubs(
+        "EnclosureSolid",
+        0. * cm, // inner rad (no hole, as cut will handle it in this case)
+        enclosureOuterRad, // outer rad
+        enclosureLength, // height 
+        startAngle, // 0 deg
+        endAngle // 360 deg (full span)
+    );
+    
+    // The section to cut from the base volume
+    auto enclosureCut = new G4Tubs(
+        "EnclosureCut",
+        0. * cm, // inner rad (no hole, solid cut)
+        reflectorOuterRad, // outer rad (cut a section with same rad as reflector)
+        enclosureLength, // height (cut has same height as base)
+        startAngle, // 0 deg
+        endAngle // 360 deg (full span)
+    );
+    // NOTE: To be a "perfect cut", could do +0.5*thickness & translate by same amount too,
+    // currently after translation part of this solid is cutting nothing, but tbh thats fine,
+    // i think this approach is more readable
+    
+    // Create new solid with cut subtracted from base
+    auto enclosure = new G4SubtractionSolid(
+        "Enclosure", // name
+        enclosureSolid, // the solid to subtract from
+        enclosureCut, // the volume to subtract
+        nullptr, // no rotation
+        G4ThreeVector(0., 0., enclosureThick) // cut translation (relative to base solid, not world)
+    );
+    
+    // Assign a material to the enclosure solid
+    auto enclosureLog = new G4LogicalVolume(
+        enclosure, // subtraction solid acts same as any other geometry here
+        Al, // enclosure material (aluminium)
+        "Enclosure"
+    );
+    
+    // Place the enclosure
+    G4VPhysicalVolume* enclosurePhys = new G4PVPlacement(
+        nullptr, // no rotation
+        crystalTrans, // same position as crystal
+        enclosureLog, // logical volume
+        "Enclosure", // name
+        worldLog, // mother volume (logical)
+        false, // no boolean ops
+        0, // one copy
+        checkOverlaps
+    );
+    
+    
+    //////////////////
+    // OPTICAL GREASE:
+    //////////////////
+    
+    // Silicon gel with ~same thickness as reflector (2.3495 mm as per schematics)
+    // NOTE: Some sources say only 0.1 mm thickness is suggested though ^
+    
+    // Optical grease (transmitting incident optical photons to the PMT window)
+    auto grease = new G4Tubs(
+        "OpticalGrease",
+        crystalInnerRad, // 0cm
+        crystalOuterRad, // same radius as crystal (slots into reflector)
+        reflectorThickness * 0.5, // same thickness as reflector (will be multiplied by 2 on placement)
+        startAngle, // 0 deg
+        endAngle // 360 deg (full span)
+    );
+    
+    // Lithium (alkali metal due to low binding energy of outer shell electron)
+    auto greaseLog = new G4LogicalVolume(grease, Si, "OpticalGrease");
+    
+    // Translation along Z axis (relative to crystal)
+    G4double greaseZ = crystalZ + (0.5 * crystalHeight) + (0.5 * reflectorThickness);
+    // NOTE: Places it on crystal Z (centre of the crystal), 
+    // translates it by half the crystal height (to account for it being centre of crystal),
+    // due to 0.5 reflector thickness being placed either side of its origin,
+    // need to shift it by 0.5 * its thickness
+    
+    // Placed on the back side of the crystal
+    G4VPhysicalVolume* greasePhys = new G4PVPlacement(
+        nullptr, // No rotation
+        G4ThreeVector(crystalX, crystalY, greaseZ), // Translation
+        greaseLog, // The logical volume
+        "OpticalGrease", // Name
+        worldLog, // Mother volume (logical)
+        false, // No boolean ops
+        0, // Copy number
+        checkOverlaps
+    );
+    
+    
+    ////////////////////////
+    // PHOTOMULTIPLIER TUBE:
+    ////////////////////////
+
+    // TODO ...
+    // NOTE: Will likely just be the window
+    // Pyrex or fused silica ?
+    
+    
+    ////////////////
+    // PHOTOCATHODE:
+    ////////////////
+    
+    // TODO: Reduce thickness to ~1mm
     
     // Photocathode (absorbing or detecting incident optical photons)
     auto photocathode = new G4Tubs(
@@ -580,6 +724,49 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
         0,
         checkOverlaps
     );
+    
+    
+    /////////////////
+    // SOURCE CASING:
+    /////////////////
+    
+    // TODO: ...
+    
+    
+    ////////////
+    // TABLETOP:
+    ////////////
+    
+    // TODO: ... 
+    
+    // NOTE: MDF style wood
+    // ~' -> 2' thick
+    
+    G4double tableSize = 0.5*m; // 1m probably better but dont wanna make world massive (also is rectangle not square)
+    G4double tableHeight = 0.05*m; // 5cm ? TODO: spitballing, need to refine this
+    
+    auto table = new G4Box("Table", tableSize * 0.5, tableSize * 0.5, tableHeight * 0.5);
+    
+    auto tableLog = new G4LogicalVolume(table, Al, "Table"); // TODO: Need actual table material
+    
+    // Rotate about z-axis 90 degrees
+    auto tableRot = new G4RotationMatrix();
+    tableRot->rotateX(90. * deg);
+    
+    // Translate in -y direction by radius of can + half thickness of table
+    G4double tableTransY = -1. * (enclosureOuterRad + (tableHeight * 0.5));
+    
+    G4VPhysicalVolume* tablePhys = new G4PVPlacement(
+        tableRot, // Rotated 90 degrees in Z direction
+        // nullptr,
+        G4ThreeVector(0., tableTransY, 0.), 
+        tableLog,
+        "Table",
+        worldLog,
+        false,
+        0,
+        checkOverlaps // NOTE: Will overlap currently
+    );
 
     
     ////////////
@@ -589,9 +776,18 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Define the border between the crystal and the reflector
     auto crystalReflectorBorder = new G4LogicalBorderSurface("CrystalToReflector", crystalPhys, reflectorPhys, reflectorSurface);
     
-    // Define the border between the crystal and the photocathode
-    auto crystalScoringBorder = new G4LogicalBorderSurface("CrystalToPhotocathode", crystalPhys, photocathodePhys, photocathodeSurface);
+    // Define the border between the crystal and the photocathode - TODO: Remove, move to PMT window->photocathode border
+    auto crystalPhotocathodeBorder = new G4LogicalBorderSurface("CrystalToPhotocathode", crystalPhys, photocathodePhys, photocathodeSurface);
     
+    // Define the border between the crystal and silicon gel (optical grease) - TODO: is this surface needed ? can this just have rindex on material (NOTE there may be tiny bit of reflection/absorption though)
+    // auto crystalGreaseBorder = new G4LogicalBorderSurface("CrystalToGrease", crystalPhys, greasePhys, greaseSurface);
+    
+    // Define the border between the silicon gel and the PMT window - TODO: Likewise ?
+    // auto greaseWindowBorder = new G4LogicalBorderSurface("GreaseToWindow", greasePhys, windowPhys, windowSurface);
+    
+    // Define the border between the PMT window and the photocathode - TODO: This one is needed (and replaces crystal-pc border)
+    // auto windowPhotocathodeBorder = new G4LogicalBorderSurface("WindowToPhotocathode", windowPhys, photocathodePhys, photocathodeSurface);
+        
     
     /////////////
     // COLOURING:
@@ -615,15 +811,31 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     reflectorVisAtt->SetForceSolid(true);
     reflectorLog->SetVisAttributes(reflectorVisAtt);
     
-    // Scoring region
+    // Aluminium enclosure
+    auto enclosureVisAtt = new G4VisAttributes(G4Color(0.8, 0.8, 0.8, 1.)); // mid-light gray
+    enclosureVisAtt->SetForceSolid(true);
+    enclosureLog->SetVisAttributes(enclosureVisAtt);
+    
+    // Optical grease
+    // TODO: ...
+    
+    // Optical window
+    // TODO: ...
+    
+    // Scoring photocathode
     auto photocathodeVisAtt = new G4VisAttributes(G4Color(1., 0., 0., 0.5)); // red
     photocathodeVisAtt->SetForceSolid(true);
     photocathodeLog->SetVisAttributes(photocathodeVisAtt);
     
-    // Assign colour to the source geometry
+    // Source geometry
     auto sourceVisAtt = new G4VisAttributes(G4Color(0.0, 1.0, 0.0, 0.5)); // green
     sourceVisAtt->SetForceSolid(true);
     sourceLog->SetVisAttributes(sourceVisAtt);
+    
+    // Tabletop geometry
+    auto tableVisAtt = new G4VisAttributes(G4Color(0.95, 0.95, 0.95, 1.)); // light gray
+    tableVisAtt->SetForceSolid(true);
+    tableLog->SetVisAttributes(tableVisAtt);
     
     
     ///////////

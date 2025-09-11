@@ -18,9 +18,9 @@ void AnalysisManager::CreateHistogram() {
     analysisManager->CreateH1(
         "Photons", // Name
         "Optical Photons", // Title
-        256, // NOTE: Seems inadequate for optical photons
-        // 512, // 
-        // 1024, // Number of bins
+        // 256, // NOTE: Does the job, but features very compressed
+        // 512, // NOTE: Starts to look bit better, but 100,000 decays gives fairly low counts for amount of bins
+        1024, // Number of bins
         // 0., // Lower bounds
         // 1. * eV, // Lower bounds
         // 1. * MeV // Upper bounds
