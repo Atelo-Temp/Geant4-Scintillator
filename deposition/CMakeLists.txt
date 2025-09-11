@@ -2,7 +2,7 @@
 # Setup the project
 #
 cmake_minimum_required(VERSION 3.16...3.27)
-project(spectroscopy)
+project(deposition)
 
 #----------------------------------------------------------------------------
 # Create compile_commands.json for C++ LSP
@@ -25,23 +25,29 @@ file(GLOB headers ${PROJECT_SOURCE_DIR}/include/*.hh)
 #----------------------------------------------------------------------------
 # Add the executable, use our local headers, and link it to the Geant4 libraries
 #
-add_executable(spectroscopy spectroscopy.cc ${sources} ${headers})
-target_include_directories(spectroscopy PRIVATE include)
-target_link_libraries(spectroscopy PRIVATE ${Geant4_LIBRARIES})
+add_executable(deposition deposition.cc ${sources} ${headers})
+target_include_directories(deposition PRIVATE include)
+target_link_libraries(deposition PRIVATE ${Geant4_LIBRARIES})
 
 #----------------------------------------------------------------------------
 # Copy all scripts to the build directory, i.e. the directory in which we
-# build the executable. This is so that we can run the executable directly 
-# because it relies on these scripts being in the current working directory.
+# build B1. This is so that we can run the executable directly because it
+# relies on these scripts being in the current working directory.
 #
-set(SPECTROSCOPY_SCRIPTS
+set(DEPOSITION_SCRIPTS
+  # deposition.in
+  # deposition.out
+  # init_vis.mac
+  # run1.mac
+  # run2.mac
   run.mac
   vis.mac
   )
 
-foreach(_script ${SPECTROSCOPY_SCRIPTS})
+foreach(_script ${DEPOSITION_SCRIPTS})
   configure_file(
     # ${PROJECT_SOURCE_DIR}/${_script}
+    # ${PROJECT_BINARY_DIR}/${_script}
     ${PROJECT_SOURCE_DIR}/macros/${_script}
     ${PROJECT_BINARY_DIR}/${_script}
     COPYONLY

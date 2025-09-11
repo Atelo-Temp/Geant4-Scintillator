@@ -1,8 +1,8 @@
 // #include "DetectorConstruction.hh"
-#include "MyDetectorConstruction.hh"  // When leaving it as named here, causes errors (only in vscode), in scintillator/ no errors ...
+#include "DetectorConstruction.hh"  // When leaving it as named here, causes errors (only in vscode), in scintillator/ no errors ...
 // Is it due to scintillator "using namespace xyz;"
-#include "MyPhysicsList.hh"
-#include "MyActionInitialization.hh"
+#include "PhysicsList.hh"
+#include "ActionInitialization.hh"
 
 // #include "G4MTRunManager.hh"
 // #include "G4RunManager.hh"
@@ -36,9 +36,10 @@ int main(int argc, char** argv) {
     //     auto *runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::Default);
     // #endif
     
-    // ...
+    // Default time threshold for radioactive decay is 1 year, set it higher for longer lived isotopes
     G4HadronicParameters::Instance()->SetTimeThresholdForRadioactiveDecay(1.E+60 * CLHEP::year);
-
+    // NOTE: nuclides with sampled lifetime longer than this threshold would otherwise be killed
+    
     // Mandatory initialisation classes
     //
     // Register geometry

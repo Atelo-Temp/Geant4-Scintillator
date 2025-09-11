@@ -60,11 +60,11 @@ Same as scintillator, but reintroduces histogramming (and optical photon detecti
 
 TODO: Count edep from gammas, compare with how many optical photons generated (as well as detected, absorbed, etc - SEE: LXeHistoManager.cc)
 
-- 9) XYZ
+- 9) Spectroscopy
 
 Same as optics, but reintroduces radioactive decay, and full geometry
 
-- 9) Spectroscopy (RENAME: Deposition ? TODO) (TECHNICALLY THE FIRST DRAFTING OF THIS CAME AFTER DECAY ...)
+- 10) Deposition (PREVIOUSLY NAMED: Spectroscopy) (TECHNICALLY THE FIRST DRAFTING OF THIS CAME AFTER DECAY ...)
 
 Same as decay, but introduces complete detector geometry beyond just the crstal. 
 

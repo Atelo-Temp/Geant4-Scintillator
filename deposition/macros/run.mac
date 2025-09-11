@@ -1,0 +1,14 @@
+# For batch mode
+
+# Use multithreaded mode, 4 cores
+/run/numberOfThreads 4
+
+# Initialise kernel
+/run/initialize
+
+# Does this print progress bar?
+# /run/printProgress 100000
+
+# 100,000 events
+/run/beamOn 100000
+

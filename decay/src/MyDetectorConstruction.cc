@@ -61,9 +61,9 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Flag for checking geometry overlap
     G4bool checkOverlaps = true;
 
-    /////////////
+    //////////////////////
     // GEOMETRY MATERIALS:
-    /////////////
+    //////////////////////
 
     // Get a pointer to the material manager instance
     G4NistManager* nist = G4NistManager::Instance();
