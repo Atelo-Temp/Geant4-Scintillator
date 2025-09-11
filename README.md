@@ -38,7 +38,7 @@ Implements histogramming and nTuples, building on the sensitive detector functio
 
 Features updates to main() function, to allow command line swap between batch processing and interactive mode.
 
-- 6) Decay
+- 6) Decay      (RENAME: Radioactivity ?)
 
 Implements radioactive decay for a chosen isotope, replacing the monoenergetic particle shot by the particle gun in previous projects.
 
@@ -48,23 +48,27 @@ Features addition to main() function, to allow longer lived (>1y) isotopes to de
 
 > NOTE: May also wish to model the particle as a volume source, assigned to the spherical geometry.
 
-- 7) Scintillator (RENAME: -> Scintillation ? -> Optics ? -> Optical)
+- 7) Scintillator       (RENAME: -> Scintillation ? -> Optics ? -> Optical)
 
 Implements scintillation light (optical photons), in response to energy deposition in a scintillator crystal medium, also defines reflective and detection (absorption) surfaces.
 
 > NOTE: Reverts back to a simple 662 keV gamma shot from the particle gun, to keep the focus on the scintillation process, also no radioactive decay or histogramming.
 
-- 8) Optics (RENAME: -> Scintilllator ? SPECTROSCOPY ?)
+- 8) Optics     (RENAME: -> Scintilllator ? SPECTROSCOPY ?)
 
 Same as scintillator, but reintroduces histogramming (and optical photon detection/absorption positions)
 
 TODO: Count edep from gammas, compare with how many optical photons generated (as well as detected, absorbed, etc - SEE: LXeHistoManager.cc)
 
-- 9) Spectroscopy
+- 9) Radioactivity      (PREVIOUSLY NAMED: Spectroscopy)
 
-Same as optics, but reintroduces radioactive decay, and full geometry
+Same as optics, but reintroduces radioactive decay and source geometry
 
-- 10) Deposition (PREVIOUSLY NAMED: Spectroscopy) (TECHNICALLY THE FIRST DRAFTING OF THIS CAME AFTER DECAY ...)
+- 10) Spectroscopy
+
+Same as spectroscopy, but models full detector geometry
+
+- 11) Deposition        (PREVIOUSLY NAMED: Spectroscopy) (TECHNICALLY THE FIRST DRAFTING OF THIS CAME AFTER DECAY ...)
 
 Same as decay, but introduces complete detector geometry beyond just the crstal. 
 
@@ -85,4 +89,4 @@ TODO: Also use subtraction solids
 - Spectroscopy: Brings all of the former concepts together to simulate gamma-ray spectroscopy using a scintillator detector (TODO: May leave this as a more comprehensive version of decay, with no optical photon generation)
 ^may rename as just "detector"
 
-TODO: follow on project from scintillator, 
+- Deposition: Same as spectroscopy, but no scintillation light (may do it, may not)

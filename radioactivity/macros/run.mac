@@ -1,0 +1,17 @@
+# For batch mode
+
+# Use multithreaded mode, 4 cores
+/run/numberOfThreads 4
+
+# Initialise kernel
+/run/initialize
+
+# Does this print progress bar?
+# /run/printProgress 100000
+
+# 100,000 events
+# /run/beamOn 100000
+
+# 100,000 events (5000 takes ~135s with direct 662 keV gamma, but decay means much fewer interactions, 100,000 with isotropic source took ~2 mins)
+/run/beamOn 100000 # with decay, since less gammas interact with detector, need more events
+# due to decay, and optical photons, sim time could fluctuate a lot for same amount of events
