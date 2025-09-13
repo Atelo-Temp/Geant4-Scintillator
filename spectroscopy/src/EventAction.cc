@@ -20,13 +20,13 @@ void EventAction::BeginOfEventAction(const G4Event*) {
 
 void EventAction::EndOfEventAction(const G4Event*) {
     // Print to stdout
-//     G4cout << G4endl << "Optical Photons Generated: " << fTotalPhotons << G4endl;
-//     
-//     G4cout << G4endl << "Optical Photons Detected: " << fDetectedPhotons << G4endl;
-//     G4cout << G4endl << "Percent Detected: " << (fDetectedPhotons / fTotalPhotons) * 100 << G4endl;
-//     
-//     G4cout << G4endl << "Optical Photons Absorbed: " << fAbsorbedPhotons << G4endl;
-//     G4cout << G4endl << "Percent Absorbed: " << (fAbsorbedPhotons / fTotalPhotons) * 100 << G4endl;
+    G4cout << G4endl << "Optical Photons Generated: " << fTotalPhotons << G4endl;
+    
+    G4cout << G4endl << "Optical Photons Detected: " << fDetectedPhotons << G4endl;
+    G4cout << G4endl << "Percent Detected: " << (fDetectedPhotons / fTotalPhotons) * 100 << G4endl;
+    
+    G4cout << G4endl << "Optical Photons Absorbed: " << fAbsorbedPhotons << G4endl;
+    G4cout << G4endl << "Percent Absorbed: " << (fAbsorbedPhotons / fTotalPhotons) * 100 << G4endl;
     
     // NOTE: ^ Removed to save time during batch processing, may want an logic statement that 
     // checks whether in visualisation or batch, as this nice for vis

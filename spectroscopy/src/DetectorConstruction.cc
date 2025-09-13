@@ -54,12 +54,25 @@
 
 #include "G4OpticalSurface.hh"
 #include "G4LogicalBorderSurface.hh"
-#include <G4SurfaceProperty.hh>
+#include "G4Element.hh"
+#include "G4Material.hh"
+#include "G4SurfaceProperty.hh"
+#include "G4Types.hh"
 
 #include "G4Sphere.hh"
 
 
 // TODO: Probably wanna use consistent units throughout
+
+// TODO: Fix emission spectrum to actual NaI(Tl) range
+// (add tiny bit of Tl doping to the crystal material ?)
+
+// TODO: Fix light leakage at optical window outer radius
+
+// TODO: There is overhang of the encapsulation at the back of the crystal 
+// (of thickness = encapsulation thickness, as that was added to front for beta shield)
+
+// TODO: Expand on MPTs / surfaces of optical grease & window ?
 
 
 // namespace GEOMETRY {
@@ -79,22 +92,58 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     G4NistManager* nist = G4NistManager::Instance();
 
     // World material
-    G4Material* air = nist->FindOrBuildMaterial("G4_AIR");
+    G4Material* air = nist->FindOrBuildMaterial("G4_AIR"); // Carbon, nitrogen, oxygen, argon
 
     // Scintillator material
-    G4Material* NaI = nist->FindOrBuildMaterial("G4_SODIUM_IODIDE");
+    G4Material* NaI = nist->FindOrBuildMaterial("G4_SODIUM_IODIDE"); // (1 part Na, 1 part I), density = 3.667 g/cm^3
     
-    // Scintillation light reflector material (Al2O3)
-    G4Material* Al2O3 = nist->FindOrBuildMaterial("G4_ALUMINUM_OXIDE");
+    // Scintillation light reflector material (Alumina - Al2O3)
+    G4Material* Al2O3 = nist->FindOrBuildMaterial("G4_ALUMINUM_OXIDE"); // (2 part Al, 3 part O), density = 3.97 g/cm^3
     
-    // Scintillator can material (Al2O3)
-    G4Material* Al = nist->FindOrBuildMaterial("G4_Al");
+    // Scintillator can material (Aluminium)
+    G4Material* Al = nist->FindOrBuildMaterial("G4_Al"); // density = 2.699 g/cm^3
     
-    // Optical grease (Silicon gel)
-    G4Material* Si = nist->FindOrBuildMaterial("G4_Si"); // TODO: Grease probably has different density
+    // Optical grease (Silicone gel) - NOTE: Synthetic "silicone" (polymer), not natural "Silicon"
+    auto H = new G4Element("Hydrogen", "H", 1, 1.0078 * g/mole); // Z=1, A=1, density = 8.3748E-5 g/cm^3
+    auto C = new G4Element("Carbon", "C", 6, 12.011 * g/mole); //  Z=6, A=12, density = 2 g/cm^3
+    auto O = new G4Element("Oxygen", "O", 8, 15.999 * g/mole); // Z=8, A=16, density = 0.00133151 g/cm^3
+    auto Si = new G4Element("Silicon", "Si", 14, 28.086 * g/mole); // Z=14, A=28, density = 2.33 g/cm^3
+    auto PDMS = new G4Material("PDMS", 0.97 * g/cm3, 3);
+    PDMS->AddElement(Si, 1); // NOTE: MUST BE FRACTIONAL IF MATERIAL, PASS ELEMENT IF USING ATOMS
+    PDMS->AddElement(C, 2);
+    PDMS->AddElement(H, 6);
+    // PDMS->AddElement(O, 1) // NOTE: Oxygen is missing (although a chain of 3 would only have 2 oxygen atoms)
+    // NOTE: Using polydimethylsiloxane (PDMS) as a proxy for the gel, which has repeating monomer units.
+    // Monomer unit: [Si(CH3)2-O]
+    // Formula for PDMS: CH3 [Si(CH3)2-O]n Si(CH3)3 (NOTE: Where n is the number of repeating monomer units)
+    // TODO: Maybe do PDMS as chain of 3: [(Si, 3) (C, 6), (H, 18), (O, 2)]
     
-    // Scoring material
-    G4Material* Li = nist->FindOrBuildMaterial("G4_Li"); // lithium photocathode
+    // Borosilicate glass (Pyrex is in mat lib, but maybe soda lime, not borosilicate as pyrex started out in 1915)
+    // NOTE: High optical clarity in visible range (400-700 nm) (... and beyond 300-2500 nm), and resistant to breaking due to changes in temperature
+    // NOTE: Ideally should match emission spectrum of NaI(Tl) (~300-550 nm or 320-550 nm ... some say ~340-520 nm)
+    G4Material* SiO2 = nist->FindOrBuildMaterial("G4_SILICON_DIOXIDE"); // Silica - (1 part Si, 2 part O), density = 2.32 g/cm^3
+    G4Material* B2O3 = nist->FindOrBuildMaterial("G4_BORON_OXIDE"); // Boron Trioxide - (2 part B, 3 part O), density = 1.812 g/cm^3
+    // NOTE: Not sure why theyve named "boron trioxide" as blanket boron oxide term
+    //
+    // Alkali Oxides
+    G4Material* Na2O = nist->FindOrBuildMaterial("G4_SODIUM_MONOXIDE"); // Sodium Monoxide (Soda) - (2 part Na, 1 part O), density = 2.27 g/cm^3
+    // G4Material* K2O = nist->FindOrBuildMaterial("G4_POTASSIUM_OXIDE"); // Potasium Monoxide - (2 part K, 1 part O), density = 2.32 g/cm^3
+    // NOTE: 
+    //
+    auto borosilicate = new G4Material("BOROSILICATE_GLASS", 2.23 * g/cm3, 4); // 80.6% SiO2, , density = 2.23 g/cm^3 (NOTE: Some sources say 2.51 density)
+    borosilicate->AddMaterial(SiO2, 80.6 * perCent); // Borosilicate ~81%, Soda lime is ~69% (Forms the basic structure of the glass)
+    borosilicate->AddMaterial(B2O3, 13. * perCent); // Stated as 5-13% (Lowers melting temp, enhances chemical durability and thermal shock resistance)
+    // 6.4% remaining
+    borosilicate->AddMaterial(Al2O3, 2.4 * perCent); // TODO: 2-3% (Enhances chemical durability and mechanical strength)
+    // 4% remaining
+    borosilicate->AddMaterial(Na2O, 4. * perCent); // TODO: ~4% alkali oxides (Na2O, K20 - one or the other, or both)
+    // borosilicate->AddMaterial(K2O, 0. * perCent); // TODO ^^
+    // NOTE: Potassium may cause unwanted noise, not all PMT designs use this in their borosilicate (while some do intentionally)
+    // NOTE: SCHOTT BK7, SCHOTT 8250, SCHOTT 8337
+    
+    // Photocathode material (alkali metal)
+    G4Material* Li = nist->FindOrBuildMaterial("G4_Li"); // Lithium
+    // TODO: Bialkali ? Although the material kinda doesnt matter in this sim, moreso the surface
     
     
     ////////////////////
@@ -136,7 +185,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // NOTE: Need at least: refractive index, emission spectrum, absorption length, yield, decay time
     
     // Wavelength range listed for NaI (refractiveindex.info)
-    std::vector<G4double> energy = {1.9587*eV, 2.3991*eV, 2.8437*eV}; // Wavelength (~436nm - 633nm)
+    std::vector<G4double> energy = {1.9587*eV, 2.3991*eV, 2.8437*eV}; // Wavelength (~436nm - 633nm)    TODO: This could be refined to emi range
     // std::vector<G4double> energy = {1.239841939*eV/0.633, 1.239841939*eV/0.436}; // 436 nm - 633 nm (smallest must go first)
     // NOTE: Visible light ranges from ~400 nm (violet) to ~700 nm (red)
     
@@ -291,6 +340,52 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     MPTReflectorSurf->AddProperty("REFLECTIVITY", energy, reflectivity); // NOTE: No difference when using this energy or energyAl203
     reflectorSurface->SetMaterialPropertiesTable(MPTReflectorSurf);
 
+    
+    /*
+     * ...
+     */
+    
+    // Optical grease (interface between crystal and PMT window)
+    auto MPTGrease = new G4MaterialPropertiesTable();
+    
+    // Dielectric polished surface, allowing refraction
+    auto greaseSurface = new G4OpticalSurface("GreaseSurface", unified, polished, dielectric_dielectric);
+    
+    // Refractive index of optical grease (1.46 @ 589.3 nm)
+    std::vector<G4double> rindexGrease = {1.46, 1.46, 1.46}; // TODO: Refractive index matching ...
+    // TODO: Refine this across 300-550 nm emission range
+    
+    // ...
+    MPTGrease->AddProperty("RINDEX", energy, rindexGrease);
+    // TODO: Add transmission ? Reflectivity ?
+    
+    // Assign the refractive index to the optical grease material
+    PDMS->SetMaterialPropertiesTable(MPTGrease);
+    // ...
+    
+    /*
+     * ...
+     */
+    
+    // PMT Glass MPT (Optical window)
+    auto MPTWindow = new G4MaterialPropertiesTable();
+    
+    // Dielectric polished surface, allowing refraction
+    auto windowSurface = new G4OpticalSurface("WindowSurface", unified, polished, dielectric_dielectric);
+    
+    // Refractive index of borosilicate glass
+    std::vector<G4double> rindexBorosilicate = {1.53, 1.53, 1.53};
+    // TODO: Refine this across 300-550 nm emission range
+    
+    // ...
+    MPTWindow->AddProperty("RINDEX", energy, rindexBorosilicate);
+    // TODO: Add transmission ? Reflectivity ?
+    
+    // Assign the refractive index to the borosilicate glass material
+    borosilicate->SetMaterialPropertiesTable(MPTWindow);
+    // ...
+    
+    
     /*
      * DETECTOR SURFACE DEFINITION
      * 
@@ -353,6 +448,9 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     // NOTE: Only seeing ~1% of the total optical photons being "DETECTED" on full energy deposition
     // NOTE: Actually ranges from ~1% to 7% seemingly
+    
+    // Bialkali material has a broad spectra response from 170-560 nm
+    // photocathode spectral response should match the emission spectrum of the scintillator used
     
     
     /////////
@@ -466,7 +564,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Inner rad can (4.04495 cm) - outer rad crystal (3.81 cm) => 0.23495 cm reflector thickness
     G4double reflectorThickness = 0.23495 * cm;
     G4double reflectorOuterRad = crystalOuterRad + reflectorThickness;
-    G4double reflectorHeight = (crystalHeight * 0.5) + reflectorThickness; 
+    G4double reflectorHeight = (crystalHeight * 0.5) + reflectorThickness; // TODO: (crystalHeight + 2 * reflectorThick) - leave variables as full length
     // NOTE: Same as crystal height, with reflector thickness added to both ends (will be multiplied by two)
     
     // Base volume which will be cut
@@ -526,6 +624,131 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // just need to give "ReflectorSolid" (crystalheight + 0.5 * reflectorThick)
     
     
+    //////////////////
+    // OPTICAL GREASE:
+    //////////////////
+    
+    // Silicon gel with ~same thickness as reflector (2.3495 mm as per schematics)
+    // NOTE: Some sources say only 0.1 mm thickness is suggested though ^ (and less kinda makes sense)
+        
+    // ... the optical grease will then be pressed against the PMT window
+    
+    // Optical grease (transmitting incident optical photons to the PMT window)
+    auto grease = new G4Tubs(
+        "OpticalGrease",
+        crystalInnerRad, // 0cm
+        crystalOuterRad, // same radius as crystal (slots into reflector)
+        reflectorThickness * 0.5, // same thickness as reflector (will be multiplied by 2 on placement)
+        startAngle, // 0 deg
+        endAngle // 360 deg (full span)
+    );
+    
+    // PDMS (proxy for silicone gel)
+    auto greaseLog = new G4LogicalVolume(grease, PDMS, "OpticalGrease");
+    
+    // Translation along Z axis (relative to crystal origin)
+    G4double greaseZ = crystalZ + (crystalHeight * 0.5) + (reflectorThickness * 0.5);
+    // NOTE: Places it on crystal Z (centre of the crystal), 
+    // translates it by half the crystal height (to account for it being centre of crystal),
+    // due to 0.5 reflector thickness being placed either side of its origin,
+    // need to shift it by 0.5 * its thickness
+    
+    // Placed on the back side of the crystal
+    G4VPhysicalVolume* greasePhys = new G4PVPlacement(
+        nullptr, // No rotation
+        G4ThreeVector(crystalX, crystalY, greaseZ), // Translation
+        greaseLog, // The logical volume
+        "OpticalGrease", // Name
+        worldLog, // Mother volume (logical)
+        false, // No boolean ops
+        0, // Copy number
+        checkOverlaps
+    );
+    
+    
+    ////////////////////////
+    // PHOTOMULTIPLIER TUBE:
+    ////////////////////////
+
+    // NOTE: Will likely just be the window (OPTICAL WINDOW)
+    
+    G4double windowThick = 0.2 * cm; // 2mm according to hamamatsu handbook
+    
+    // Optical window (transmitting incident optical photons to the PMT window)
+    auto window = new G4Tubs(
+        "OpticalWindow",
+        crystalInnerRad, // 0cm
+        crystalOuterRad, // same radius as crystal (slots into reflector)
+        windowThick * 0.5, // ... (will be multiplied by 2 on placement)
+        startAngle, // 0 deg
+        endAngle // 360 deg (full span)
+    );
+    
+    // Borosilicate glass (high optical performance)
+    auto windowLog = new G4LogicalVolume(window, borosilicate, "OpticalWindow");
+    
+    // Translation along Z axis (relative to optical grease origin)
+    G4double windowZ = greaseZ + (reflectorThickness * 0.5) + (windowThick * 0.5);
+    // NOTE: Places it on grease Z (centre of the grease),
+    // translates it by half the grease height (to account for it being centre of grease),
+    // due to 0.5 window thickness being placed either side of window origin,
+    // need to shift it by 0.5 * its thickness
+    
+    // Placed against the optical grease
+    G4VPhysicalVolume* windowPhys = new G4PVPlacement(
+        nullptr, // No rotation
+        G4ThreeVector(crystalX, crystalY, windowZ), // Translation
+        windowLog, // The logical volume
+        "OpticalWindow", // Name
+        worldLog, // Mother volume (logical)
+        false, // No boolean ops
+        0, // Copy number
+        checkOverlaps
+    );
+    
+    
+    ////////////////
+    // PHOTOCATHODE:
+    ////////////////
+    
+    // Coating inside of PMT optical window
+    
+    // ...
+    G4double photocathodeThick = 0.1 * cm; // 1mm
+    
+    // Photocathode (absorbing or detecting incident optical photons)
+    auto photocathode = new G4Tubs(
+        "Photocathode",
+        crystalInnerRad, // 0cm
+        crystalOuterRad, // same radius as crystal & window (painted onto back of window)
+        photocathodeThick * 0.5,
+        startAngle, // 0 deg
+        endAngle // 360 deg (full span)
+    );
+    
+    // Lithium (alkali metal due to low binding energy of outer shell electron)
+    auto photocathodeLog = new G4LogicalVolume(photocathode, Li, "Photocathode");
+    
+    // Translation along Z axis (relative to optical window origin)
+    G4double photocathodeZ = windowZ + (windowThick * 0.5) + (photocathodeThick * 0.5);
+    // NOTE: Places it on window Z (centre of the window),
+    // translates it by half the window height (to account for it being centre of window),
+    // due to 0.5 window thickness being placed either side of window origin,
+    // need to shift it by 0.5 * its thickness
+    
+    // Placed on the inside of the PMT window
+    G4VPhysicalVolume* photocathodePhys = new G4PVPlacement(
+        nullptr, // No rotation
+        G4ThreeVector(crystalX, crystalY, photocathodeZ), // Translation
+        photocathodeLog, // The logical volume
+        "Photocathode", // Name
+        worldLog, // Mother volume (logical)
+        false, // No boolean ops
+        0, // Copy number
+        checkOverlaps
+    );
+    
+    
     ///////////////////////
     // ALUMINIUM ENCLOSURE:
     ///////////////////////
@@ -555,6 +778,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // G4double enclosureInnerRad = (((3.225 * 2.54) / 2) * cm) - enclosureThick; // 3.225' dia => 8.1915cm dia => 4.09575 cm outer rad => 4.04495 cm inner rad (NOTE: Unused)
     G4double enclosureOuterRad = ((3.225 * 2.54) / 2) * cm; // NOTE: 3.225' dia => 8.1915cm dia => 4.09575 cm outer rad
     G4double enclosureLength = reflectorHeight + enclosureThick; // NOTE: Reflector height is 1/2 height, so only (1 * enclosure thickness)
+    // TODO: Maybe make this full length height, better practice imo, and done two different methods throughout
     
     // Base volume which will be cut
     auto enclosureSolid = new G4Tubs(
@@ -606,91 +830,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
         0, // one copy
         checkOverlaps
     );
-    
-    
-    //////////////////
-    // OPTICAL GREASE:
-    //////////////////
-    
-    // Silicon gel with ~same thickness as reflector (2.3495 mm as per schematics)
-    // NOTE: Some sources say only 0.1 mm thickness is suggested though ^
-    
-    // Optical grease (transmitting incident optical photons to the PMT window)
-    auto grease = new G4Tubs(
-        "OpticalGrease",
-        crystalInnerRad, // 0cm
-        crystalOuterRad, // same radius as crystal (slots into reflector)
-        reflectorThickness * 0.5, // same thickness as reflector (will be multiplied by 2 on placement)
-        startAngle, // 0 deg
-        endAngle // 360 deg (full span)
-    );
-    
-    // Lithium (alkali metal due to low binding energy of outer shell electron)
-    auto greaseLog = new G4LogicalVolume(grease, Si, "OpticalGrease");
-    
-    // Translation along Z axis (relative to crystal)
-    G4double greaseZ = crystalZ + (0.5 * crystalHeight) + (0.5 * reflectorThickness);
-    // NOTE: Places it on crystal Z (centre of the crystal), 
-    // translates it by half the crystal height (to account for it being centre of crystal),
-    // due to 0.5 reflector thickness being placed either side of its origin,
-    // need to shift it by 0.5 * its thickness
-    
-    // Placed on the back side of the crystal
-    G4VPhysicalVolume* greasePhys = new G4PVPlacement(
-        nullptr, // No rotation
-        G4ThreeVector(crystalX, crystalY, greaseZ), // Translation
-        greaseLog, // The logical volume
-        "OpticalGrease", // Name
-        worldLog, // Mother volume (logical)
-        false, // No boolean ops
-        0, // Copy number
-        checkOverlaps
-    );
-    
-    
-    ////////////////////////
-    // PHOTOMULTIPLIER TUBE:
-    ////////////////////////
 
-    // TODO ...
-    // NOTE: Will likely just be the window
-    // Pyrex or fused silica ?
-    
-    
-    ////////////////
-    // PHOTOCATHODE:
-    ////////////////
-    
-    // TODO: Reduce thickness to ~1mm
-    
-    // Photocathode (absorbing or detecting incident optical photons)
-    auto photocathode = new G4Tubs(
-        "Photocathode",
-        crystalInnerRad,
-        crystalOuterRad,
-        reflectorThickness * 0.5, // NOTE: Probably want much thinner photocathode
-        startAngle,
-        endAngle
-    );
-    
-    // Lithium (alkali metal due to low binding energy of outer shell electron)
-    auto photocathodeLog = new G4LogicalVolume(photocathode, Li, "Photocathode");
-    
-    // Placed on the back side of the crystal
-    G4VPhysicalVolume* photocathodePhys = new G4PVPlacement(
-        nullptr, // No rotation
-        G4ThreeVector(crystalX, crystalY, crystalZ + (0.5 * crystalHeight) + (0.5 * reflectorThickness)), // Translation
-        photocathodeLog, // The logical volume
-        "Photocathode", // Name
-        worldLog, // Mother volume (logical)
-        false, // No boolean ops
-        0, // Copy number
-        checkOverlaps
-    );
-    
-    // NOTE: This geometry will be replaced by optical grease (silicon gel) in full model, can leave as current thickness,
-    // the optical grease will then be pressed against the PMT window, with the photocathode coating the other side
-    
     
     //////////
     // SOURCE:
@@ -776,9 +916,6 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Define the border between the crystal and the reflector
     auto crystalReflectorBorder = new G4LogicalBorderSurface("CrystalToReflector", crystalPhys, reflectorPhys, reflectorSurface);
     
-    // Define the border between the crystal and the photocathode - TODO: Remove, move to PMT window->photocathode border
-    auto crystalPhotocathodeBorder = new G4LogicalBorderSurface("CrystalToPhotocathode", crystalPhys, photocathodePhys, photocathodeSurface);
-    
     // Define the border between the crystal and silicon gel (optical grease) - TODO: is this surface needed ? can this just have rindex on material (NOTE there may be tiny bit of reflection/absorption though)
     // auto crystalGreaseBorder = new G4LogicalBorderSurface("CrystalToGrease", crystalPhys, greasePhys, greaseSurface);
     
@@ -786,7 +923,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // auto greaseWindowBorder = new G4LogicalBorderSurface("GreaseToWindow", greasePhys, windowPhys, windowSurface);
     
     // Define the border between the PMT window and the photocathode - TODO: This one is needed (and replaces crystal-pc border)
-    // auto windowPhotocathodeBorder = new G4LogicalBorderSurface("WindowToPhotocathode", windowPhys, photocathodePhys, photocathodeSurface);
+    auto windowPhotocathodeBorder = new G4LogicalBorderSurface("WindowToPhotocathode", windowPhys, photocathodePhys, photocathodeSurface);
         
     
     /////////////
@@ -801,8 +938,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     worldVisAtt->SetForceSolid(true); // ... (think this can be called w/ no arg for same effect)
     worldLog->SetVisAttributes(worldVisAtt); // assign to the logical volume
 
-    // Scintillator geometry
-    auto scintillatorVisAtt = new G4VisAttributes(G4Color(1.0, 1.0, 0., 0.75)); // yellow
+    // Scintillator crystal
+    auto scintillatorVisAtt = new G4VisAttributes(G4Color(1., 1., 1., 0.5)); // white (part-opaque)
     scintillatorVisAtt->SetForceSolid(true);
     scintillatorLog->SetVisAttributes(scintillatorVisAtt);
     
@@ -812,15 +949,19 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     reflectorLog->SetVisAttributes(reflectorVisAtt);
     
     // Aluminium enclosure
-    auto enclosureVisAtt = new G4VisAttributes(G4Color(0.8, 0.8, 0.8, 1.)); // mid-light gray
+    auto enclosureVisAtt = new G4VisAttributes(G4Color(0.8, 0.8, 0.8, 1.)); // mid-light gray (solid)
     enclosureVisAtt->SetForceSolid(true);
     enclosureLog->SetVisAttributes(enclosureVisAtt);
     
     // Optical grease
-    // TODO: ...
+    auto greaseVisAtt = new G4VisAttributes(G4Color(1.0, 1.0, 0., 0.75)); // yellow
+    greaseVisAtt->SetForceSolid(true);
+    greaseLog->SetVisAttributes(greaseVisAtt);
     
     // Optical window
-    // TODO: ...
+    auto windowVisAtt = new G4VisAttributes(G4Color(0.8, 0.8, 0.8, 0.25)); // mid-light gray (opaque)
+    windowVisAtt->SetForceSolid(true);
+    windowLog->SetVisAttributes(windowVisAtt);
     
     // Scoring photocathode
     auto photocathodeVisAtt = new G4VisAttributes(G4Color(1., 0., 0., 0.5)); // red

@@ -26,7 +26,7 @@ void AnalysisManager::CreateHistogram() {
         // 1. * MeV // Upper bounds
         1., // Lower bounds
         // 38000. // Upper bounds (NOTE: This is far too much, 5k would be fine due to how few of those generated actually detect in photocathode)
-        5000. // Upper bounds
+        5000. // Upper bounds (TODO: This needs to be dynamic ... Different sources will produce different amount of optical photons)
     );
     // NOTE: 100 bins from 0->1 MeV
     
