@@ -48,12 +48,36 @@ E = (hc)/λ
 Where:
 
 E = photon energy
-h = Planck's constant
-c = Speed of light
+h = Planck's constant (6.6261 * 10^-34 J s)
+c = Speed of light (2.9979 * 10^8 m/s)
 
-Hence, higher photon energy corresponds to shorter wavelengths.
+Hence, higher photon energy corresponds to shorter wavelengths (i.e. E is inverseley proportional to λ).
 
 [Refractive Indices](refractiveindex.info)
+
+Since we need to pass the energy that accompanies the refractive index vector in electron volts (eV),
+convert Planck's constant from "J s" to "eV s":
+
+> NOTE: 1 eV = 1.602176634 * 10^-19 J
+
+So Planck's constant as a fraction of an eV (h / 1 eV):
+
+h (eV s) = (6.6261 * 10^-34 J s) / (1.602176634 * 10^-19 J)
+
+Therefore:
+
+hc = ((6.6261 * 10^-34 J s) / (1.602176634 * 10^-19 J)) * (2.9979 * 10^8 m/s)
+   = 1.239837404 * 10^-6 eV m
+
+Units: eV s * m s^-1 = eV m
+
+So to convert a wavelength in metres to eV:
+
+E (eV) = (1.239837404 * 10^-6 eV m) / λ m
+
+For wavelength in nm (1 * 10^-9 m) to eV:
+
+E (eV) = 1239.837404 / λ nm
 
 ## Implementation
 
