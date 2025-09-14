@@ -34,15 +34,20 @@
 #include "DetectorConstruction.hh"
 
 #include "G4NistManager.hh"
+#include "G4Element.hh"
+#include "G4Material.hh"
+
+#include "G4SystemOfUnits.hh"
 #include "G4ThreeVector.hh"
 
 #include "G4Box.hh"
+#include "G4Tubs.hh"
+#include "G4Sphere.hh"
+#include "G4SubtractionSolid.hh"
+
 #include "G4LogicalVolume.hh"
 #include "G4VPhysicalVolume.hh"
 #include "G4PVPlacement.hh"
-#include "G4SystemOfUnits.hh"
-
-#include "G4Tubs.hh"
 
 #include "G4VisAttributes.hh"
 #include "G4Color.hh"
@@ -50,24 +55,47 @@
 #include "G4MaterialPropertiesTable.hh" // for optical photons
 // #include "G4MaterialPropertyVector.hh" // can use instead of 2x std::vector
 
-#include "G4SubtractionSolid.hh"
-
 #include "G4OpticalSurface.hh"
 #include "G4LogicalBorderSurface.hh"
-#include "G4Element.hh"
-#include "G4Material.hh"
 #include "G4SurfaceProperty.hh"
+
 #include "G4Types.hh"
 
-#include "G4Sphere.hh"
 
-
-// TODO: Probably wanna use consistent units throughout
+// TODO: Probably wanna use consistent units throughout (cm probably easiest to adhere to)
 
 // TODO: Fix emission spectrum to actual NaI(Tl) range
 // (add tiny bit of Tl doping to the crystal material ?)
 
-// TODO: Fix light leakage at optical window outer radius
+/*
+ * The light leakage problem.
+ * 
+ * Light leakage at optical window outer radius.
+ * 
+ * This is probably a genuine design consideration, as the solution varies by schematic,
+ * no designs seem to have reflector at the outer radius of the window,
+ * many have either aluminium enclosure or hermetic seal there.
+ * 
+ * Also varies based on crystal assembly or PMT integrated assembly.
+ * 
+ * This may be a slight loss mechanism, having reflector there would improve resolution.
+ * 
+ * ... there is probably a logical reason why reflector wouldnt extend there,
+ * (i.e. need for hermetic sealing due to hygroscopic crystal, 
+ * differences in crystal assembly and integrated PMT assembly, etc)
+ * 
+ * I think the best solution is:
+ * - Extend aluminium encapsulation to window Z, add hermetic seal between glass and aluminium
+ * (However, will need to define dielectric_metal surface between the glass and seal)
+ * 
+ * Else:
+ * - Could cut encapsulation at grease Z, add some other part between window outer rad and can outer rad
+ * 
+ * NOTE: Going to do an aluminium seal, and give it uncoated aluminium reflectivity,
+ * in practice, wouldnt want uncoated aluminium exposed to mechanical/environmental stress,
+ * but its not exposed to the crystal itself here, and only has a few optical photons
+ * interacting with it (from outer rad of window)
+ */
 
 // TODO: There is overhang of the encapsulation at the back of the crystal 
 // (of thickness = encapsulation thickness, as that was added to front for beta shield)
@@ -117,6 +145,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Monomer unit: [Si(CH3)2-O]
     // Formula for PDMS: CH3 [Si(CH3)2-O]n Si(CH3)3 (NOTE: Where n is the number of repeating monomer units)
     // TODO: Maybe do PDMS as chain of 3: [(Si, 3) (C, 6), (H, 18), (O, 2)]
+    // Or could do as percentages
     
     // Borosilicate glass (Pyrex is in mat lib, but maybe soda lime, not borosilicate as pyrex started out in 1915)
     // NOTE: High optical clarity in visible range (400-700 nm) (... and beyond 300-2500 nm), and resistant to breaking due to changes in temperature
@@ -144,6 +173,19 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Photocathode material (alkali metal)
     G4Material* Li = nist->FindOrBuildMaterial("G4_Li"); // Lithium
     // TODO: Bialkali ? Although the material kinda doesnt matter in this sim, moreso the surface
+    
+    // Table material (MDF wood proxy, using generalised wood chemical composition)
+    auto wood = new G4Material("WOOD", 0.8 * g/cm3, 6); // NOTE: Solid cellular material of wood ~1.5 g/cm3, but lowered by air spaces
+    auto N = new G4Element("Nitrogen", "N", 7, 14.007 * g/mole); // Z=7, A=14, density = ...
+    auto Ca = new G4Element("Calcium", "Ca", 20, 40.078 * g/mole); // Z=20, A=40, density = ...
+    auto K = new G4Element("Potassium", "K", 19, 39.098 * g/mole); // Z=19, A=39, density = ...
+    wood->AddElement(C, 50. * perCent);
+    wood->AddElement(O, 42. * perCent);
+    wood->AddElement(H, 6. * perCent);
+    wood->AddElement(N, 1. * perCent);
+    wood->AddElement(Ca, 0.5 * perCent); // NOTE: Simplified by making last 1% Ca/K
+    wood->AddElement(K, 0.5 * perCent); // in reality, would also be sodium, magnesium, iron, sulfur, chlorine, silicon, phosphorus
+    // NOTE: Composition from wikipedia, cellular density from britannica, MDF density from dover chemical
     
     
     ////////////////////
@@ -188,6 +230,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     std::vector<G4double> energy = {1.9587*eV, 2.3991*eV, 2.8437*eV}; // Wavelength (~436nm - 633nm)    TODO: This could be refined to emi range
     // std::vector<G4double> energy = {1.239841939*eV/0.633, 1.239841939*eV/0.436}; // 436 nm - 633 nm (smallest must go first)
     // NOTE: Visible light ranges from ~400 nm (violet) to ~700 nm (red)
+    // TODO: See EMI notes
     
     // Refractive index (n) - The ratio of speed of light in air/vaccum (c) to SOL in medium (v) (NOTE: n = (c / v))
     std::vector<G4double> rindex = {1.7779, 1.8043, 1.8391}; // A function of wavelength (~436nm - 633nm)
@@ -201,12 +244,12 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     // The energy spectrum of the emitted scintillation photons
     // NOTE: This is essential to generate the correct number of photons (25156 for 662 keV, instead of 5-10)
-    std::vector<G4double> emi = {1., 1., 1.}; // same amount of photons for each wavelength
-    MPTCrystal->AddProperty("SCINTILLATIONCOMPONENT1", energy, emi); // "Fast component"
+    std::vector<G4double> emission = {1., 1., 1.}; // same amount of photons for each wavelength
+    MPTCrystal->AddProperty("SCINTILLATIONCOMPONENT1", energy, emission); // "Fast component"
     // NOTE: Tells Geant4 how many photons for each wavelength (or energy)
     // The scintillation photons will have a spectrum, depending on wavelength,
     // may have more photons in red spectrum than blue spectrum
-    // TODO: NaI(Tl) actually emits light in 340-520nm wavelength region, peaking at ~410nm (gaussian shape)
+    // TODO: NaI(Tl) actually emits light in ~340-520nm wavelength region, peaking at ~410, 415, or 420nm (gaussian shape)
     
     // Absorption length is the average distance travelled by a photon before being absorbed by the medium 
     // (i.e. it is the mean free path returned by the GetMeanFreePath method)
@@ -306,7 +349,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
      * - Absorption
      * 
      * NOTE: No refraction, suitable for a reflector material, 
-     * reflection probability must be set by "REFLECIVITY" property.
+     * reflection probability must be set by "REFLECTIVITY" property.
      * 
      * Front painted finishes prevent refraction, but still allow for absorption:
      * - PolishedFrontPainted (specular spike reflection)
@@ -453,6 +496,23 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // photocathode spectral response should match the emission spectrum of the scintillator used
     
     
+    /*
+     * HERMETIC SEAL
+     * 
+     * NOTE: Aluminium is rarely used as an uncoated reflective surface,
+     * as the mechanical and environmental properties are poor,
+     * however in this case it will only really be exposed to
+     * a small fraction of long wavelength UV and blue-violet visible photons
+     */
+    
+    // Hermetic seal MPT
+    auto MPTSeal = new G4MaterialPropertiesTable();
+    auto sealSurface = new G4OpticalSurface("HermeticSeal", unified, polished, dielectric_metal);
+    std::vector<G4double> reflectivitySeal = {0.9, 0.9, 0.9};
+    MPTSeal->AddProperty("REFLECTIVITY", energy, reflectivitySeal);
+    sealSurface->SetMaterialPropertiesTable(MPTSeal);
+    
+    
     /////////
     // WORLD:
     /////////
@@ -564,7 +624,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Inner rad can (4.04495 cm) - outer rad crystal (3.81 cm) => 0.23495 cm reflector thickness
     G4double reflectorThickness = 0.23495 * cm;
     G4double reflectorOuterRad = crystalOuterRad + reflectorThickness;
-    G4double reflectorHeight = (crystalHeight * 0.5) + reflectorThickness; // TODO: (crystalHeight + 2 * reflectorThick) - leave variables as full length
+    /*G4double reflectorHeight = (crystalHeight * 0.5) + reflectorThickness;*/ // TODO: (crystalHeight + 2 * reflectorThick) - leave variables as full length
+    G4double reflectorHeight = crystalHeight + (reflectorThickness * 2);
     // NOTE: Same as crystal height, with reflector thickness added to both ends (will be multiplied by two)
     
     // Base volume which will be cut
@@ -572,7 +633,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
         "ReflectorSolid",
         0. * cm, // inner rad (no hole, as cut will handle it in this case)
         reflectorOuterRad, // outer rad
-        reflectorHeight, // height 
+        // reflectorHeight, // height 
+        reflectorHeight * 0.5, // height 
         startAngle, // 0 deg
         endAngle // 360 deg (full span)
     );
@@ -582,7 +644,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
         "ReflectorCut",
         0. * cm, // inner rad (no hole, solid cut)
         crystalOuterRad, // outer rad (cut a section with same rad as crystal)
-        reflectorHeight, // height (cut has same height base)
+        // reflectorHeight, // height 
+        reflectorHeight * 0.5, // height (cut has same height base)
         startAngle, // 0 deg
         endAngle // 360 deg (full span)
     );
@@ -777,15 +840,17 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     G4double enclosureThick = 0.0508 * cm; // NOTE: 0.02' => 0.508 mm
     // G4double enclosureInnerRad = (((3.225 * 2.54) / 2) * cm) - enclosureThick; // 3.225' dia => 8.1915cm dia => 4.09575 cm outer rad => 4.04495 cm inner rad (NOTE: Unused)
     G4double enclosureOuterRad = ((3.225 * 2.54) / 2) * cm; // NOTE: 3.225' dia => 8.1915cm dia => 4.09575 cm outer rad
-    G4double enclosureLength = reflectorHeight + enclosureThick; // NOTE: Reflector height is 1/2 height, so only (1 * enclosure thickness)
+    // G4double enclosureLength = reflectorHeight + enclosureThick; // NOTE: Reflector height is 1/2 height, so only (1 * enclosure thickness)
     // TODO: Maybe make this full length height, better practice imo, and done two different methods throughout
+    G4double enclosureLength = reflectorHeight + (enclosureThick * 2);
     
     // Base volume which will be cut
     auto enclosureSolid = new G4Tubs(
         "EnclosureSolid",
         0. * cm, // inner rad (no hole, as cut will handle it in this case)
         enclosureOuterRad, // outer rad
-        enclosureLength, // height 
+        // enclosureLength, // height 
+        enclosureLength * 0.5, // height 
         startAngle, // 0 deg
         endAngle // 360 deg (full span)
     );
@@ -795,7 +860,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
         "EnclosureCut",
         0. * cm, // inner rad (no hole, solid cut)
         reflectorOuterRad, // outer rad (cut a section with same rad as reflector)
-        enclosureLength, // height (cut has same height as base)
+        // enclosureLength, // height (cut has same height as base)
+        enclosureLength * 0.5, // height (cut has same height as base)
         startAngle, // 0 deg
         endAngle // 360 deg (full span)
     );
@@ -825,6 +891,54 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
         crystalTrans, // same position as crystal
         enclosureLog, // logical volume
         "Enclosure", // name
+        worldLog, // mother volume (logical)
+        false, // no boolean ops
+        0, // one copy
+        checkOverlaps
+    );
+    
+    
+    /////////////////
+    // HERMETIC SEAL:
+    /////////////////
+    
+    // NOTE: Im not 100% set on this design (with this component), but it will do for now
+    // this could also be done with an addition solid,
+    // but not sure i like the sound of that, as in reality it would be impossible to manufacture
+    // (fiting crystal and reflector inside)
+    
+    // The seal could be something that is screwed in or welded to the enclosure
+    
+    // ...
+    G4double sealLength = windowThick;
+    G4double sealOuterRad = reflectorOuterRad;
+    
+    // Base volume which will be cut
+    auto seal = new G4Tubs(
+        "HermeticSeal",
+        crystalOuterRad, // inner rad (no hole, as cut will handle it in this case)
+        sealOuterRad, // outer rad
+        sealLength * 0.5, // height
+        startAngle, // 0 deg
+        endAngle // 360 deg (full span)
+    );
+    
+    // Assign a material to the seal solid
+    auto sealLog = new G4LogicalVolume(
+        seal, // subtraction solid acts same as any other geometry here
+        Al, // seal material (aluminium)
+        "HermeticSeal"
+    );
+    
+    // Translation along Z axis (relative to optical window origin)
+    G4double sealZ = windowZ;
+    
+    // Place the seal
+    G4VPhysicalVolume* sealPhys = new G4PVPlacement(
+        nullptr, // no rotation
+        G4ThreeVector(crystalX, crystalY, sealZ), // same position as crystal
+        sealLog, // logical volume
+        "HermeticSeal", // name
         worldLog, // mother volume (logical)
         false, // no boolean ops
         0, // one copy
@@ -871,31 +985,36 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     /////////////////
     
     // TODO: ...
+    // Encapsulates alpha and beta radiation
     
     
     ////////////
     // TABLETOP:
     ////////////
-    
-    // TODO: ... 
-    
+
     // NOTE: MDF style wood
     // ~' -> 2' thick
     
-    G4double tableSize = 0.5*m; // 1m probably better but dont wanna make world massive (also is rectangle not square)
-    G4double tableHeight = 0.05*m; // 5cm ? TODO: spitballing, need to refine this
+    // Table geometry parameters
+    G4double tableSize = 0.5 * m; // 1m probably better but dont wanna make world massive (also is rectangle not square)
+    G4double tableHeight = 0.05 * m; // 5cm ? TODO: spitballing, need to refine this
     
+    // ...
     auto table = new G4Box("Table", tableSize * 0.5, tableSize * 0.5, tableHeight * 0.5);
     
-    auto tableLog = new G4LogicalVolume(table, Al, "Table"); // TODO: Need actual table material
+    // Using wood as a proxy for MDF (which would actually be slightly different)
+    auto tableLog = new G4LogicalVolume(table, wood, "Table");
     
     // Rotate about z-axis 90 degrees
     auto tableRot = new G4RotationMatrix();
     tableRot->rotateX(90. * deg);
+    // NOTE: Could just change xyz lengths, but leaving this here as example of rotation matrix
     
     // Translate in -y direction by radius of can + half thickness of table
     G4double tableTransY = -1. * (enclosureOuterRad + (tableHeight * 0.5));
+    // NOTE: So that bottom of enclosure rests on table
     
+    // ...
     G4VPhysicalVolume* tablePhys = new G4PVPlacement(
         tableRot, // Rotated 90 degrees in Z direction
         // nullptr,
@@ -905,7 +1024,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
         worldLog,
         false,
         0,
-        checkOverlaps // NOTE: Will overlap currently
+        checkOverlaps
     );
 
     
@@ -921,10 +1040,13 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     // Define the border between the silicon gel and the PMT window - TODO: Likewise ?
     // auto greaseWindowBorder = new G4LogicalBorderSurface("GreaseToWindow", greasePhys, windowPhys, windowSurface);
+
+    // Define the border between the optical window and the hermetic seal
+    auto windowSealBorder = new G4LogicalBorderSurface("WindowToSeal", windowPhys, sealPhys, sealSurface);
     
-    // Define the border between the PMT window and the photocathode - TODO: This one is needed (and replaces crystal-pc border)
+    // Define the border between the optical window and the photocathode - TODO: This one is needed (and replaces crystal-pc border)
     auto windowPhotocathodeBorder = new G4LogicalBorderSurface("WindowToPhotocathode", windowPhys, photocathodePhys, photocathodeSurface);
-        
+
     
     /////////////
     // COLOURING:
@@ -967,6 +1089,11 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     auto photocathodeVisAtt = new G4VisAttributes(G4Color(1., 0., 0., 0.5)); // red
     photocathodeVisAtt->SetForceSolid(true);
     photocathodeLog->SetVisAttributes(photocathodeVisAtt);
+    
+    // Hermetic seal
+    auto sealVisAtt = new G4VisAttributes(G4Color(0.9, 0.9, 0.9, 1.)); // light gray (opaque)
+    sealVisAtt->SetForceSolid(true);
+    sealLog->SetVisAttributes(sealVisAtt);
     
     // Source geometry
     auto sourceVisAtt = new G4VisAttributes(G4Color(0.0, 1.0, 0.0, 0.5)); // green
