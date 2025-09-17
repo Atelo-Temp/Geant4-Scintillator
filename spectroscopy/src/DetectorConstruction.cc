@@ -32,6 +32,7 @@
 
 // #include "DetectorConstruction.hh" // When leaving it as named here, causes errors (only in vscode), in scintillator/ no errors ...
 #include "DetectorConstruction.hh"
+#include "MaterialDefinitions.hh"
 
 #include "G4NistManager.hh"
 #include "G4Element.hh"
@@ -194,31 +195,35 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // SOURCE MATERIALS:
     ////////////////////
 
-    // Source material (define Cesium-18 isotope)
-    auto sourceIsotope = new G4Isotope(
-        "137Cs", // name
-        55, // num protons (Z)
-        137, // Atomic mass (num nucleons) (A),
-        136.907089 * g / mole // Molar mass (grams per molecule) (~18g per mol)
-    );
-    // NOTE: 1 mol contains avogadros number of particles (6.022 x 10^23)
+//     // Source material (define Cesium-18 isotope)
+//     auto sourceIsotope = new G4Isotope(
+//         "137Cs", // name
+//         55, // num protons (Z)
+//         137, // Atomic mass (num nucleons) (A),
+//         136.907089 * g / mole // Molar mass (grams per molecule) (~18g per mol)
+//     );
+//     // NOTE: 1 mol contains avogadros number of particles (6.022 x 10^23)
+//     
+//     // Define an element from the isotope
+//     auto sourceElement = new G4Element("Cesium-137", "137Cs", 1); // name, symbol, num isotopes
+//     
+//     // Assign the defined isotope to the element
+//     sourceElement->AddIsotope(sourceIsotope, 100.0 * perCent); // isotope, no other isotopes so 100%
+//     
+//     // Because isotope and element have no direct interaction in G4, need to create a material to assign to logical volume
+//     auto sourceMat = new G4Material("137Cs", 1.886 * g / cm3, 1); // name, density (g/cm^3), phase (solid, liquid, gas)
+//     // NOTE: Density is estimate, in reality it wont usually be a pure 137Cs source,
+//     // usually embedded in a matrix, encapsulated (stainless steel), or a mixed compound (cesium chloride),
+//     // i.e. cesium oxide ceramic matrix (more like 1.47 g/cm3)
+//     
+//     // Assign the element to the G4 material
+//     sourceMat->AddElement(sourceElement, 100.0 * perCent); // element, amount of element in material (100%)
+//     // TODO: In practice there would be non-zero amount of the daughter isotope too,
+//     // based on how old the source was (after 30y half of a "new" 137Cs source would be 137Ba)
     
-    // Define an element from the isotope
-    auto sourceElement = new G4Element("Cesium-137", "137Cs", 1); // name, symbol, num isotopes
-    
-    // Assign the defined isotope to the element
-    sourceElement->AddIsotope(sourceIsotope, 100.0 * perCent); // isotope, no other isotopes so 100%
-    
-    // Because isotope and element have no direct interaction in G4, need to create a material to assign to logical volume
-    auto sourceMat = new G4Material("137Cs", 1.886 * g / cm3, 1); // name, density (g/cm^3), phase (solid, liquid, gas)
-    // NOTE: Density is estimate, in reality it wont usually be a pure 137Cs source,
-    // usually embedded in a matrix, encapsulated (stainless steel), or a mixed compound (cesium chloride),
-    // i.e. cesium oxide ceramic matrix (more like 1.47 g/cm3)
-    
-    // Assign the element to the G4 material
-    sourceMat->AddElement(sourceElement, 100.0 * perCent); // element, amount of element in material (100%)
-    // TODO: In practice there would be non-zero amount of the daughter isotope too,
-    // based on how old the source was (after 30y half of a "new" 137Cs source would be 137Ba)
+    // Cesium-137 (137Cs) source, 50% barium (137Ba) daughter product
+    auto sourceHandler = new MaterialDefinitions();
+    auto sourceMat = sourceHandler->Create137Cs();
     
     // Source Casing
     G4Material* PVC = nist->FindOrBuildMaterial("G4_POLYVINYL_CHLORIDE"); // density = 1.3 g/cm^3
@@ -454,8 +459,10 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // auto windowSurface = new G4OpticalSurface("WindowSurface", unified, polished, dielectric_dielectric);
     
     // Refractive index of borosilicate glass (1.53024 @ 404.7 nm - SCHOTT BK7 Datasheet)
-    std::vector<G4double> rindexBorosilicate = {1.53, 1.53, 1.53};
+    // std::vector<G4double> rindexBorosilicate = {1.53, 1.53, 1.53};
     // TODO: Refine this across 300-550 nm emission range
+    std::vector<G4double> rindexBorosilicate = {1.51872, 1.53024, 1.54272}; // NOTE: From SCOTT BK7 datasheet
+    // NOTE: Closest indices for (550 nm, 415 nm, 325 nm) => (546.1 nm, 404.7 nm, 334.1 nm)
     
     // High absorption length in the medium
     std::vector<G4double> abslengthBorosilicate = {420. * cm, 420. * cm, 420. * cm};
@@ -511,7 +518,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     auto MPTPhotocathode = new G4MaterialPropertiesTable();
     
     // Unified model, polished surface finish, dielectric->metal interface
-    auto photocathodeSurface = new G4OpticalSurface("Photocathode", unified, polished, dielectric_metal);
+    // auto photocathodeSurface = new G4OpticalSurface("Photocathode", unified, polished, dielectric_metal);
+    auto photocathodeSurface = new G4OpticalSurface("Photocathode", unified, ground, dielectric_metal);
 
     // std::vector<G4double> energyScoring = {1.239841939*eV / 0.700, 1.239841939*eV / 0.551, 1.239841939*eV / 0.400}; // 400 nm - 700 nm (visible range)
     // std::vector<G4double> reflectivityScoring = {0.9, 0.9, 0.9}; // Li apparently 90% reflectivity between 400-700 nm
