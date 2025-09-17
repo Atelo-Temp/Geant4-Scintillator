@@ -56,3 +56,10 @@ In the base directory:
 Default particle set in PrimaryGeneratorAction.cc
 
 Default can be overridden via macro (i.e. "gps/particle/gamma") after compilation, and changed between runs
+
+## ...
+
+```
+find . -name "*.root" -type f
+find . -name "*.root" -type f -delete
+```

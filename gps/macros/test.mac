@@ -1,0 +1,10 @@
+#
+/gps/pos/type Volume
+/gps/pos/shape Sphere
+/gps/pos/centre 0. 0. 2.90425 cm
+/gps/pos/radius 1 mm
+/gps/pos/confine Source
+
+/run/beamOn 1
+
+# /control/execute test.mac
