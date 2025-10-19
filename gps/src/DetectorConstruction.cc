@@ -375,36 +375,72 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
      * NOTE: No refraction, suitable for a reflector material, 
      * reflection probability must be set by "REFLECTIVITY" property.
      * 
-     * Front painted finishes prevent refraction, but still allow for absorption:
+     * Front painted finishes prevent refraction (no transmission), but still allow for absorption:
      * - PolishedFrontPainted (specular spike reflection)
-     * - GroundFrontPainted (lambertian reflection)
+     * - GroundFrontPainted (lambertian reflection - diffuse)
      * 
      * NOTE: Both are suitable (as they prevent refraction, incident light will only absorb or reflect),
      * 
      * Eliminating possibility for visible light photons to penetrate alumina reflector seems suitable (painted options).
      * 
-     * Back painted finishes prevent refraction, but also prevent absorption:
+     * Back painted finishes prevent refraction (no transmission), but allow for custom reflection mechanics:
      * - PolishedBackPainted (specular spike, specular lobe, backscatter, lambertian)
      * - GroundBackPainted (specular spike, specular lobe, backscatter, lambertian)
      * 
-     * NOTE: Afaik, the backpainted choices work, but will only reflect, no absorption,
-     * which is not as realistic? (i could be mistaken about absorption though)
+     * SigmaAlpha to specify surface roughness...
+     * 
+     * NOTE: RINDEX must be specified (for surface) for back painted afaik (tested with and without)
+     * 
+     * Back painted allows for; setting sigma alpha, and individual reflection constants
+     * I.e. ground front painted only lambertian, but ground back painted may be one of four
+     * 
+     * NOTE: If reflectivity = 1 -> no absorption at painted boundary
+     * If reflectivity = 0.9 -> 0.1 absorption at boundary ?
      * 
      * NOTE: With a "painted" surface finish, it seems the rindex, or an MPT,
      * doesnt need to be assigned to the Al203 material, spectrum remains the same either way.
+     * 
+     * NOTE: SigmaAlpha only seems to have an effect on BackPainted (not FrontPainted)
      */
 
     // Reflector MPT (definining probability of reflection, or else absorption)
     auto MPTReflectorSurf = new G4MaterialPropertiesTable();
     
     // Unified model, polished front painted so refraction does not occur, dielectric-dielectric interface
-    auto reflectorSurface = new G4OpticalSurface("ReflectorSurface", unified, polishedfrontpainted, dielectric_dielectric);
+    // auto reflectorSurface = new G4OpticalSurface("ReflectorSurface", unified, polishedfrontpainted, dielectric_dielectric);
+    // NOTE: Reflectors are typically diffuse (ground) for better results, will see how much difference it makes in sim
+    //
+    // auto reflectorSurface = new G4OpticalSurface("ReflectorSurface", unified, groundfrontpainted, dielectric_dielectric);
+    //
+    auto reflectorSurface = new G4OpticalSurface("ReflectorSurface", unified, groundbackpainted, dielectric_dielectric);
+    
+    // For back painted surface
+    // reflectorSurface->SetSigmaAlpha(0.1); // Specify surface roughness
+    // reflectorSurface->SetSigmaAlpha(0.5); // Specify surface roughness
+    reflectorSurface->SetSigmaAlpha(1); // Specify surface roughness
     
     // Reflection probability as a function of wavelength
-    std::vector<G4double> reflectivity = {0.9, 0.9, 0.9}; // 1 = all photons will be reflected (reflectance of 0.3% in practice)
+    std::vector<G4double> reflectivity = {0.9, 0.9, 0.9}; // 1 = all photons will be reflected
+    // NOTE: May be better to specify rindex (ground front painted will ensure no refraction, fresnel will calc reflectivity)
+    // Reflectivity = 1. by  default (could remove this all together?), for dielectric-dielectris transmission = 1 - R
+    // not certain this is feasible though (does it become a perfect reflector w/ R=1 ...)
+    // NOTE: Yeah need to specify != 1. else no absorption in reflector (perfect reflector not realistic)
+    
+    // Refractive index (back painted)
+    // std::vector<G4double> rindexReflector = {1.78, 1.78, 1.78}; // Al2O3
+    std::vector<G4double> rindexReflector = {1., 1., 1.}; // Study says r = 1 when not tape like coating (i.e. for powders) due to air gap?
+    
+    // Reflection constants (back painted)
+    std::vector<G4double> slcReflector = {0.05, 0.05, 0.05}; // Specular lobe constant
+    std::vector<G4double> bsReflector = {0.01, 0.01, 0.01}; // back scatter constant
     
     // Assign property to MPT, and MPT to surface
     MPTReflectorSurf->AddProperty("REFLECTIVITY", energy, reflectivity); // NOTE: No difference when using this energy or energyAl203
+    MPTReflectorSurf->AddProperty("RINDEX", energy, rindexReflector);
+    
+    // MPTReflectorSurf->AddProperty("SPECULARLOBECONSTANT", energy, slcReflector);
+    // MPTReflectorSurf->AddProperty("BACKSCATTERCONSTANT", energy, bsReflector);
+    
     reflectorSurface->SetMaterialPropertiesTable(MPTReflectorSurf);
 
     
@@ -1007,16 +1043,16 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // TODO: THE LAST SPECTRUM ONLY MOVED THE CASING LOL NOT THE SOURCE
     
     // Place the radioactive source 
-    G4VPhysicalVolume* sourcePhys = new G4PVPlacement(
-        nullptr,
-        sourceTrans,
-        sourceLog,
-        "Source",
-        worldLog,
-        false,
-        0,
-        checkOverlaps
-    );
+    // G4VPhysicalVolume* sourcePhys = new G4PVPlacement(
+    //     nullptr,
+    //     sourceTrans,
+    //     sourceLog,
+    //     "Source",
+    //     worldLog,
+    //     false,
+    //     0,
+    //     checkOverlaps
+    // );
     
     
     /////////////////
