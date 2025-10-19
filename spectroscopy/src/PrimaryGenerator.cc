@@ -5,6 +5,11 @@
 
 #include "G4IonTable.hh" // Get acces to predefinied ions (decay physics)
 
+// TEST ...
+#include "DetectorConstruction.hh"
+#include "G4RunManager.hh"
+// TEST ....
+
 // Define the class constructor for the particle generator
 // NOTE: Everything related to particle definition is removed when using decay physics
 PrimaryGenerator::PrimaryGenerator() {
@@ -13,11 +18,21 @@ PrimaryGenerator::PrimaryGenerator() {
 
     // Instantiate the particle gun with args
     fParticleGun = new G4ParticleGun(numParticles);
+    
+    // TEST ...     (NOTE: Could also pass this into constructor in main() ...) Not sure if this will even work like it does in stepping action, initialise hasnt been called yet
+    // const auto detConst = static_cast<const DetectorConstruction*>(
+    //     G4RunManager::GetRunManager()->GetUserDetectorConstruction()
+    // );
+    // G4double z = detConst->GetSourceDetectorDist();
+    // TEST ...
 
     // Define the position of the particle
-    G4double x = 0. * m;
-    G4double y = 0. * m;
-    G4double z = -0.01 * m; // small 1cm offset for visibility
+    G4double x = 0. * cm;
+    G4double y = 0. * cm;
+    // G4double z = -1. * cm; // small 1cm offset for visibility
+    // TODO: This does not reflect position of source geometry and encapsulation
+    // Seems janky to manually define it as (5.90425 * cm) - sourceDetectorDist though
+    G4double z = (5.90425 * cm) - 3. * cm; // NOTE: See DetectorConstruction.cc notes
 
     // Create a position vector with the defined components
     G4ThreeVector pos(x, y, z);

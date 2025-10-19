@@ -104,6 +104,7 @@
 
 // TODO: Volumetric source (assigned to source geometry, instead of point source inside of it)
 // probably need to use general particle source instead of particle gun
+// NOTE: Point source inside of source geom pretty much negates x-rays
 
 
 // namespace GEOMETRY {
@@ -988,19 +989,34 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     auto sourceLog = new G4LogicalVolume(solidSource, sourceMat, "Source");
     
     // Define translation (offset from origin by 1cm => so 11cm from detector)
-    auto sourceTrans = G4ThreeVector(0 * cm, 0 * cm, -1. * cm);
+    // auto sourceTrans = G4ThreeVector(0 * cm, 0 * cm, -1. * cm);
+    // NOTE: This Z should be crystalZ + (crystalHeight * 0.5) + (reflectorThick) + (enclosureThick) + (sourceDetectorDist)
+    
+    // NOTE: Face of the detector is 5.90425 cm from world origin (0, 0, 0)
+    // so, source had been 6.90425 cm from face of detector in all prior sims
+    
+    // 3cm source-detector (face) distance, as it was in lab work (and my recorded spectra)
+    G4double sourceDetectorDist = 3. * cm;
+    G4double sourceZ = crystalZ - ((crystalHeight * 0.5) + reflectorThickness + enclosureThick) - sourceDetectorDist;
+
+    // ...
+    auto sourceTrans = G4ThreeVector(crystalX, crystalY, sourceZ);
+    // NOTE: Source is placed exactly in line with crystal in (x, y) plane, and specified distance in z
+    
+    // TODO: I NEED THIS IN PRIMARY GENERATOR ACTION TOO ...
+    // TODO: THE LAST SPECTRUM ONLY MOVED THE CASING LOL NOT THE SOURCE
     
     // Place the radioactive source 
-    G4VPhysicalVolume* sourcePhys = new G4PVPlacement(
-        nullptr,
-        sourceTrans,
-        sourceLog,
-        "Source",
-        worldLog,
-        false,
-        0,
-        checkOverlaps
-    );
+    // G4VPhysicalVolume* sourcePhys = new G4PVPlacement(
+    //     nullptr,
+    //     sourceTrans,
+    //     sourceLog,
+    //     "Source",
+    //     worldLog,
+    //     false,
+    //     0,
+    //     checkOverlaps
+    // );
     
     
     /////////////////

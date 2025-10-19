@@ -76,6 +76,10 @@ Same as decay, but introduces complete detector geometry beyond just the crstal.
 
 TODO: Also use subtraction solids
 
+- 12) GPS
+
+Uses general particle source (GPS) with isotope assigned to volume, instead of particle gun point source
+
 > NOTE: Will remain as is, simulating gamma-ray spectroscopy via energy deposition, and not by counting scintillation photons.
 
 ## Other
@@ -90,3 +94,5 @@ TODO: Also use subtraction solids
 ^may rename as just "detector"
 
 - Deposition: Same as spectroscopy, but no scintillation light (may do it, may not)
+
+- GPS: Same as spectroscopy, but uses GPS for volumetric source
