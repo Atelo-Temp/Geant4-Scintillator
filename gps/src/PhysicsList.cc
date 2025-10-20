@@ -15,7 +15,7 @@
 #include "PhysicsList.hh" // Header file containing class interface
 
 #include "G4EmStandardPhysics.hh" // Standard physics list for electromagnetic interactions
-// #include "G4EmStandardPhysics_option4.hh" // TODO: See below
+#include "G4EmStandardPhysics_option4.hh" // TODO: See below
 
 #include "G4OpticalPhysics.hh"
 
@@ -25,8 +25,9 @@
 // Define the class constructor
 PhysicsList::PhysicsList() {
     // Register EM Physics
-    RegisterPhysics(new G4EmStandardPhysics());
+    // RegisterPhysics(new G4EmStandardPhysics());
     // TODO: Consider G4EmStandardPhysics_option4 better but more computationally expensive EM modelling
+    RegisterPhysics(new G4EmStandardPhysics_option4());
 
     // Register scintillation physics
     RegisterPhysics(new G4OpticalPhysics());    

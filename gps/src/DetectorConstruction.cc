@@ -415,27 +415,29 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     auto reflectorSurface = new G4OpticalSurface("ReflectorSurface", unified, groundbackpainted, dielectric_dielectric);
     
     // For back painted surface
-    // reflectorSurface->SetSigmaAlpha(0.1); // Specify surface roughness
-    // reflectorSurface->SetSigmaAlpha(0.5); // Specify surface roughness
-    reflectorSurface->SetSigmaAlpha(1); // Specify surface roughness
+    // reflectorSurface->SetSigmaAlpha(0.1); // Specify surface roughness (almost polished)
+    // reflectorSurface->SetSigmaAlpha(0.5); // Specify surface roughness (matte)
+    reflectorSurface->SetSigmaAlpha(1); // Specify surface roughness (diffuse)
     
     // Reflection probability as a function of wavelength
-    std::vector<G4double> reflectivity = {0.9, 0.9, 0.9}; // 1 = all photons will be reflected
-    // NOTE: May be better to specify rindex (ground front painted will ensure no refraction, fresnel will calc reflectivity)
-    // Reflectivity = 1. by  default (could remove this all together?), for dielectric-dielectris transmission = 1 - R
-    // not certain this is feasible though (does it become a perfect reflector w/ R=1 ...)
-    // NOTE: Yeah need to specify != 1. else no absorption in reflector (perfect reflector not realistic)
+    std::vector<G4double> reflectivityReflector = {0.9, 0.9, 0.9}; // 1 = all photons will be reflected (Default val)
+    // NOTE: Need to specify reflectivity != 1. else no absorption in reflector (perfect reflector, not realistic)
     
     // Refractive index (back painted)
     // std::vector<G4double> rindexReflector = {1.78, 1.78, 1.78}; // Al2O3
-    std::vector<G4double> rindexReflector = {1., 1., 1.}; // Study says r = 1 when not tape like coating (i.e. for powders) due to air gap?
+    std::vector<G4double> rindexReflector = {1., 1., 1.}; // Air (dry packed causes layer of air)
+    // std::vector<G4double> rindexReflector = {1.46, 1.46, 1.46}; // Silicone optical grease (TODO: Currently untested)
+    // NOTE: Levin 1996 (UNIFIED) says r = 1 when tape like coating (i.e. for powders) due to air gap,
+    // and r = optical expoxy (i.e. silicone gel) for Al/Ti/Mg oxide powders mixed with epoxy
     
     // Reflection constants (back painted)
     std::vector<G4double> slcReflector = {0.05, 0.05, 0.05}; // Specular lobe constant
-    std::vector<G4double> bsReflector = {0.01, 0.01, 0.01}; // back scatter constant
+    std::vector<G4double> bsReflector = {0.01, 0.01, 0.01}; // Backscatter constant
+    // NOTE: Defaults to specular spike = 0, specular lobe = 0, backscatter = 0, lambertian = 1
+    // if other values are set to non-0, lambertial will be 1 - sum of other components
     
     // Assign property to MPT, and MPT to surface
-    MPTReflectorSurf->AddProperty("REFLECTIVITY", energy, reflectivity); // NOTE: No difference when using this energy or energyAl203
+    MPTReflectorSurf->AddProperty("REFLECTIVITY", energy, reflectivityReflector); // NOTE: No difference when using this energy or energyAl203
     MPTReflectorSurf->AddProperty("RINDEX", energy, rindexReflector);
     
     // MPTReflectorSurf->AddProperty("SPECULARLOBECONSTANT", energy, slcReflector);
@@ -556,19 +558,27 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     // Unified model, polished surface finish, dielectric->metal interface
     // auto photocathodeSurface = new G4OpticalSurface("Photocathode", unified, polished, dielectric_metal);
-    auto photocathodeSurface = new G4OpticalSurface("Photocathode", unified, ground, dielectric_metal);
+    auto photocathodeSurface = new G4OpticalSurface("Photocathode", unified, ground, dielectric_metal); // TODO: Polished or ground ...
 
+    // Reflectivity of the photocathode
     // std::vector<G4double> energyScoring = {1.239841939*eV / 0.700, 1.239841939*eV / 0.551, 1.239841939*eV / 0.400}; // 400 nm - 700 nm (visible range)
     // std::vector<G4double> reflectivityScoring = {0.9, 0.9, 0.9}; // Li apparently 90% reflectivity between 400-700 nm
     std::vector<G4double> reflectivityScoring = {0.05, 0.05, 0.05}; // NOTE: But that massively decreases efficiency ...
-    // NOTE: There must be a methodology used to decrease reflectivity in this application
+    // NOTE: There must be a methodology used to decrease reflectivity in this application (yes, anti-reflective coatings)
     
-    //
-    std::vector<G4double> efficiency = {0.25, 0.25, 0.25}; // 25% QE starter (flat efficiency)
+    // Quantum efficiency
+    // std::vector<G4double> efficiencyScoring = {0.25, 0.25, 0.25}; // 25% QE starter (flat efficiency)
+    
+    // NOTE: Leaning towards bialkali photocathode (K--Cs, i.e. K2CsSb or K-Cs-Sb)
+    // Reflectivity ~21% @500nm
+    // QE: 0.08 @550nm, ~0.27 @415nm, ~0.26 @325nm 
+    
+    // std::vector<G4double> reflectivityScoring = {0.21, 0.21, 0.21};
+    std::vector<G4double> efficiencyScoring = {0.08, 0.27, 0.26};
     
     // NOTE: Using same energy as other MPTS has no effect on output spectrum at all (vs "energyScoring")
     MPTPhotocathode->AddProperty("REFLECTIVITY", energy, reflectivityScoring); // 1 minus the absorption coeffcient
-    MPTPhotocathode->AddProperty("EFFICIENCY", energy, efficiency); // Chance of an absorbed photon to be detected
+    MPTPhotocathode->AddProperty("EFFICIENCY", energy, efficiencyScoring); // Chance of an absorbed photon to be detected
     
     photocathodeSurface->SetMaterialPropertiesTable(MPTPhotocathode);
     
