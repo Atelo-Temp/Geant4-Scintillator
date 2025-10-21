@@ -65,6 +65,10 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     // If at a boundary ...
     auto boundaryStatus = fBoundary->GetStatus();
     
+    // TODO: Timing window
+    // if (!initialPEtime) initialPEtime == ...
+    // currPEtime = intialPEtime - globalTime
+    
     // This assumes that the volume causing detection is the photocathode
     // as it is the only volume with non-zero efficiency
     if (boundaryStatus == Detection) {

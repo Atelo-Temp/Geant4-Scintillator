@@ -65,7 +65,12 @@
 
 // TODO: Probably wanna use consistent units throughout (cm probably easiest to adhere to)
 
-// TODO: add tiny bit of Tl doping to the crystal material ?)
+// TODO: Add tiny bit of Tl doping to the crystal material ?
+
+// TODO: 
+
+// TODO: There is overhang of the encapsulation at the back of the crystal 
+// (of thickness = encapsulation thickness, as that was added to front for beta shield)
 
 /*
  * The light leakage problem.
@@ -98,13 +103,6 @@
  * but its not exposed to the crystal itself here, and only has a few optical photons
  * interacting with it (from outer rad of window)
  */
-
-// TODO: There is overhang of the encapsulation at the back of the crystal 
-// (of thickness = encapsulation thickness, as that was added to front for beta shield)
-
-// TODO: Volumetric source (assigned to source geometry, instead of point source inside of it)
-// probably need to use general particle source instead of particle gun
-// NOTE: Point source inside of source geom pretty much negates x-rays
 
 
 // namespace GEOMETRY {
@@ -229,6 +227,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Source Casing
     G4Material* PVC = nist->FindOrBuildMaterial("G4_POLYVINYL_CHLORIDE"); // density = 1.3 g/cm^3
     // NOTE: 2 part carbon (C), 3 part hydrogen (H), 1 part chlorine (Cl)
+    
+    // TODO: Should "MaterialDefinitions -- i.e. sourceHandler" be deleted...
     
     
     /////////////////
@@ -414,19 +414,25 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     //
     auto reflectorSurface = new G4OpticalSurface("ReflectorSurface", unified, groundbackpainted, dielectric_dielectric);
     
-    // For back painted surface
-    // reflectorSurface->SetSigmaAlpha(0.1); // Specify surface roughness (almost polished)
-    // reflectorSurface->SetSigmaAlpha(0.5); // Specify surface roughness (matte)
-    reflectorSurface->SetSigmaAlpha(1); // Specify surface roughness (diffuse)
+    // Specify surface roughness (For back painted surface)
+    // reflectorSurface->SetSigmaAlpha(0.1); // Almost polished (specular)
+    reflectorSurface->SetSigmaAlpha(0.25); // Ground polished (partially diffuse)
+    // reflectorSurface->SetSigmaAlpha(0.35);
+    // reflectorSurface->SetSigmaAlpha(0.4);
+    // reflectorSurface->SetSigmaAlpha(0.5); // Very Matte / Rough powder (strongly diffuse)
+    // reflectorSurface->SetSigmaAlpha(0.75); // Rough powder (strongly diffuse)
+    // reflectorSurface->SetSigmaAlpha(1); // Strongly diffuse
     
-    // Reflection probability as a function of wavelength
-    std::vector<G4double> reflectivityReflector = {0.9, 0.9, 0.9}; // 1 = all photons will be reflected (Default val)
+    // Reflection probability as a function of wavelength (1 = all photons will be reflected (Default val))
+    std::vector<G4double> reflectivityReflector = {0.9, 0.9, 0.9}; // Rough est val
+    // std::vector<G4double> reflectivityReflector = {0.94, 0.94, 0.94}; // 96% alumina -> 94% reflectance
+    // std::vector<G4double> reflectivityReflector = {0.96, 0.96, 0.96}; // 99.7% alumina -> 96% reflectance @500-2000nm
     // NOTE: Need to specify reflectivity != 1. else no absorption in reflector (perfect reflector, not realistic)
     
     // Refractive index (back painted)
     // std::vector<G4double> rindexReflector = {1.78, 1.78, 1.78}; // Al2O3
     std::vector<G4double> rindexReflector = {1., 1., 1.}; // Air (dry packed causes layer of air)
-    // std::vector<G4double> rindexReflector = {1.46, 1.46, 1.46}; // Silicone optical grease (TODO: Currently untested)
+    // std::vector<G4double> rindexReflector = {1.46, 1.46, 1.46}; // Silicone optical grease
     // NOTE: Levin 1996 (UNIFIED) says r = 1 when tape like coating (i.e. for powders) due to air gap,
     // and r = optical expoxy (i.e. silicone gel) for Al/Ti/Mg oxide powders mixed with epoxy
     
@@ -557,24 +563,24 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     auto MPTPhotocathode = new G4MaterialPropertiesTable();
     
     // Unified model, polished surface finish, dielectric->metal interface
-    // auto photocathodeSurface = new G4OpticalSurface("Photocathode", unified, polished, dielectric_metal);
-    auto photocathodeSurface = new G4OpticalSurface("Photocathode", unified, ground, dielectric_metal); // TODO: Polished or ground ...
+    auto photocathodeSurface = new G4OpticalSurface("Photocathode", unified, polished, dielectric_metal);
+    // auto photocathodeSurface = new G4OpticalSurface("Photocathode", unified, ground, dielectric_metal);
+    // NOTE: Polished more typical for PC
 
     // Reflectivity of the photocathode
     // std::vector<G4double> energyScoring = {1.239841939*eV / 0.700, 1.239841939*eV / 0.551, 1.239841939*eV / 0.400}; // 400 nm - 700 nm (visible range)
     // std::vector<G4double> reflectivityScoring = {0.9, 0.9, 0.9}; // Li apparently 90% reflectivity between 400-700 nm
-    std::vector<G4double> reflectivityScoring = {0.05, 0.05, 0.05}; // NOTE: But that massively decreases efficiency ...
+    // std::vector<G4double> reflectivityScoring = {0.05, 0.05, 0.05}; // NOTE: But that massively decreases efficiency ...
     // NOTE: There must be a methodology used to decrease reflectivity in this application (yes, anti-reflective coatings)
     
     // Quantum efficiency
     // std::vector<G4double> efficiencyScoring = {0.25, 0.25, 0.25}; // 25% QE starter (flat efficiency)
     
     // NOTE: Leaning towards bialkali photocathode (K--Cs, i.e. K2CsSb or K-Cs-Sb)
-    // Reflectivity ~21% @500nm
+    // Reflectivity: ~21% @500nm
     // QE: 0.08 @550nm, ~0.27 @415nm, ~0.26 @325nm 
-    
-    // std::vector<G4double> reflectivityScoring = {0.21, 0.21, 0.21};
-    std::vector<G4double> efficiencyScoring = {0.08, 0.27, 0.26};
+    std::vector<G4double> reflectivityScoring = {0.21, 0.21, 0.21};
+    std::vector<G4double> efficiencyScoring = {0.08, 0.27, 0.26}; // TODO: PC polished w/ just new R, QE
     
     // NOTE: Using same energy as other MPTS has no effect on output spectrum at all (vs "energyScoring")
     MPTPhotocathode->AddProperty("REFLECTIVITY", energy, reflectivityScoring); // 1 minus the absorption coeffcient
@@ -583,7 +589,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     photocathodeSurface->SetMaterialPropertiesTable(MPTPhotocathode);
     
     // NOTE: Only seeing ~1% of the total optical photons being "DETECTED" on full energy deposition
-    // NOTE: Actually ranges from ~1% to 7% seemingly
+    // Actually ranges from ~1% to 7% seemingly
+    // update: photopeak centroid typically at ~5-6% of total photons
     
     // Bialkali material has a broad spectra response from 170-560 nm
     // photocathode spectral response should match the emission spectrum of the scintillator used
