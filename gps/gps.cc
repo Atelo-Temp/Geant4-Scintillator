@@ -25,15 +25,17 @@ int main(int argc, char** argv) {
         ui = new G4UIExecutive(argc, argv);
     }
 
-    // Construct the default run manager
+    // Construct the default run manager (NOTE: Factory will auto select MT or Serial based on G4 build)
     auto runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::Default);
     // NOTE: Use auto when initialising classes to avoid duplicating type name
 
     // Identify multi-threaded environment or not
     // #ifdef G4MULTITHREADED
-    //     auto *runManager = new G4MTRunManager(); // G4RunManagerFactory::GetMTMasterRunManager() ?
+        // auto *runManager = new G4MTRunManager(); // G4RunManagerFactory::GetMTMasterRunManager() ?
+        // std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>> MULTITHREADING\n\n";
     // #else
-    //     auto *runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::Default);
+        // auto *runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::Default);
+        // std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>> NO MULTITHREADING\n\n";
     // #endif
     
     // Default time threshold for radioactive decay is 1 year, set it higher for longer lived isotopes

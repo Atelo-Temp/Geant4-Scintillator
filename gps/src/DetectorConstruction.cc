@@ -126,6 +126,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
 
     // Scintillator material
     G4Material* NaI = nist->FindOrBuildMaterial("G4_SODIUM_IODIDE"); // (1 part Na, 1 part I), density = 3.667 g/cm^3
+    // TODO: NaI:Tl blend
     
     // Scintillation light reflector material (Alumina - Al2O3)
     G4Material* Al2O3 = nist->FindOrBuildMaterial("G4_ALUMINUM_OXIDE"); // (2 part Al, 3 part O), density = 3.97 g/cm^3
@@ -148,6 +149,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Formula for PDMS: CH3 [Si(CH3)2-O]n Si(CH3)3 (NOTE: Where n is the number of repeating monomer units)
     // TODO: Maybe do PDMS as chain of 3: [(Si, 3) (C, 6), (H, 18), (O, 2)]
     // Or could do as percentages
+    // TODO: JUST ADD 1 O TO BLEND, AVERAGES OUT OVER LONG CHAIN LENGTH (100-1000+)
     
     // Borosilicate glass (Pyrex is in mat lib, but maybe soda lime, not borosilicate as pyrex started out in 1915)
     // NOTE: High optical clarity in visible range (400-700 nm) (... and beyond 300-2500 nm), and resistant to breaking due to changes in temperature
@@ -268,6 +270,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // NOTE: This is essential to generate the correct number of photons (25156 for 662 keV, instead of 5-10)
     // std::vector<G4double> emission = {1., 1., 1.}; // same amount of photons for each wavelength
     std::vector<G4double> emission = {0.1, 1., 0.1}; // emission max @ 415 nm
+    // std::vector<G4double> emission = {0.01, 1., 0.01}; // NOTE: No different to 0.1 upper/lower
     MPTCrystal->AddProperty("SCINTILLATIONCOMPONENT1", energy, emission); // "Fast component"
     // NOTE: Tells Geant4 how many photons for each wavelength (or energy)
     // The scintillation photons will have a spectrum, depending on wavelength,
@@ -299,7 +302,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     // Factor to vary width of yield distribution
     // MPTCrystal->AddConstProperty("RESOLUTIONSCALE", 0.); // no fluctuation
-    MPTCrystal->AddConstProperty("RESOLUTIONSCALE", 1.); // 1. to start, tune later
+    // MPTCrystal->AddConstProperty("RESOLUTIONSCALE", 1.); // 1. to start, tune later
+    MPTCrystal->AddConstProperty("RESOLUTIONSCALE", 3.5); // Miller et al (2024)
     // MPTCrystal->AddConstProperty("RESOLUTIONSCALE", 10.); // more gaussian
     // NOTE: A resolution scale of ZERO produces no fluctuation in optical photons generated
     // (sigma = sqrt of mean photons for step * RESOLUTIONSCALE)
@@ -415,8 +419,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     auto reflectorSurface = new G4OpticalSurface("ReflectorSurface", unified, groundbackpainted, dielectric_dielectric);
     
     // Specify surface roughness (For back painted surface)
-    // reflectorSurface->SetSigmaAlpha(0.1); // Almost polished (specular)
-    reflectorSurface->SetSigmaAlpha(0.25); // Ground polished (partially diffuse)
+    reflectorSurface->SetSigmaAlpha(0.1); // Almost polished (specular)
+    // reflectorSurface->SetSigmaAlpha(0.25); // Ground polished (partially diffuse)
     // reflectorSurface->SetSigmaAlpha(0.35);
     // reflectorSurface->SetSigmaAlpha(0.4);
     // reflectorSurface->SetSigmaAlpha(0.5); // Very Matte / Rough powder (strongly diffuse)
@@ -424,9 +428,9 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // reflectorSurface->SetSigmaAlpha(1); // Strongly diffuse
     
     // Reflection probability as a function of wavelength (1 = all photons will be reflected (Default val))
-    std::vector<G4double> reflectivityReflector = {0.9, 0.9, 0.9}; // Rough est val
+    // std::vector<G4double> reflectivityReflector = {0.9, 0.9, 0.9}; // Rough est val
     // std::vector<G4double> reflectivityReflector = {0.94, 0.94, 0.94}; // 96% alumina -> 94% reflectance
-    // std::vector<G4double> reflectivityReflector = {0.96, 0.96, 0.96}; // 99.7% alumina -> 96% reflectance @500-2000nm
+    std::vector<G4double> reflectivityReflector = {0.96, 0.96, 0.96}; // 99.7% alumina -> 96% reflectance @500-2000nm
     // NOTE: Need to specify reflectivity != 1. else no absorption in reflector (perfect reflector, not realistic)
     
     // Refractive index (back painted)
