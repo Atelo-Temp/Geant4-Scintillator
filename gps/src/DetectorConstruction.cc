@@ -567,9 +567,12 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     auto MPTPhotocathode = new G4MaterialPropertiesTable();
     
     // Unified model, polished surface finish, dielectric->metal interface
-    auto photocathodeSurface = new G4OpticalSurface("Photocathode", unified, polished, dielectric_metal);
-    // auto photocathodeSurface = new G4OpticalSurface("Photocathode", unified, ground, dielectric_metal);
+    // auto photocathodeSurface = new G4OpticalSurface("Photocathode", unified, polished, dielectric_metal);
+    auto photocathodeSurface = new G4OpticalSurface("Photocathode", unified, ground, dielectric_metal);
     // NOTE: Polished more typical for PC
+    
+    // ...
+    photocathodeSurface->SetSigmaAlpha(0.0175);
 
     // Reflectivity of the photocathode
     // std::vector<G4double> energyScoring = {1.239841939*eV / 0.700, 1.239841939*eV / 0.551, 1.239841939*eV / 0.400}; // 400 nm - 700 nm (visible range)

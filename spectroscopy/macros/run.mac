@@ -1,7 +1,8 @@
 # For batch mode
 
 # Use multithreaded mode, 4 cores
-/run/numberOfThreads 4
+# /run/numberOfThreads 4
+/run/numberOfThreads 3
 
 # Initialise kernel
 /run/initialize
@@ -11,7 +12,10 @@
 
 # 100,000 events (5000 takes ~135s with direct 662 keV gamma, but decay means much fewer interactions, 100,000 with isotropic source took ~3 mins)
 # due to decay, and optical photons, sim time could fluctuate a lot for same amount of events
-/run/beamOn 100000 # with decay, since less gammas interact with detector, need more events (256 bins) (~3 mins)
+/run/beamOn 100000 # with decay, since less gammas interact with detector, need more events (256 bins) (~3 mins, ~7cm source-detector, 4 cores 4 threads)
+# POST COMP REF: (~22m, 3cm source-detector, 3 cores 3 threads)
+# POST REINSTALL: (~3m, ~7cm source-detector, 3 cores 3 threads), (~9m, 3cm source-detector, 3 cores 3 threads)
+
 # /run/beamOn 200000 # for 1024 bins (~6 mins)
 # /run/beamOn 300000 # for 1024 bins (~ mins)
 # /run/beamOn 400000 # for 1024 bins (~25 mins)
