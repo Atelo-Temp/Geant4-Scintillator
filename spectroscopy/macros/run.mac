@@ -14,7 +14,12 @@
 # due to decay, and optical photons, sim time could fluctuate a lot for same amount of events
 /run/beamOn 100000 # with decay, since less gammas interact with detector, need more events (256 bins) (~3 mins, ~7cm source-detector, 4 cores 4 threads)
 # POST COMP REF: (~22m, 3cm source-detector, 3 cores 3 threads)
-# POST REINSTALL: (~3m, ~7cm source-detector, 3 cores 3 threads), (~9m, 3cm source-detector, 3 cores 3 threads)
+# POST VBOX REINSTALL: (~3m, ~7cm source-detector, 3 cores 3 threads), (~9m, 3cm source-detector, 3 cores 3 threads)
+# NEXT DAY POST REBOOT: (~8m, ~7cm source-detector, 3 cores 3 threads)
+# VBOX REINSTALL AGAIN: (~3m, ~7cm source-detector, 3 cores 3 threads)
+# POST REBOOT: (~8m, ~7cm source-detector, 3 cores 3 threads)
+# POST WSL INSTALL & REBOOT: (~8m, ~7cm source-detector, 3 cores 3 threads)
+# POST WSL INSTALL & RESTART: (~3m, ~7cm source-detector, 3 cores 3 threads), (~9m, 3cm source-detector, 3 cores 3 threads)
 
 # /run/beamOn 200000 # for 1024 bins (~6 mins)
 # /run/beamOn 300000 # for 1024 bins (~ mins)

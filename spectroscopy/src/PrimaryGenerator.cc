@@ -29,10 +29,10 @@ PrimaryGenerator::PrimaryGenerator() {
     // Define the position of the particle
     G4double x = 0. * cm;
     G4double y = 0. * cm;
-    // G4double z = -1. * cm; // small 1cm offset for visibility
+    G4double z = -1. * cm; // small 1cm offset for visibility
     // TODO: This does not reflect position of source geometry and encapsulation
     // Seems janky to manually define it as (5.90425 * cm) - sourceDetectorDist though
-    G4double z = (5.90425 * cm) - 3. * cm; // NOTE: See DetectorConstruction.cc notes
+    // G4double z = (5.90425 * cm) - 3. * cm; // NOTE: See DetectorConstruction.cc notes
 
     // Create a position vector with the defined components
     G4ThreeVector pos(x, y, z);

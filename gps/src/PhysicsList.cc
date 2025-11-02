@@ -22,6 +22,8 @@
 #include "G4RadioactiveDecayPhysics.hh" // physics list
 #include "G4DecayPhysics.hh" // handling different decay models
 
+#include "G4EmParameters.hh"
+
 // Define the class constructor
 PhysicsList::PhysicsList() {
     // Register EM Physics
@@ -29,7 +31,8 @@ PhysicsList::PhysicsList() {
     // TODO: Consider G4EmStandardPhysics_option4 better but more computationally expensive EM modelling
     RegisterPhysics(new G4EmStandardPhysics_option4());
     
-    // TODO: Enable PIXE
+    // Enable PIXE atomic de-excitation
+    G4EmParameters::Instance()->SetPixe(true); // NOTE: Must be called after passing physics list
 
     // Register scintillation physics
     RegisterPhysics(new G4OpticalPhysics());    

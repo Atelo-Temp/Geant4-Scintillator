@@ -125,7 +125,14 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     G4Material* air = nist->FindOrBuildMaterial("G4_AIR"); // Carbon, nitrogen, oxygen, argon
 
     // Scintillator material
-    G4Material* NaI = nist->FindOrBuildMaterial("G4_SODIUM_IODIDE"); // (1 part Na, 1 part I), density = 3.667 g/cm^3
+    // G4Material* NaI = nist->FindOrBuildMaterial("G4_SODIUM_IODIDE"); // (1 part Na, 1 part I), density = 3.667 g/cm^3
+    auto Na = new G4Element("Sodium", "Na", 11, 22.990 * g/mole);
+    auto I = new G4Element("Iodine", "I", 53, 126.90 * g/mole);
+    auto Tl = new G4Element("Thallium", "Tl", 81, 204.38 * g/mole);
+    auto NaI = new G4Material("NaI:Tl", 3.667 * g/cm3, 3);
+    NaI->AddElement(Na, 15.3035 * perCent);
+    NaI->AddElement(I, 84.5603 * perCent);
+    NaI->AddElement(Na, 0.1362 * perCent);
     // TODO: NaI:Tl blend
     
     // Scintillation light reflector material (Alumina - Al2O3)
@@ -572,7 +579,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // NOTE: Polished more typical for PC
     
     // ...
-    photocathodeSurface->SetSigmaAlpha(0.0175);
+    // photocathodeSurface->SetSigmaAlpha(0.0175);
 
     // Reflectivity of the photocathode
     // std::vector<G4double> energyScoring = {1.239841939*eV / 0.700, 1.239841939*eV / 0.551, 1.239841939*eV / 0.400}; // 400 nm - 700 nm (visible range)
@@ -881,7 +888,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Coating inside of PMT optical window
     
     // ...
-    G4double photocathodeThick = 0.1 * cm; // 1mm
+    // G4double photocathodeThick = 0.1 * cm; // 1mm
+    G4double photocathodeThick = 20 * nm; // 20nm
     
     // Photocathode (absorbing or detecting incident optical photons)
     auto photocathode = new G4Tubs(

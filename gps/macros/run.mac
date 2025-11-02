@@ -1,9 +1,7 @@
 # For batch mode
 # Call: ./gps run.mac
 
-# Use multithreaded mode (4 cores) (reduced to 2 cores)
-# /run/numberOfThreads 4
-# /run/numberOfThreads 2
+# Use multithreaded mode (3 cores)
 /run/numberOfThreads 3
 
 # Initialise kernel
@@ -29,7 +27,10 @@
 # due to decay, and optical photons, sim time could fluctuate a lot for same amount of events
 /run/beamOn 100000 # with decay, since less gammas interact with detector, need more events (256 bins) (~3 mins) (~7m now ...)
 # POST COMP REF -- EM4: (~28m just now - 4 cores 4 threads) (~1hr 2m - 2 cores 4 threads) (~52m - 2 cores 2 threads), EM1: (~54m 2-2), EM4: (~39m 3 cores 3 threads) (~35m 3 cores 3 threads)
-# POST REINSTALL: (~15m, 3cm source-detector, 3 cores 3 threads)
+# POST VBOX REINSTALL: (~15m, 3cm source-detector, 3 cores 3 threads)
+# POST REBOOT: (~35m, 3cm source-detector, 3 cores 3 threads)
+# POST WSL INSTALL: (~18m, 3cm source-detector, 3 cores 3 threads)
+# PIXE Enabled: (~18-20m, 3cm source-detector, 3 cores 3 threads)
 
 # /run/beamOn 200000 # for 1024 bins (~6 mins)
 # /run/beamOn 300000 # for 1024 bins (~ mins)
