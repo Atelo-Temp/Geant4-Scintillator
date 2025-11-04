@@ -22,7 +22,11 @@
 #include "G4RadioactiveDecayPhysics.hh" // physics list
 #include "G4DecayPhysics.hh" // handling different decay models
 
+// TEST ... PIXE, cuts
 #include "G4EmParameters.hh"
+#include "G4RegionStore.hh"
+#include "G4SystemOfUnits.hh"
+//  ...
 
 // Define the class constructor
 PhysicsList::PhysicsList() {
@@ -33,6 +37,8 @@ PhysicsList::PhysicsList() {
     
     // Enable PIXE atomic de-excitation
     G4EmParameters::Instance()->SetPixe(true); // NOTE: Must be called after passing physics list
+    // G4EmParameters::Instance()->SetDeexcitationIgnoreCut(true); // NOTE: Already true
+    // TODO: Set cuts to 100 um
 
     // Register scintillation physics
     RegisterPhysics(new G4OpticalPhysics());    
@@ -46,3 +52,19 @@ PhysicsList::PhysicsList() {
 
 // Define the destructor (optional given default setting in header file)
 // PhysicsList::~PhysicsList() {}
+
+// TEST ...
+void PhysicsList::SetCuts() {
+    // Default production thresholds for world volume
+    SetCutsWithDefault();
+    
+    // Production thresholds for detector regions
+    G4String regionName = "Scintillator";
+    G4Region* region = G4RegionStore::GetInstance()->GetRegion(regionName);
+    auto cuts = new G4ProductionCuts();
+    cuts->SetProductionCut(100 * um);
+    region->SetProductionCuts(cuts);
+    
+    // TODO: Scintillator "Region" has not been set in detector construction yet
+}
+// ...

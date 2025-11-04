@@ -19,6 +19,13 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     // ...
     auto track = step->GetTrack();
     
+    // TODO: If particle is gamma (for escape x-rays specifically)
+    // Check pre and post step touchable logic volume
+    // If pre step volume is crystal, and post step is not crystal (reflector, enclosure, air, etc)
+    // Get kinetic energy of particle
+    // Flag it as an escape x-ray
+    // Add to running total escaped energy tracker
+    
     // If particle is not optical photon, break
     if (track->GetDefinition() != G4OpticalPhoton::OpticalPhotonDefinition()) {
         return;

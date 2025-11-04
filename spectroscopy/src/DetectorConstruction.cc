@@ -1029,19 +1029,17 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Subtraction solid of same geometry as source
     // likely slightly different in reality but itll do
     
-    // TODO: PVC material
-    
-    // ...
+    // Source encapsulation dimensions
     G4double casingSizeX = 3. * cm;
     G4double casingSizeY = enclosureOuterRad * 2; // Same diameter as enclosure
-    G4double casingSizeZ = 1. * cm;
+    G4double casingSizeZ = 0.5 * cm;
     
-    // ...
-    auto casingBase = new G4Box("Table", casingSizeX * 0.5, casingSizeY * 0.5, casingSizeZ * 0.5);
+    // Base geometry which will be cut
+    auto casingBase = new G4Box("CasingBase", casingSizeX * 0.5, casingSizeY * 0.5, casingSizeZ * 0.5);
     
-    // ...
+    // Cut to be made in base geometry
     auto casingCut = new G4Sphere(
-        "CasingBase", // name
+        "CasingCut", // name
         0., // minmum radius (0 = not hollow),
         sourceRadius, // maximum radius
         0. * deg, // minimum phi angle
@@ -1052,7 +1050,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     // Create new solid with cut subtracted from base
     auto casing = new G4SubtractionSolid(
-        "CasingCut", // name
+        "Casing", // name
         casingBase, // the solid to subtract from
         casingCut, // the volume to subtract
         nullptr, // no rotation

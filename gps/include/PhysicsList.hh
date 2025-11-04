@@ -15,6 +15,9 @@ class PhysicsList : public G4VModularPhysicsList {
         // ~PhysicsList() override; // Think this suffices, but examples add "= default"
         ~PhysicsList() override = default;
         // NOTE: Marking as default means no implementation in ".cc" file needed
+        
+        // TEST ...
+        void SetCuts() override;
 };
 
 #endif

@@ -725,7 +725,12 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
         checkOverlaps
     );
     // NOTE: This places the scintillator at the origin of the mother volume, shifted by 0.5 meter along Z
-
+    
+    // TEST: Create a region for the crystal (for 100 um cuts only in detector volume)
+    auto crystalRegion = new G4Region("Scintillator"); // NOTE: Havent imported this ?
+    scintillatorLog->SetRegion(crystalRegion);
+    crystalRegion->AddRootLogicalVolume(scintillatorLog);
+    
     
     /////////////
     // REFLECTOR:
@@ -1097,19 +1102,17 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Subtraction solid of same geometry as source
     // likely slightly different in reality but itll do
     
-    // TODO: PVC material
-    
-    // ...
+    // Source encapsulation dimensions
     G4double casingSizeX = 3. * cm;
-    G4double casingSizeY = enclosureOuterRad * 2; // Same diameter as enclosure
-    G4double casingSizeZ = 1. * cm;
+    G4double casingSizeY = enclosureOuterRad * 2; // Same height as diameter of detector enclosure
+    G4double casingSizeZ = 0.5 * cm;
     
-    // ...
-    auto casingBase = new G4Box("Table", casingSizeX * 0.5, casingSizeY * 0.5, casingSizeZ * 0.5);
+    // Base geometry which will be cut
+    auto casingBase = new G4Box("CasingBase", casingSizeX * 0.5, casingSizeY * 0.5, casingSizeZ * 0.5);
     
-    // ...
+    // Cut to be made in base geometry
     auto casingCut = new G4Sphere(
-        "CasingBase", // name
+        "CasingCut", // name
         0., // minmum radius (0 = not hollow),
         sourceRadius, // maximum radius
         0. * deg, // minimum phi angle
@@ -1120,7 +1123,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     // Create new solid with cut subtracted from base
     auto casing = new G4SubtractionSolid(
-        "CasingCut", // name
+        "Casing", // name
         casingBase, // the solid to subtract from
         casingCut, // the volume to subtract
         nullptr, // no rotation
@@ -1135,16 +1138,16 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     );
     
     // Place the casing
-    // G4VPhysicalVolume* casingPhys = new G4PVPlacement(
-    //     nullptr, // no rotation
-    //     sourceTrans, // same position as crystal
-    //     casingLog, // logical volume
-    //     "Casing", // name
-    //     worldLog, // mother volume (logical)
-    //     false, // no boolean ops
-    //     0, // one copy
-    //     checkOverlaps
-    // );
+    G4VPhysicalVolume* casingPhys = new G4PVPlacement(
+        nullptr, // no rotation
+        sourceTrans, // same position as crystal
+        casingLog, // logical volume
+        "Casing", // name
+        worldLog, // mother volume (logical)
+        false, // no boolean ops
+        0, // one copy
+        checkOverlaps
+    );
     
     // TODO: Could get bit spicy and add top section too
     

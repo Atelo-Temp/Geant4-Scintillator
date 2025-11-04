@@ -38,6 +38,10 @@ set(GPS_SCRIPTS
   run.mac
   vis.mac
   test.mac
+  137Cs.mac
+  60Co.mac
+  241Am.mac
+  22Na.mac
   )
 
 foreach(_script ${GPS_SCRIPTS})
