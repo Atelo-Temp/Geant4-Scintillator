@@ -41,6 +41,7 @@ int main(int argc, char** argv) {
     // Default time threshold for radioactive decay is 1 year, set it higher for longer lived isotopes
     G4HadronicParameters::Instance()->SetTimeThresholdForRadioactiveDecay(1.E+60 * CLHEP::year);
     // NOTE: nuclides with sampled lifetime longer than this threshold would otherwise be killed
+    // Set a very high time threshold to allow all decays to happen
     
     // Mandatory initialisation classes
     //

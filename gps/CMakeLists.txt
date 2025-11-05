@@ -42,6 +42,7 @@ set(GPS_SCRIPTS
   60Co.mac
   241Am.mac
   22Na.mac
+  68Ge.mac
   )
 
 foreach(_script ${GPS_SCRIPTS})

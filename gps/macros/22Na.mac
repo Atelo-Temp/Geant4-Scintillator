@@ -24,11 +24,13 @@
 # Confine the volumetric source to the geometry with the name "Source"
 #/gps/pos/confine Source
 
-# Run 100,000 events (decay means fewer interactions in the detector, compared to monoenergetic particle gun, so number of events must be high, for 1024 bins)
+# Run for X events (1024 bins)
 # due to decay, and optical photons, sim time could fluctuate a lot for same amount of events
 # /run/beamOn 10000 # (~?m)
 # /run/beamOn 50000 # (~?m)
-/run/beamOn 100000 # (~?m)
+/run/beamOn 100000 # (~1hr 5m)
 # /run/beamOn 200000 # (~?m)
 # /run/beamOn 300000 # (~?m)
 # /run/beamOn 400000 # (~?m)
+
+# NOTE: The 1274 keV gamma in addition to 511 keV amplifies run time significantly (68Ge maybe better)

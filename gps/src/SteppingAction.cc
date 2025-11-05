@@ -76,6 +76,10 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     // if (!initialPEtime) initialPEtime == ...
     // currPEtime = intialPEtime - globalTime
     
+    // TODO: Angular QE
+    // Compute incidence angle of PE
+    // Weight detection probability
+    
     // This assumes that the volume causing detection is the photocathode
     // as it is the only volume with non-zero efficiency
     if (boundaryStatus == Detection) {
@@ -97,6 +101,9 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         auto x = detectionPosition[0];
         auto y = detectionPosition[1];
         auto z = detectionPosition[2];
+        
+        // TEST:  Get the global time
+        auto detectTime = endPoint->GetGlobalTime();
         
         // Get pointer to analysis manager singleton
         auto analysisManager = G4AnalysisManager::Instance();

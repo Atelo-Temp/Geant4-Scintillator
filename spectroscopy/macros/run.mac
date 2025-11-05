@@ -1,7 +1,8 @@
 # For batch mode
 
 # Use multithreaded mode (3 cores, 3 threads)
-/run/numberOfThreads 3
+# /run/numberOfThreads 3
+/run/numberOfThreads 2
 
 # Initialise kernel
 /run/initialize
@@ -18,8 +19,8 @@
 # VBOX REINSTALL AGAIN: (~3m, ~7cm source-detector, 3 cores 3 threads)
 # POST REBOOT: (~8m, ~7cm source-detector, 3 cores 3 threads)
 # POST WSL INSTALL & REBOOT: (~8m, ~7cm source-detector, 3 cores 3 threads)
-# POST WSL INSTALL & RESTART: (~3m, ~7cm source-detector, 3 cores 3 threads), (~9m, 3cm source-detector, 3 cores 3 threads)
+# POST WSL INSTALL & RESTART: (~3m, ~7cm source-detector, 3 cores 3 threads), (~9m, 3cm source-detector, 3 cores 3 threads), (~5m, ~7cm source-detector, 2 cores 2 threads)
 
 # /run/beamOn 200000 # for 1024 bins (~6 mins)
-# /run/beamOn 300000 # for 1024 bins (~ mins)
-# /run/beamOn 400000 # for 1024 bins (~25 mins)
+# /run/beamOn 300000 # for 1024 bins (~X mins)
+# /run/beamOn 400000 # for 1024 bins (~X mins)
