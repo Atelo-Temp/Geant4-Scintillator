@@ -1,8 +1,7 @@
 # For batch mode
 
 # Use multithreaded mode (3 cores, 3 threads)
-# /run/numberOfThreads 3
-/run/numberOfThreads 2
+/run/numberOfThreads 3
 
 # Initialise kernel
 /run/initialize

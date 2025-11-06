@@ -25,7 +25,7 @@ find_package(ROOT 6.34 CONFIG REQUIRED)
 # To see available libs:
 # root-config --libs
 #
-add_executable(rootscripts read_ascii.cc)
+add_executable(rootscripts ascii_canvas.cc)
 target_link_libraries(rootscripts PRIVATE 
     ROOT::Core 
     ROOT::RIO # IO ?

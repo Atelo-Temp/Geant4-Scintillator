@@ -31,4 +31,5 @@
 # /run/beamOn 100000 # (~17m)
 # /run/beamOn 200000 # (~38m)
 # /run/beamOn 300000 # (~56m)
-/run/beamOn 400000 # (~1hr 14m)
+# /run/beamOn 400000 # (~1hr 14m)
+/run/beamOn 500000 # (~1hr 30m)

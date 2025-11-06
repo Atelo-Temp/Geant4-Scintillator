@@ -4,16 +4,21 @@
 #include "Riostream.h" // ifstream
 
 // TODO: Replaces existing TH1
-
+// Warning in <TROOT::Append>: Replacing existing TH1: h (Potential memory leak).
+// NOTE: Need to delete "h" on re-call of draw_histo
 
 // Load in get_path, and render_histo
 int ascii_canvas() {
+    // Usage
+    std::cout << "\nASCII to Root Histogram\n\nCall get_path(path), passing path to .Spe file as param.\n\n";
+    
     // fin
     return 0;
 }
 
 // Validate file can be opened, create canvas, read input ASCII file, plot histogram
 // TODO: Probably wanna validate is expected ASCII format too
+// line 1: $SPEC_ID:
 int draw_histo(std::string path) {
     // Input file stream
     std::ifstream in;
@@ -30,7 +35,7 @@ int draw_histo(std::string path) {
     // NOTE: No need to reprompt, user can just call the function again
     if (!in.is_open()) {
         // Error message
-        std::cout << "Error: File not found." << std::endl;
+        std::cout << "Error: File not found.\n";
         
         // Error
         return 1;
@@ -119,12 +124,12 @@ int draw_histo(std::string path) {
 // NOTE: Just check if first char is ".", go until "/" is found, repeat until no "." at start, continue with delimiter
 int get_path(std::string path) {
     // Print path to stdout
-    std::cout << path << std::endl;
+    std::cout << path << "\n";
     
     // Check if string is empty (returns true if string is empty)
     if (path.empty()) {
         // Error message
-        std::cout << "Error: Empty string." << std::endl;
+        std::cout << "Error: Empty string.\n";
         
         // Error value
         return 1;
@@ -143,7 +148,7 @@ int get_path(std::string path) {
     // Ensure file extension delimiter is present in path (find will return -1 if not found)
     if (delimiterIdx == -1) {
         // Write to stdout
-        std::cout << "Error: No file extension." << std::endl;
+        std::cout << "Error: No file extension.\n";
         
         // Error value
         return 1;
@@ -159,7 +164,7 @@ int get_path(std::string path) {
     // Check file ends with ".Spe", reject invalid file type
     if (token != ".Spe") {
         // Write to stdout
-        std::cout << "Error: Invalid extension." << std::endl;
+        std::cout << "Error: Invalid extension.\n";
         
         // Error value
         return 1;
@@ -204,7 +209,7 @@ int get_path(std::string path) {
         
         // Update the path, replacing "~" with "/home/user" (NOTE: Not sure if this is "okay" to do), but is simple
         path = home + trimmedPath;
-        std::cout << path << std::endl;
+        std::cout << path << "\n";
     }
     
     // Pass path to canvas and histo renderer
