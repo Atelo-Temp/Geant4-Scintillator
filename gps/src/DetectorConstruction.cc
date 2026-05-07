@@ -63,7 +63,7 @@
 #include "G4Types.hh"
 
 
-// TODO: Probably wanna use consistent units throughout (cm probably easiest to adhere to)
+// NOTE: Uses consistent units throughout (cm probably easiest to adhere to)
 
 // TODO: Add tiny bit of Tl doping to the crystal material ?
 
@@ -132,7 +132,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     auto NaI = new G4Material("NaI:Tl", 3.667 * g/cm3, 3);
     NaI->AddElement(Na, 15.3035 * perCent);
     NaI->AddElement(I, 84.5603 * perCent);
-    NaI->AddElement(Na, 0.1362 * perCent);
+    // NaI->AddElement(Na, 0.1362 * perCent); // TODO: I have been running tests with Na instead of Tl
+    NaI->AddElement(Tl, 0.1362 * perCent);
     // TODO: NaI:Tl blend
     
     // Scintillation light reflector material (Alumina - Al2O3)

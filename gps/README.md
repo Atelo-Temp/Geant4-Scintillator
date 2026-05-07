@@ -2,6 +2,8 @@
 
 Basic gamma spectroscopy scintillator detector, with output spectrum, and simulated radioactive decay
 
+Note, this version uses the GPS volume source instead of a point source
+
 ## Features
 
 - An world volume filled with air, a 3' sodium iodide scintillator crystal, an alumina reflector covering the crystal, and a lithium photocathode attached to the back of the crystal
@@ -20,9 +22,9 @@ Basic gamma spectroscopy scintillator detector, with output spectrum, and simula
 
 - Scintillation photons & photocathode
 
-## Not Implemented
-
 - Volumetric source (instead of point source)
+
+## Not Implemented
 
 - Consider the definition of the source material (does a portion need to be set as the daughter product)
 
@@ -98,6 +100,43 @@ RegisterPhysics(new G4OpticalPhysics());
 - Detector Construction
 
 Need to define the following values for the scintillator medium: refractive index, emission spectrum, yield, decay time, absorption length
+
+## Building
+
+### Initial Build
+
+```bash
+# rm -rf build # NOTE: If it already exists and you want to do a clean build
+mkdir build
+cd build
+cmake -DGeant4_DIR=~/geant4/geant4-v11.3.2/install/lib64/cmake/Geant4/ ../
+make -j 3 gps
+```
+
+### Updating Build On Changes
+
+I.e., on ".cc" file change
+
+```bash
+cd build # make sure you are in the build dir
+make -j 3 gps # call to cmake can be omitted, and no need to clean build dir
+```
+
+NOTE: If you change/edit the CMakeLists.txt, such as addinig a new cpp file to the build, you will need to do a fresh initial build
+
+## Running
+
+### Batch Mode
+
+```bash
+./gps run.mac
+```
+
+### Visualiser
+
+```bash
+./gps
+```
 
 ## Analysis
 
