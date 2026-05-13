@@ -39,7 +39,7 @@ int hist_zoom () {
     c = new TCanvas("c", "Spectrum", winX, winY, width, height);
     
     // Handle error creating canvas
-    if (!hpx) {
+    if (!c) {
         printf("Error: Couldnt create canvas!\n");
         return 1;
     }
@@ -88,6 +88,3 @@ int reset () {
     
     return 0;
 }
-
-
-// TODO: Load a histogram into memory from a '.root' file, zoom in on a peak, and fit user defined function
