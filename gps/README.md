@@ -122,7 +122,7 @@ cd build # make sure you are in the build dir
 make -j 3 gps # call to cmake can be omitted, and no need to clean build dir
 ```
 
-NOTE: If you change/edit the CMakeLists.txt, such as addinig a new cpp file to the build, you will need to do a fresh initial build
+NOTE: If you change/edit the CMakeLists.txt, such as adding a new cpp file to the build, you will need to do a fresh initial build
 
 ## Running
 

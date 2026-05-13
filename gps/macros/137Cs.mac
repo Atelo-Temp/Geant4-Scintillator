@@ -2,7 +2,7 @@
 # Call: ./gps run.mac
 
 # Use multithreaded mode (3 cores, 3 threads)
-/run/numberOfThreads 3
+/run/numberOfThreads 3 # NOTE: Using less threads results in slower simulations
 
 # Initialise kernel
 /run/initialize
@@ -28,8 +28,8 @@
 # due to decay, and optical photons, sim time could fluctuate a lot for same amount of events
 # /run/beamOn 10000 # (~2m)
 # /run/beamOn 50000 # (~9m)
-/run/beamOn 100000 # (~17m)     (~21m) (~19m)
+# /run/beamOn 100000 # (~17m)     (~21m) (~19m) (~18m)
 # /run/beamOn 200000 # (~38m)
 # /run/beamOn 300000 # (~56m)
 # /run/beamOn 400000 # (~1hr 14m)
-# /run/beamOn 500000 # (~1hr 30m)
+/run/beamOn 500000 # (~1hr 30m)
