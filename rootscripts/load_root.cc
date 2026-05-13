@@ -1,4 +1,4 @@
-// Load a histogram into memory from a '.root' file, and fit user defined function
+// Load a histogram into memory from a '.root' file
 
 #include <TFile.h>
 #include <TH1.h>
@@ -7,12 +7,11 @@
 // Executes automatically on script start (NOTE: Choose another function name if you wish to manually call it instead) 
 int load_root () {
     // Fetch and open root file
-    auto *f = TFile::Open("~/geant4/geant4-v11.3.2/project/gps/build/output0.root");
+    auto *in = TFile::Open("~/geant4/geant4-v11.3.2/project/gps/build/output0.root");
     
     // Get the histogram from the root file
     TH1 *hpx = nullptr;
-    f->GetObject("Photons;2", hpx);
-    f->Close();
+    in->GetObject("Photons;2", hpx);
     
     // Canvas args
     Int_t winX = 0; // Top left of screen
@@ -25,6 +24,9 @@ int load_root () {
     
     // Draw histogram with default option
     hpx->DrawCopy("HIST");
+    
+    // Close input file
+    in->Close();
     
     return 0;
 }
