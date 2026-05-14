@@ -90,8 +90,8 @@ int reset () {
     return 0;
 }
 
-// ...
-int fit (int FWHM) {
+// Automatically find photopeak centroid, derive rms/low/high, fit a gaussian to it, and display the fit
+int fit () { // int fit (int FWHM) {
     // Find the tallest point in the current histogram range (NOTE: Zoom in on peak of interest first)
     int bin = hpx->GetMaximumBin();
     double peakX = hpx->GetXaxis()->GetBinCenter(bin); // get the x-axis location of max counts bin
@@ -113,13 +113,13 @@ int fit (int FWHM) {
     // (it’s a fit window, not a Gaussian width parameter)
     // The Gaussian itself mathematically extends to infinity.
 
-    // double low = peakX - (3 * rms);
-    // double high = peakX + (3 * rms);
+    double low = peakX - (3 * rms);
+    double high = peakX + (3 * rms);
 
     // TODO: FWHM (peakX / 2 => gives half maximum => iterate outwards from centre until bin val below half maximum) ?
     // ^ but this wont work for merged peaks, etc
-    double low = peakX - (2 * FWHM);
-    double high = peakX + (2 * FWHM);
+    // double low = peakX - (2 * FWHM);
+    // double high = peakX + (2 * FWHM);
     
     // NOTE: You usually want the fit window to extend well into the tails/background
     // because the fitter needs tail information to constrain sigma properly.
@@ -133,19 +133,23 @@ int fit (int FWHM) {
     // - some background included
     // - but not neighboring peaks
     
+    // Define the fit function
     auto fitFn = new TF1("fitFn", "gaus", low, high);
+    // NOTE: "gaus" is built-in ROOT shorthand for [0]*exp(-0.5*((x-[1])/[2])^2)
 
-    // ...
-    double sigma = FWHM / 2.355;
+    // Instead of relying on automatic RMS, which is not reliable for merged peaks etc,
+    // require the user to state a rough FWHM value deduced by eye, and derive sigma from it
+    // double sigma = FWHM / 2.355;
     
-    fitFn->SetParameters(peakY, peakX, sigma);
-    // fitFn->SetParameters(peakY, peakX, rms/2.0);
+    // fitFn->SetParameters(peakY, peakX, sigma);
+    fitFn->SetParameters(peakY, peakX, rms/2.0);
     // fitFn->SetParNames("Constant", "Centroid", "FWHM");
     fitFn->SetParNames("Amplitude", "Centroid", "Sigma");
     
     auto result = hpx->Fit(fitFn, "RS");
     // "R" = use the range of the function
     // "S" = return a TFitResultPtr for further analysis
+    // "M" = improves the fit quality
     
     // Draw the fit line (ROOT internally stores the fit function with the histogram after fitting)
     hpx->GetFunction("fitFn")->Draw("SAME");

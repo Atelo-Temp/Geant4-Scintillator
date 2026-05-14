@@ -1,3 +1,6 @@
+// Read data from an acii file and create a root file with an histogram and an ntuple
+// root.cern/doc/v636/tree101__basic_8C.html
+
 #include "Riostream.h"
 
 #include "TROOT.h"
