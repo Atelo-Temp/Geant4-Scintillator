@@ -5,8 +5,8 @@
 
 #include "G4Types.hh"
 
-// ...
-class RunAction; // TODO: Maybe best to include header here?
+// Forward declaration
+class RunAction;
 
 // ...
 class EventAction : public G4UserEventAction {
@@ -18,7 +18,7 @@ class EventAction : public G4UserEventAction {
         ~EventAction() override = default;
         
         // Start of event handler
-        void BeginOfEventAction(const G4Event* event) override;
+        void BeginOfEventAction(G4Event const *event) override;
         
         // End of event handler
         void EndOfEventAction(const G4Event* event) override;
@@ -40,13 +40,13 @@ class EventAction : public G4UserEventAction {
         RunAction* fRunAction = nullptr;
         
         // Optical photon tally
-        G4double fTotalPhotons = 0.;
+        G4int fTotalPhotons = 0;
         
         // Detected photon tally
-        G4double fDetectedPhotons = 0.;
+        G4int fDetectedPhotons = 0;
         
         // Absorbed photon tally
-        G4double fAbsorbedPhotons = 0.;
+        G4int fAbsorbedPhotons = 0;
 };
 
 #endif
