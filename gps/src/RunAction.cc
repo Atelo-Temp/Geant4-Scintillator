@@ -7,7 +7,8 @@
 
 // Define the class constructor
 RunAction::RunAction() {
-    auto fAnalysis = new AnalysisManager();
+    // auto fAnalysis = new AnalysisManager(); // NOTE: Shouldnt have auto here afaik !
+    fAnalysis = new AnalysisManager();
 }
 
 // Class destructor frees up local storage

@@ -30,7 +30,7 @@ class DetectorConstruction : public G4VUserDetectorConstruction {
         // Public method to get stored pointer to scoring region
         // G4LogicalVolume* GetScoringVolume() const { return fScoringVolume; };
 
-    protected:
+    // protected:
         // Local storage to access scoring volume outside the scope of "Construct()"
         // G4LogicalVolume* fScoringVolume = nullptr; // logical volume
 

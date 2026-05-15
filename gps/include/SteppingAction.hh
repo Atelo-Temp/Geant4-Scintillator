@@ -11,6 +11,7 @@
 // Defined in "EventAction.hh"
 // class EventAction;
 
+// TODO: Should i delete fEventAction && fBoundary in custom destructor ??
 
 // Step handler
 class SteppingAction : public G4UserSteppingAction {
@@ -29,7 +30,7 @@ class SteppingAction : public G4UserSteppingAction {
         EventAction* fEventAction = nullptr;
         
         // Pointer to scoring region
-        G4LogicalVolume* fScoringVolume = nullptr;
+        // G4LogicalVolume* fScoringVolume = nullptr;
         
         // Pointer to boundary process
         G4OpBoundaryProcess* fBoundary = nullptr;

@@ -6,7 +6,7 @@
 #include "G4Types.hh"
 
 // ...
-class RunAction;
+class RunAction; // TODO: Maybe best to include header here?
 
 // ...
 class EventAction : public G4UserEventAction {

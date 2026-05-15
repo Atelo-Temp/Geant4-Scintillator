@@ -64,7 +64,5 @@ void PhysicsList::SetCuts() {
     auto cuts = new G4ProductionCuts();
     cuts->SetProductionCut(100 * um);
     region->SetProductionCuts(cuts);
-    
-    // TODO: Scintillator "Region" has not been set in detector construction yet
 }
 // ...

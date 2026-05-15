@@ -16,7 +16,7 @@
 
 // Step handler, will excute on each step
 void SteppingAction::UserSteppingAction(const G4Step* step) {
-    // ...
+    // Get the track object for the current step
     auto track = step->GetTrack();
     
     // TODO: If particle is gamma (for escape x-rays specifically)
