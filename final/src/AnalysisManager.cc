@@ -19,7 +19,7 @@ void AnalysisManager::CreateHistogram() {
         "Photons", // Name
         "Optical Photons", // Title
         1024, // Number of bins
-        1., // Lower bounds (NOTE: Dont count 0 photons "detected" events)
+        0., // Lower bounds (NOTE: EventAction now only writes to histo when photons > 0)
         5000. // Upper bounds (TODO: This needs to be dynamic ... Different sources will produce different amount of optical photons)
         // TODO: 1024. // Upper bounds (need to adjust EventAction to calculate channel instead of photons)
         // G4String& unitName = "none"

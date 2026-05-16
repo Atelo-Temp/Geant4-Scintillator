@@ -1,0 +1,35 @@
+# For batch mode
+# Call: ./gps run.mac
+
+# Use multithreaded mode (3 cores, 3 threads)
+/run/numberOfThreads 3 # NOTE: Using less threads results in slower simulations
+
+# Initialise kernel
+/run/initialize
+
+# Print progress every X events (Minimal impact on run time)
+/run/printProgress 10000 # Print progress every 10% (every 10,000 events) (for 100,000 total)
+
+# Set up the general particle source (137Cs) (defaults to 137Cs if source not specified)
+# /gps/particle ion
+# /gps/ion 55 137 0 0 # (Z, Atomic Mass, Charge, Excitation Energy)
+# /gps/ion 55 137 # (Z, Atomic Mass, Charge, Excitation Energy)
+#
+# Specify volumetric source and spherical volume
+/gps/pos/type Volume
+/gps/pos/shape Sphere
+# Specify the origin and radius of the sphere
+/gps/pos/centre 0. 0. 2.90425 cm
+/gps/pos/radius 1 mm
+# Confine the volumetric source to the geometry with the name "Source"
+#/gps/pos/confine Source
+
+# Run for X events (1024 bins)
+# due to decay, and optical photons, sim time could fluctuate a lot for same amount of events
+/run/beamOn 10000 # (~2m)
+# /run/beamOn 50000 # (~9m)
+# /run/beamOn 100000 # (~17m)     (~21m) (~19m) (~18m)
+# /run/beamOn 200000 # (~38m)
+# /run/beamOn 300000 # (~56m)
+# /run/beamOn 400000 # (~1hr 14m)
+# /run/beamOn 500000 # (~1hr 30m) (~1hr 40m)
