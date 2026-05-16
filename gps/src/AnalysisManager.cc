@@ -1,4 +1,4 @@
-// Class interfacce
+// Class interface
 #include "AnalysisManager.hh"
 
 // G4 lib
@@ -14,19 +14,15 @@ void AnalysisManager::CreateHistogram() {
     // Get a pointer to the singleton analysis manager via the static method
     auto analysisManager = G4AnalysisManager::Instance();
     
-    // Creat histogram (one dimension to store deposited energy)
+    // Create histogram (one dimension to store deposited energy)
     analysisManager->CreateH1(
         "Photons", // Name
         "Optical Photons", // Title
-        // 256, // NOTE: Does the job, but features very compressed
-        // 512, // NOTE: Starts to look bit better, but 100,000 decays gives fairly low counts for amount of bins
         1024, // Number of bins
-        // 0., // Lower bounds
-        // 1. * eV, // Lower bounds
-        // 1. * MeV // Upper bounds
-        1., // Lower bounds
-        // 38000. // Upper bounds (NOTE: This is far too much, 5k would be fine due to how few of those generated actually detect in photocathode)
+        0., // Lower bounds (NOTE: EventAction now only writes to histo when photons > 0)
         5000. // Upper bounds (TODO: This needs to be dynamic ... Different sources will produce different amount of optical photons)
+        // TODO: 1024. // Upper bounds (need to adjust EventAction to calculate channel instead of photons)
+        // G4String& unitName = "none"
     );
     // NOTE: 100 bins from 0->1 MeV
     

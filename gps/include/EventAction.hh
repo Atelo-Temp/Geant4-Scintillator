@@ -7,6 +7,26 @@
 
 // Forward declaration
 class RunAction;
+// NOTE: Sometimes preferred over #include, as it reduces compilation times and 
+// prevents cyclic dependencies (when #include'ing, the entire file is copied 
+// into this file, if that file #include's other files, those get copied too)
+
+// NOTE: Forward declarations are suitable when the the only interaction with
+// said class are via: 
+// - pointers (since pointers always have a fixed memory size, as they only 
+// store memory addresses, i.e. 8 bytes on 64 bit machine) 
+// - references
+// - when said class is used as a function return type or argument
+
+// NOTE: The interface below meets this criteria
+
+// NOTE: Explicitly include the file when:
+// - Inheriting from XYZ
+// - Using XYZ as a value/member variable (i.e., XYZ my_object;), as otherwise 
+// the compiler will throw an error since it does not know the size of the
+// dependency
+// - Calling methods or accessing members of XYZ (i.e., when you need to know 
+// what is inside of the class)
 
 // ...
 class EventAction : public G4UserEventAction {
