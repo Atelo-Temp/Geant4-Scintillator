@@ -25,9 +25,6 @@ class SteppingAction : public G4UserSteppingAction {
         // Intra-event step handler (takes pointer to step object)
         void UserSteppingAction(const G4Step*) override;
         
-        // Find optical photon boundary process
-        void FindBoundary(G4Track* track);
-        
     private:
         // Pointer to event object
         EventAction* fEventAction = nullptr;

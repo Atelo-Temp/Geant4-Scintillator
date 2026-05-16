@@ -15,7 +15,7 @@
 #include "G4AnalysisManager.hh"
 
 // Step handler, will excute on each step
-void SteppingAction::UserSteppingAction(const G4Step* step) {
+void SteppingAction::UserSteppingAction(const G4Step* step) {    
     // Get the track object for the current step
     G4Track* track = step->GetTrack();
     
@@ -33,7 +33,30 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     
     // Find the boundary process only once (cache the pointer)
     if (fBoundary == nullptr) {
-        FindBoundary(track);
+        // Get pointer to the process list (for optical photons)
+        G4ProcessVector* pv = track->GetDefinition()->GetProcessManager()->GetProcessList();
+        
+        // Iterate over list of process objects
+        for (int i = 0; i < pv->size(); ++i) {
+            // Pointer to current non-null process
+            G4VProcess* process = (*pv)[i]; 
+            // NOTE: Since "pv" is a pointer to a collection, rather than a direct object,
+            // it needs to be dereferenced first (*pv), to reveal the actual object in memory,
+            // so that processes can be accessed via index
+            
+            // Prevent attempted access to non-existent method
+            if (process == nullptr) continue;
+            
+            // If the boundary process is found
+            // NOTE: i.e. "Transportation", "OpAbsorption", "OpRayleigh", "OpMieHG", "OpBoundary"
+            if (process->GetProcessName() == "OpBoundary") {
+                // Cache the pointer to the boundary process
+                fBoundary = dynamic_cast<G4OpBoundaryProcess*>(process);
+                
+                // End iteration when found
+                break;
+            }
+        }
     }
  
     // Count one optical photon (for total generated, not absorbed, detected, etc)
@@ -133,34 +156,4 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     
     // TODO: Maybe switch case here ^
     // Can also do xyz of reflection position, etc
-}
-
-// Find the boundary process and assign it to the class property "fBoundary"
-// NOTE: Is there a cleaner way to do this?
-void SteppingAction::FindBoundary(G4Track* track) {
-    // Get pointer to the process list (for optical photons)
-    G4ProcessVector* pv = track->GetDefinition()->GetProcessManager()->GetProcessList();
-    
-    // Iterate over list of process objects
-    for (int i = 0; i < pv->size(); ++i) {
-        // Pointer to current non-null process
-        G4VProcess* process = (*pv)[i]; 
-        // NOTE: Since "pv" is a pointer to a collection, rather than a direct object,
-        // it needs to be dereferenced first (*pv), to reveal the actual object in memory,
-        // so that processes can be accessed via index
-        
-        // Prevent attempted access to non-existent method
-        if (process == nullptr) continue;
-        
-        // If the boundary process is found
-        // NOTE: i.e. "Transportation", "OpAbsorption", "OpRayleigh", "OpMieHG", "OpBoundary"
-        if (process->GetProcessName() == "OpBoundary") {
-            // Cache the pointer to the boundary process
-            fBoundary = dynamic_cast<G4OpBoundaryProcess*>(process);
-            
-            // End iteration when found
-            break;
-        }
-    }
-    // TODO: Error handling? Return 1/0 if fBoundary not set/set
 }

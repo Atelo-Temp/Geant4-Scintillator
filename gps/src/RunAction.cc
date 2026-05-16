@@ -17,7 +17,12 @@ RunAction::~RunAction() {
 }
 
 // Define the start of run event handler (Takes run object as a parameter)
+// NOTE: This method is invoked at the beginning of the BeamOn() method, but after
+// confirmation of the conditions of the G4 kernel
 void RunAction::BeginOfRunAction(const G4Run* run) {
+    // TODO: May wanna just move all the code below \/ \/ to a method in AnalysisManager,
+    // as im instantiating fAnalysis in constructor anyways ...
+    
     // Get a pointer to the singleton analysis manager
     auto analysisManager = G4AnalysisManager::Instance();
     // NOTE: Couldnt the pointer just be stored in the class?
@@ -40,12 +45,13 @@ void RunAction::BeginOfRunAction(const G4Run* run) {
     
     // Create and open the file with the supplied name
     analysisManager->OpenFile(fileName);
-    
-    // TODO: May wanna just move this ^ to method in AnalysisManager
 }
 
 // Define the end of run event handler (Also takes run object)
 void RunAction::EndOfRunAction(const G4Run* run) {
+    // TODO: Again this all seems suitable for a dedicated method in AnalysisManager \/
+    // except the "finishing run" console log (and run ID grab for said log)
+    
      // Get a pointer to the singleton analysis manager
     auto analysisManager = G4AnalysisManager::Instance();
     

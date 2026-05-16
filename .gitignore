@@ -3,3 +3,6 @@ build/
 
 # Ignore cache dir
 .cache/
+
+# Ignore local data storage (i.e. saved spectra)
+data/
