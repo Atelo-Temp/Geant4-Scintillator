@@ -14,9 +14,10 @@ TH1 *hpx = nullptr;
 TCanvas *c = nullptr;
 
 // Executes automatically on script start (NOTE: Choose another function name if you wish to manually call it instead) 
-int fitter () {
+int counts () {
     // Fetch and open root file
-    auto *in = TFile::Open("~/geant4/geant4-v11.3.2/project/gps/build/output0.root");
+    // auto *in = TFile::Open("~/geant4/geant4-v11.3.2/project/gps/build/output0.root");
+    TFile* in = TFile::Open("~/geant4/geant4-v11.3.2/project/data/17_2_NaI-Tl_gpsvolsrc_EM4-PIXE-cut100um_source-casing_diffusebackpaint_0-96R_sigalpha0-1_rindexAir_pc-20nm-GND-R-QE_3cm_137cs_1024bin_3-5res_500000event.root");
     
     // Get the histogram from the root file and assign it to the TH1 pointer
     // TH1 *hpx = nullptr;
@@ -61,7 +62,6 @@ int fitter () {
     // 10 = only number of entries
     // 110 = entries and mean
     
-    // gStyle->SetOptFit(0111); // NOTE: param is a bit-mask (4-digit integer)
     // gStyle->SetOptFit(111);
     
     return 0;
@@ -105,18 +105,32 @@ int reset () {
 }
 
 // Manually input estimated photopeak centroid and FWHM values, fit a gaussian to it, and display the fit
-int fit (int const FWHM) { // TODO: int fit (int const centroid, int const FWHM) {
+// int fit (int const centroidPE, int const FWHMpe) {
+int fit (int const centroidPE, int const roughFWHM) {
     // Find the tallest point in the current histogram range (NOTE: Zoom in on peak of interest first)
-    int const bin = hpx->GetMaximumBin();
-    double const peakX = hpx->GetXaxis()->GetBinCenter(bin); // get the x-axis location of max counts bin
-    double const peakY = hpx->GetBinContent(bin); // get the y-axis number of counts for max bin, i.e. amplitude
+    // int const bin = hpx->GetMaximumBin();
+    
+    // NOTE: Temp conversion until binning done properly
+    int const roughCentroid = std::floor((1024. / 5000.) * centroidPE);
+    // int const FWHM = std::floor((1024. / 5000.) * FWHMpe);
+    
+    printf("Centroid Channel: %d, FWHM (channels): %d\n", roughCentroid, roughFWHM);
+    
+   
+    // Get the centre of the centroid channel, and number of counts in centroid bin
+    double const peakX = hpx->GetXaxis()->GetBinCenter(roughCentroid); // get the x-axis location of max counts bin
+    double const peakY = hpx->GetBinContent(roughCentroid); // get the y-axis number of counts for max bin, i.e. amplitude
+    // NOTE: Since bin center takes actual bin, need the conversion from photons to bins
+    // but centroid & FWHM values will reflect the photons
+    
+    printf("Peak X: %f, Peak Y: %f\n", peakX, peakY);
     
     // Define the fit window (low & high)
     // NOTE: the region of the histogram ROOT is allowed to use for the fit.
     // (it’s a fit window, not a Gaussian width parameter)
     // The Gaussian itself mathematically extends to infinity.
-    double const low = peakX - (2 * FWHM);
-    double const high = peakX + (2 * FWHM);
+    double const roughLow = peakX - (2.5 * roughFWHM); // NOTE: Generous 2.5 for centroid finding
+    double const roughHigh = peakX + (2.5 * roughFWHM); // TODO: ^ May want to be more conservative if fitting overlapping peaks though
     // TODO: FWHM (peakX / 2 => gives half maximum => iterate outwards from centre until bin val below half maximum) ?
     // ^ but this wont work for merged peaks, etc
     
@@ -133,7 +147,7 @@ int fit (int const FWHM) { // TODO: int fit (int const centroid, int const FWHM)
     // - but not neighboring peaks
     
     // Define the fit function
-    auto fitFn = new TF1("fitFn", "gaus", low, high);
+    auto prefitFn = new TF1("prefitFn", "gaus", roughLow, roughHigh);
     // NOTE: "gaus" is built-in ROOT shorthand for [0]*exp(-0.5*((x-[1])/[2])^2)
     
     // NOTE: "gaus(0)" is functionally the same, and can be abbreviated to "gaus" 
@@ -143,13 +157,13 @@ int fit (int const FWHM) { // TODO: int fit (int const centroid, int const FWHM)
 
     // Instead of relying on automatic RMS, which is not reliable for merged peaks etc,
     // require the user to state a rough FWHM value deduced by eye, and derive sigma from it
-    double const sigma = FWHM / 2.355;
+    double const roughSigma = roughFWHM / 2.355;
     
-    printf("PRE-FIT SIGMA: %f\n", sigma);
+    printf("PRE-FIT SIGMA: %f\n", roughSigma);
     
     // Pass the parameters required for the gaussian fit function
-    fitFn->SetParameters(peakY, peakX, sigma);
-    fitFn->SetParNames("Amplitude", "Centroid", "Sigma");
+    prefitFn->SetParameters(peakY, peakX, roughSigma);
+    prefitFn->SetParNames("Amplitude", "Centroid", "Sigma");
     // NOTE: [0] = Amplitude, [1] = Mean, [2] = Sigma
     
     // NOTE: If we defined "gaus(0) + gaus(3)", we would need to pass separate params, i.e.:
@@ -160,15 +174,35 @@ int fit (int const FWHM) { // TODO: int fit (int const centroid, int const FWHM)
     // where params: [4] & [5] are then the intercept and slope for the poly fit
     
     // Call the histograms fit method, passing the fit function and histogram fitting options string
-    TFitResultPtr result = hpx->Fit(fitFn, "RS");
+    TFitResultPtr initialResult = hpx->Fit(prefitFn, "RS");
     // "R" = use the range of the function
     // "S" = return a TFitResultPtr for further analysis
     // "M" = attempts to improve the fit quality
     // "L" = use log likelihood method (default chi-square), for use with counts histograms
     // "+" = adds this new fitted func to list of fitted funcs (default is delete previous keep last)
     
+    // Extract the initial fit results
+    double const prefitAmplitude = initialResult->Parameter(0);
+    double const prefitCentroid = initialResult->Parameter(1);
+    double const prefitSigma = initialResult->Parameter(2);
+    double const prefitFWHM = prefitSigma * 2.335;
+    
+    // Base the fit window around the true centroid to avoid lopsidedness in the fit
+    double const low = prefitCentroid - (2 * prefitFWHM);
+    double const high = prefitCentroid + (2 * prefitFWHM);
+    
+    // Define the fit function which will take refined parameters
+    auto refitFn = new TF1("refitFn", "gaus", low, high);
+    
+    // Perform a refit using the fitted params
+    refitFn->SetParameters(prefitAmplitude, prefitCentroid, prefitSigma);
+    refitFn->SetParNames("Amplitude", "Centroid", "Sigma");
+    
+    // Calculate the results of the refit
+    TFitResultPtr result = hpx->Fit(refitFn, "RS");
+    
     // Draw the fit line (ROOT internally stores the fit function with the histogram after fitting)
-    hpx->GetFunction("fitFn")->Draw("SAME");
+    hpx->GetFunction("refitFn")->Draw("SAME");
     // NOTE: The "HIST" option suppresses drawing associated functions (including fits),
     // hence why "hpx->Draw()" works here instead of drawing the fit fn (but we lose the histogram view),
     // and why "hpx->Draw("HIST")" doesnt work alone, so calling draw on the stored fn is the way,
@@ -195,7 +229,6 @@ int fit (int const FWHM) { // TODO: int fit (int const centroid, int const FWHM)
     double const fittedSigma = result->Parameter(2);
     double const fittedFWHM = fittedSigma * 2.355;
     
-    printf("Peak X: %f, Peak Y: %f\n", peakX, peakY);
     printf("Goodness of Fit: %f\n", goodFit);
     
     printf("POST-FIT SIGMA: %f\n", fittedSigma);
@@ -206,11 +239,46 @@ int fit (int const FWHM) { // TODO: int fit (int const centroid, int const FWHM)
     return 0;
 }
 
-// ...
+// NOTE: While errors may not be reduced via the refit, it is not necessarily redundant,
+// as it still ensures the low/high window is centred on the centroid
+// (not the rough centroid passed as a param to the fn)
+
+// Calculate integrated counts under the fit curve, and errors
 int getCounts() {
-    // ...
+    // Retrieve the fit function
+    TF1* fit = hpx->GetFunction("refitFn");
     
-    return 1;
+    // Handle missing function
+    if (!fit) {
+        printf("Error: No such fit function found.");
+        return 1;
+    }
+    
+    // Retrieve the fit window set during fitting
+    double xmin;
+    double xmax;
+    fit->GetRange(xmin, xmax);
+    // NOTE: These will be the lower/upper bounds of the integration
+    
+    // Get bin width for bin 1 (NOTE: could be any of the 1024 bins, theyre all same width)
+    double binWidth = hpx->GetBinWidth(1);
+    // NOTE: ROOT histograms store counts per bin, the integral of a function is in
+    // units of: Energy * Counts (technically: photons * counts, with current setup), 
+    // dividing by the Energy/Bin (kev/Bin), or in this case photons/Bin, converts
+    // it back to pure counts
+    
+    // Calculate integral for the area under the fitted gaussian curve
+    double area = fit->Integral(xmin, xmax); // NOTE: Is num photons in current form
+    double totalCounts = area / binWidth;
+    
+    // Get the error (calculated as: sqrt(totalCounts), in counting statistics)
+    double countsError = fit->IntegralError(xmin, xmax) / binWidth;
+    // NOTE: Must also be divided by bin width, otherwise it would be:
+    // +/- num photons, rather than counts
+    
+    printf("COUNTS: %.2f, ERROR [SQRT(COUNTS)]: +/-%.2f\n", totalCounts, countsError);
+
+    return 0;
     
     // TODO: Total area - background area (for lab spectra with background)
 }

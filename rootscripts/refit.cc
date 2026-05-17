@@ -256,15 +256,6 @@ int fit (int const centroidPE, int const roughFWHM) {
 // as it still ensures the low/high window is centred on the centroid
 // (not the rough centroid passed as a param to the fn)
 
-// ...
-int getCounts() {
-    // ...
-    
-    return 1;
-    
-    // TODO: Total area - background area (for lab spectra with background)
-}
-
 /*
  * TODO:
  * 

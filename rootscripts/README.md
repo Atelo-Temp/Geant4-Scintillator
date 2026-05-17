@@ -37,11 +37,15 @@ Also requires manual implementation of rough FWHM (more versatile for merged pea
 Rquires manual implementation of both centroid and sigma (more versatile for merged peaks, etc)
 Will perform an initial rough fit, then a secondary fit using the parameters from the first fit for convergence
 
->>> TODOS
-
 8) counts.cc
 
 Integrates area under the fit curve to determine counts
+
+>>> TODOS
+
+8.5) ...
+
+Write custom data to the statistics box
 
 9) lab_fit.cc
 
@@ -54,11 +58,15 @@ Convert a 2048 bin lab spectrum to 1024 bins
 11) any_fit.cc
 
 Hybrid fitting, able to handle both ascii files (lab) and root files (simulation)
-^ maybe also able to determine whether it needs a 
+^ maybe also able to determine whether it needs a gaussian or gaus + pol fit
 
 12) multi_fit.cc
 
-Able to fit multiple peaks
+Able to fit multiple peaks (i.e. 60Co, or even 133Ba)
+
+13) ...
+
+Full functionality of all previous fitting capabilities, plus final touches
 
 ...
 fitter.cc
