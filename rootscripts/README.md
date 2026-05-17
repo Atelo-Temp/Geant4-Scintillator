@@ -4,6 +4,8 @@
 
 ## Project Ordering
 
+NOTE: ascii_to_root.cc is pulled from root.cern tutorials, hence not listed here
+
 1) canvas.cc
 
 Creates a basic canvas and plots a sin function
@@ -22,11 +24,45 @@ Same as load_root.cc, with added functionality to zoom in on a region of interes
 
 5) basic_fit.cc
 
-Same as hist_zoom.cc, with very basic peak fitting functionality
+Same as hist_zoom.cc, with very basic peak fitting functionality (automatically finds centroid and sigma)
 
-6) ...
+6) fit_stats.cc
 
-NOTE: ascii_to_root.cc is pulled from root.cern tutorials, hence not listed here
+Implements custom statistics box output
+
+Also requires manual implementation of rough FWHM (more versatile for merged peaks, etc), and calculates accurate FWHM using fit
+
+7) refit.cc
+
+Rquires manual implementation of both centroid and sigma (more versatile for merged peaks, etc)
+Will perform an initial rough fit, then a secondary fit using the parameters from the first fit for convergence
+
+>>> TODOS
+
+8) counts.cc
+
+Integrates area under the fit curve to determine counts
+
+9) lab_fit.cc
+
+Fit a lab spectrum using a gaussian + poly fit
+
+10) downsampling.cc
+
+Convert a 2048 bin lab spectrum to 1024 bins
+
+11) any_fit.cc
+
+Hybrid fitting, able to handle both ascii files (lab) and root files (simulation)
+^ maybe also able to determine whether it needs a 
+
+12) multi_fit.cc
+
+Able to fit multiple peaks
+
+...
+fitter.cc
+fit_root.cc
 
 ## Examples
 
@@ -70,7 +106,7 @@ get_path("~/Maestro/LaBr/LaBr_300s_sources/60Co_LaBr_750v_10coarse_3cm.Spe")
 get_path("~/Maestro/LaBr/LaBr_300s_sources/241Am_LaBr_750v_10coarse_3cm.Spe")
 ```
 
-- Example 4 (CeBr 2' 137Cs):
+- Example 4 (CeBr 1' 137Cs):
 
 ```c++
 get_path("~/Maestro/CeBr/CeBr_300s_sources/137Cs_CeBr_-1000v_3cm.Spe")
