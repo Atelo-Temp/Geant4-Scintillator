@@ -20,9 +20,7 @@ int refit () {
     TFile* in = TFile::Open("~/geant4/geant4-v11.3.2/project/data/17_2_NaI-Tl_gpsvolsrc_EM4-PIXE-cut100um_source-casing_diffusebackpaint_0-96R_sigalpha0-1_rindexAir_pc-20nm-GND-R-QE_3cm_137cs_1024bin_3-5res_500000event.root");
     
     // Get the histogram from the root file and assign it to the TH1 pointer
-    // TH1 *hpx = nullptr;
-    in->GetObject("Photons;2", hpx);
-    // hpx = in->Get("Photons;2");
+    in->GetObject("Photons;2", hpx); // hpx = in->Get("Photons;2");
     
     // Handle missing histogram
     if (!hpx) {
@@ -41,7 +39,6 @@ int refit () {
     Int_t height = 800;
     
     // Create a canvas display
-    // auto c = new TCanvas("c", "Spectrum", winX, winY, width, height);
     c = new TCanvas("c", "Spectrum", winX, winY, width, height);
     
     // Handle error creating canvas
@@ -51,18 +48,13 @@ int refit () {
     }
     
     // Draw histogram with default option
-    // hpx->DrawCopy("HIST");
-    // copy = hpx->DrawCopy("HIST"); // NOTE: Could store copy in global variable and ref in range()
     hpx->Draw("HIST");
     
     // Clean the histogram statistics box
-    // gStyle->SetOptStat(10); // default = 000001111 (NOTE: no it isnt)
-    gStyle->SetOptStat(0);
+    gStyle->SetOptStat(0); // default = 1111 (NOTE: 000001111 with zeros removed)
     // 0 = hides the statistics box entirely (leaving only fit box when fitted)
     // 10 = only number of entries
     // 110 = entries and mean
-    
-    // gStyle->SetOptFit(111);
     
     return 0;
 }
@@ -75,9 +67,8 @@ int range (double start, double end) {
         return 1;
     }
     
+    // Set lower/upper canvas view range
     hpx->GetXaxis()->SetRangeUser(start, end);
-    
-    // hpx->DrawCopy("HIST"); // NOTE: If working with copy, need to call draw copy again
     
     // Notify canvas of update
     c->Modified();
@@ -96,8 +87,10 @@ int reset () {
         return 1;
     }
     
+    // Resets canvas view range
     hpx->GetXaxis()->UnZoom();
     
+    // Notify canvas of update
     c->Modified();
     c->Update();
     

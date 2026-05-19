@@ -20,7 +20,7 @@ int fit_root () {
     TFile* in = TFile::Open("~/geant4/geant4-v11.3.2/project/data/17_2_NaI-Tl_gpsvolsrc_EM4-PIXE-cut100um_source-casing_diffusebackpaint_0-96R_sigalpha0-1_rindexAir_pc-20nm-GND-R-QE_3cm_137cs_1024bin_3-5res_500000event.root");
     
     // Get the histogram from the root file and assign it to the TH1 pointer
-    in->GetObject("Photons;2", hpx);
+    in->GetObject("Photons;2", hpx); // hpx = in->Get("Photons;2");
     
     // Handle missing histogram
     if (!hpx) {
@@ -51,7 +51,7 @@ int fit_root () {
     hpx->Draw("HIST");
     
     // Clean the histogram statistics box
-    gStyle->SetOptStat(0);
+    gStyle->SetOptStat(0); // default = 1111 (NOTE: 000001111 with zeros removed)
     // 0 = hides the statistics box entirely (leaving only fit box when fitted)
     // 10 = only number of entries
     // 110 = entries and mean
