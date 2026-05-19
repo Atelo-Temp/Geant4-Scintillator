@@ -28,7 +28,7 @@ Same as hist_zoom.cc, with very basic peak fitting functionality (automatically 
 
 6) fit_stats.cc
 
-Implements custom statistics box output
+Implements statistics box output
 
 Also requires manual implementation of rough FWHM (more versatile for merged peaks, etc), and calculates accurate FWHM using fit
 
@@ -41,30 +41,35 @@ Will perform an initial rough fit, then a secondary fit using the parameters fro
 
 Integrates area under the fit curve to determine counts
 
->>> TODOS
-
-8.5) ...
+9) custom_stats.cc
 
 Write custom data to the statistics box
 
-9) lab_fit.cc
+Also integrates counts into the fitting pipeline, rather than as a separate method to be called manually as in counts.cc
 
-Fit a lab spectrum using a gaussian + poly fit
+>>> TODOS
 
 10) downsampling.cc
 
 Convert a 2048 bin lab spectrum to 1024 bins
 
-11) any_fit.cc
+11) lab_fit.cc
+
+Fit a lab spectrum using a gaussian + poly fit
+
+hpx->GetXaxis()->GetBinLowEdge(...GetXaxis()->GetFirst())
+...GetXaxis()->GetBinUpEdge(...GetXaxis()->GetLast())
+
+12) any_fit.cc
 
 Hybrid fitting, able to handle both ascii files (lab) and root files (simulation)
 ^ maybe also able to determine whether it needs a gaussian or gaus + pol fit
 
-12) multi_fit.cc
+13) multi_fit.cc
 
 Able to fit multiple peaks (i.e. 60Co, or even 133Ba)
 
-13) ...
+14) ...
 
 Full functionality of all previous fitting capabilities, plus final touches
 

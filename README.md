@@ -68,7 +68,7 @@ Same as optics, but reintroduces radioactive decay and source geometry
 
 Same as spectroscopy, but models full detector geometry
 
-- 11) Deposition        (PREVIOUSLY NAMED: Spectroscopy) (TECHNICALLY THE FIRST DRAFTING OF THIS CAME AFTER DECAY ...)
+- 11) Deposition        (PREVIOUSLY NAMED: Spectroscopy) (TECHNICALLY THE FIRST DRAFTING OF THIS CAME AFTER DECAY SO THIS IS MORE LIKE 6.5, BUT MAY WORK ON IT IN FUTURE AS EDEP RATHER THAN OPTICAL PHOTON)
 
 Same as decay, but introduces complete detector geometry beyond just the crstal. 
 
@@ -76,11 +76,15 @@ Same as decay, but introduces complete detector geometry beyond just the crstal.
 
 TODO: Also use subtraction solids
 
+> NOTE: Will remain as is, simulating gamma-ray spectroscopy via energy deposition, and not by counting scintillation photons.
+
 - 12) GPS
 
 Uses general particle source (GPS) with isotope assigned to volume, instead of particle gun point source
 
-> NOTE: Will remain as is, simulating gamma-ray spectroscopy via energy deposition, and not by counting scintillation photons.
+- 13) FINAL
+
+...
 
 ## Other
 
