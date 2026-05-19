@@ -48,6 +48,13 @@ void EventAction::EndOfEventAction(const G4Event*) {
         // Fill the histogram (add a count to the appropriate energy bin)
         analysisManager->FillH1(0, fDetectedPhotons); // (id, value) only one histo, so id = 0
         // NOTE: On full 662 keV energy deposited will add to counts for that bin, etc
+        
+        // TEST \/\/\/\/\/\/\/\/\/
+        // ...
+        analysisManager->FillNtupleIColumn(1, 0, fDetectedPhotons); // ntuple ID, column ID, fill value
+        // NOTE: Only 1 column, hence column ID = 0
+        analysisManager->AddNtupleRow(1); // Saves row for Ntuple ID = 1
+        // ...
     }
     // NOTE: If using multiple histograms for any reason (i.e. two detectors)
     // make sure to mark appropriate ID

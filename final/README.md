@@ -179,19 +179,75 @@ i.e. how many photons interact with detector, xyz of interaction.
 Would also not be able to get information about global time, as we dont know
 when photon was emitted from the source
 
-Similarly we would not be able to get the wavelength
+Similarly we would not be able to get the wavelength of each photon.
 
 To view these histograms:
 
 ```bash
-root output0_T0.root --web=off
+root output0_t0.root --web=off
 new TBrowser
 ```
 
 The energy-counts histogram will no longer be included, 
 but histograms for the nTuples described in "RunAction" & "SensitiveDetector" will be.
 
+Alternatively, by adding the following in the RunAction class constructor:
+
+```c++
+auto analysisManager = G4AnalysisManager::Instance();
+analysisManager->SetNtupleMerging(true); // this is false by default
+```
+
+Geant4 will automatically stitch all the thread ntuples together into the single output0.root file.
+
+Subseqeuently, we can access the Ntuples via the standard:
+
+```bash
+root output0.root --web=off
+new TBrowser
+```
+
+> NOTE: Merging massive Ntuples can cause the simulation to run out of memory and crash at the end of the run, keeping merging false
+ensures that the raw data is safely dumped to the hard drive on the fly, using virtually zero extra RAM. 
+
+> NOTE: Additionally, if running a simulation across a huge number of threads (i.e., 32, 64, or more), having all those threads
+attempt to feed data into a single merged structure at the end of the run can create an I/O bottleneck.
+
+> NOTE: Most of the time it is fine to enable merging though, i.e., running on a local desktop or laptop, but its good to be aware
+of these caveats.
+
+If you want/need to keep thread files separate, the following command can be used for post-processing, via ROOT's build-in "hadd" utility:
+
+```bash
+hadd merged.root output0_t*.root
+```
+
+Which can then be accessed via:
+
+```bash
+root merged.root --web=off
+new TBrowser
+```
+
 i.e.:
+
+- Optical Photons Detected Per Event
+
+This Ntuple contains the number of optical photons "detected" at the photocathode each event.
+
+Storing this information in an Ntuple instead of the G4 H1 allows us to bypass the 1024 bin limit.
+
+However, we cant just view it as a histogram immediately, as its a sequential list of photons detected for each event, i.e. 100000 events, 100000 entries.
+
+To quickly view it as a histogram in the TBrowser, enter the following into the root terminal:
+
+```C++
+// 1024 bins, 0 photons lower bound, 3000 photons upper bound
+EventData->Draw("NumPhotons >> hTotal(1024, 0, 3000", "", "")
+// NOTE: EventData is the name of the ntuple, and NumPhotons is the name of the Ntuple column of interest
+```
+
+Since we have per-event data, this can also be easily binned into a root histogram via a root macro, for further post-processing (i.e. fitting, etc).
 
 - iEvent: 
 
@@ -205,7 +261,7 @@ NOTE: Perhaps electrons liberated creating additional photons too, etc.
 
 - X, Y, Z, Positions: 
 
-Most of the photons enter the detector at (0, 0, )
+Most of the photons enter the detector at (0, 0)
 
 X & Y:
 Since the photon is shot in a straight line along Z, there is a noticeable peak at X=0 & Y=0,

@@ -11,6 +11,11 @@
 RunAction::RunAction() {
     // auto fAnalysis = new AnalysisManager(); // NOTE: Shouldnt have auto here!
     fAnalysis = new AnalysisManager();
+    
+    // Enable merging of Ntuples which are spread across the threads into one outfile
+    auto analysisManager = G4AnalysisManager::Instance();
+    analysisManager->SetNtupleMerging(true);
+    // NOTE: See README.md for more info
 }
 
 // Class destructor frees up local storage

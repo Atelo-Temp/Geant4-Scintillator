@@ -16,7 +16,7 @@ void AnalysisManager::CreateHistogram() {
     
     // Create histogram (one dimension to store deposited energy)
     analysisManager->CreateH1(
-        "Photons", // Name
+        "PhotonsSpectrum", // Name
         "Optical Photons", // Title
         1024, // Number of bins
         0., // Lower bounds (NOTE: EventAction now only writes to histo when photons > 0)
@@ -27,7 +27,9 @@ void AnalysisManager::CreateHistogram() {
     // NOTE: 100 bins from 0->1 MeV
     
     // Create nTuples to store more in root file
-    analysisManager->CreateNtuple("Photons", "Photons"); // name, title
+    // analysisManager->CreateNtuple("Photons", "Photons"); // name, title
+    // analysisManager->CreateNtuple("Photons Data", "Photon Coordinates"); // name, title
+    analysisManager->CreateNtuple("StepData", "Photon Coordinates"); // name, title
     
     // Define columns and rows iniside the tuple
     // analysisManager->CreateNtupleIColumn("iEvent"); // I = integer (event number)
@@ -44,5 +46,14 @@ void AnalysisManager::CreateHistogram() {
     analysisManager->CreateNtupleDColumn("aZ"); // y position of the photon
     
     // Mark the definition of the tuple columns as completed
-    analysisManager->FinishNtuple(0);
+    // analysisManager->FinishNtuple(0);
+    analysisManager->FinishNtuple(); // dont need to pass 0 here, automatically finishes ID = 0
+    
+    // TEST \/\/\/\/\/\/\/\/\/
+    // Create Ntuple ID = 1
+    // analysisManager->CreateNtuple("Optical Data", "Photon Counts Per Event");
+    analysisManager->CreateNtuple("EventData", "Photon Counts Per Event");
+    analysisManager->CreateNtupleIColumn("NumPhotons"); // Column 0: integer count
+    analysisManager->FinishNtuple(); // automatically finishes ID = 1
+    // NOTE: Second call to createNtuple automatically assigns ID = 1
 }

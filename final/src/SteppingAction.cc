@@ -95,8 +95,8 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         analysisManager->FillNtupleDColumn(0, 2, z); // id, 2nd column, z
         // NOTE: Takes tuple ID (0 as we only made one), column number in this row, and the entry
         
-        // Mark this row as complete
-        analysisManager->AddNtupleRow(0);
+        // Mark this row as complete (for Ntuple with passed ID)
+        analysisManager->AddNtupleRow(0); // Ntuple ID = 0
         
         // For every photon that enters the detector and interacts, each interaction will call "ProcessHits()",
         // producing a new row (linked to the event ID) for each interaction,
@@ -125,8 +125,8 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         analysisManager->FillNtupleDColumn(0, 5, z); // id, 5th column, z
         // NOTE: Takes tuple ID (0 as we only made one), column number in this row, and the entry
         
-        // Mark this row as complete
-        analysisManager->AddNtupleRow(0);
+        // Mark this row as complete (for Ntuple with passed ID)
+        analysisManager->AddNtupleRow(0); // Ntuple ID = 0
         
         // For every photon that enters the detector and interacts, each interaction will call "ProcessHits()",
         // producing a new row (linked to the event ID) for each interaction,
