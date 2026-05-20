@@ -21,8 +21,17 @@ class RunAction : public G4UserRunAction {
         // Called at the end of a run (handing pointer to the run object)
         void EndOfRunAction(const G4Run*) override;
         
+        // To be called in the constructor, for runtime tracking and random seeding
+        long GenerateTimestamp();
+        
+        // To be called at the end of the run, for runtime tracking
+        void HandleRuntime();
     private:
+        // Store a pointer to analysis manager, which executes code on construction
         AnalysisManager* fAnalysis = nullptr;
+        
+        // Stores millisecond timestamp corresponding to start of the run
+        long fStartTime = -1;
 };
 
 #endif
