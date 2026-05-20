@@ -57,3 +57,7 @@ void AnalysisManager::CreateHistogram() {
     analysisManager->FinishNtuple(); // automatically finishes ID = 1
     // NOTE: Second call to createNtuple automatically assigns ID = 1
 }
+
+// TODO: Extract file handling logic from RunAction
+// void AnalysisManager::CreateFile() {} // creates root outfile and opens it
+// void AnalysisManager::WriteAndClose() {} // writes stored data to outfile and closes it

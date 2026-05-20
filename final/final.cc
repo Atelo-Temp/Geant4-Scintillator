@@ -1,9 +1,12 @@
-// #include "DetectorConstruction.hh"
+// User classes
+// #include "MyDetectorConstruction.hh"
 #include "DetectorConstruction.hh"  // When leaving it as named here, causes errors (only in vscode), in scintillator/ no errors ...
 // Is it due to scintillator "using namespace xyz;"
 #include "PhysicsList.hh"
 #include "ActionInitialization.hh"
+#include "Timer.hh"
 
+// G4 lib
 // #include "G4MTRunManager.hh"
 // #include "G4RunManager.hh"
 #include "G4RunManagerFactory.hh"
@@ -12,6 +15,7 @@
 #include "G4VisExecutive.hh"
 
 #include "G4HadronicParameters.hh"
+#include "CLHEP/Random/Random.h"
 
 // using namespace GEOMETRY;
 
@@ -24,6 +28,15 @@ int main(int argc, char** argv) {
         // Instantiate the UI
         ui = new G4UIExecutive(argc, argv);
     }
+    
+    // Get a timestamp for random seeding
+    // auto timer = new Timer();
+    // long timestamp = timer->GetTimestamp();
+    
+    // Passing a time-dependent metric such as the computers system clock ensures
+    // that every simulation run produces entirely unique and unpredictable results
+    // CLHEP::HepRandom::setTheSeed(timestamp); 
+    // NOTE: ^ UNCOMMENT ME TO RANDOMISE SIMULATION RUNS
 
     // Construct the default run manager (NOTE: Factory will auto select MT or Serial based on G4 build)
     auto runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::Default);
