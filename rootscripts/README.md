@@ -47,31 +47,47 @@ Write custom data to the statistics box
 
 Also integrates counts into the fitting pipeline, rather than as a separate method to be called manually as in counts.cc
 
+10) ntuple_binning.cc / plot_ntuples.cc
+
+convert per-event photons detected ntuples to 2048 bin histogram
+
+11) ntuple_smearing.cc
+
+Apply a gaussian smearing to per-event photon ntuples, in order to fix aliasing issue seen when plotting 2048 bin histogram directly
+NOTE: This smearing represents PMT statistics / shot noise
+
 >>> TODOS
 
-10) downsampling.cc
+12) ntuple_fit.cc
 
-Convert a 2048 bin lab spectrum to 1024 bins
+Integrate ntuple handling into custom_stats.cc (i.e. the previous histogram pipeline)
 
-11) lab_fit.cc
+13) lab_fit.cc
 
 Fit a lab spectrum using a gaussian + poly fit
 
 hpx->GetXaxis()->GetBinLowEdge(...GetXaxis()->GetFirst())
 ...GetXaxis()->GetBinUpEdge(...GetXaxis()->GetLast())
 
-12) any_fit.cc
+14) any_fit.cc
 
 Hybrid fitting, able to handle both ascii files (lab) and root files (simulation)
 ^ maybe also able to determine whether it needs a gaussian or gaus + pol fit
+^ takes .root / .Spe filename as argument rather than hardcoded
 
-13) multi_fit.cc
+15) multi_fit.cc
 
 Able to fit multiple peaks (i.e. 60Co, or even 133Ba)
 
-14) ...
+16) omni_fit.cc
 
 Full functionality of all previous fitting capabilities, plus final touches
+
+XX) downsampling.cc
+
+Convert a 2048 bin lab spectrum to 1024 bins
+
+NOTE: Im not sure this is a good idea honestly, merged peaks will become even more merged, etc, likely better to find workaround to G4 1024 bin limit
 
 ...
 fitter.cc
