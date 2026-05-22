@@ -158,50 +158,6 @@ int load_ascii(std::string path) {
 }
 
 /*
- * NOTE: With the higher resolution (2048 bins vs 1024 bins previously),
- * aliasing is seen when plotting the Ntuples data in a histogram,
- * to account for the higher resolution, we can apply a gaussian smearing
- * to reduce the jagged edges
- */
-int const post_processing(int entry) {
-// TODO: int const post_processing(int entry, int nbins = 2048, int xmax = 3500) {
-    // In counting statistics: sigma = sqrt(N)
-    double const sigma = std::sqrt(entry);
-    // TODO: This assumes pure Poisson statistics, in a real detector system,
-    // resolution is a combination of:
-    // sigma_scintillator + sigma_transfer + sigma_PMT
-    // in geant4 RESOLUTIONSCALE covers sigma_scintillator,
-    // geometry and photocathode efficiency covers sigma_transfer,
-    // and this sigma covers sigma_PMT (but doesnt neccesarily model is accurately)
-    
-    // Apply gaussian smearing to the photons detected in this event
-    double const smeared = gRandom->Gaus(entry, sigma);
-    
-    // Conversion factor from num optical photons "detected" to 0-2048 channel number
-    double const conversion = 2048. / 3500.;
-    // NOTE: 3500 photons is arbitrary currently, in practice, this value should
-    // reflect the upper window limit for the energy region of interest, i.e.:
-    // 0 - 2 MeV
-    
-    // TODO: ^^ potentially make nbins & xmax global variables, set prior to fit,
-    // or pass them in as params to this fn
-    
-    // Convert entry to channel number
-    // int const channel = conversion * smeared; // int channel = std::floor(conversion * entry);
-    double const channel = conversion * smeared; // NOTE: Let H1 handle binning doubles
-    
-    // NOTE: Can also apply a gain factor (but would likely want to establish 
-    // this value accurately from the physical detector rather than using estimate):
-    // int const nTotal = entry * gain;
-    // double const sigma = gain * std::sqrt(entry);
-    // double const smeared = gRandom->Gaus(nTotal, sigma);
-    // double const conversion = 2048. / (3500. * gain);
-    // double const channel = conversion * smeared;
-    
-    return channel;
-}
-
-/*
  * Instantiate a ROOT histogram object
  */
 int create_hist() {
@@ -279,18 +235,19 @@ int draw_hist() {
         
         // Print 
         std::istringstream stringStream(line);
-        std::string a; // NOTE: int a; does not work seemingly, need to convert from string to int
+        std::string lineContent; // contains current line string
         
         // ...
-        if (!(stringStream >> a)) break;
+        if (!(stringStream >> lineContent)) break;
         
         // Only parse lines 13-2060 (TODO: FIX THIS HARDCODED SLOP)
         if (currentLine >= 13 && currentLine <= 2060) {
-            std::cout << a << std::endl;
+            // Debug
+            // std::cout << a << std::endl;
             // std::cout << stoi(a) << std::endl;
             
             // Convert string to integer
-            int const converted = stoi(a);
+            int const converted = stoi(lineContent);
             
             // Set current bin to the integer value on current line
             hpx->SetBinContent(currentBin, converted);
@@ -403,7 +360,9 @@ int plot_ascii (std::string fileName) {
     return 0;
 }
 
-// Zoom in on a specific range
+/*
+ * Zoom in on a specific range
+ */
 int range (double start, double end) {
     // Handle missing histogram/canvas
     if (!hpx || !c) {
@@ -424,7 +383,9 @@ int range (double start, double end) {
     return 0;
 }
 
-// Zoom back out to the full view histogram (NOTE: Could also call range(0,0))
+/*
+ * Zoom back out to the full view histogram (NOTE: Could also call range(0,0))
+ */
 int reset () {
     // Handle missing histogram/canvas
     if (!hpx || !c) {
