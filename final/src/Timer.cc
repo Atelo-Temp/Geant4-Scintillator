@@ -47,11 +47,17 @@ void Timer::EndTimer() {
     
     long const runDurationH = runDurationM / 60; // minutes to hours
     
+    long const remainderM = runDurationM % 60; // remainder minutes not divisible by 60
+    
     long const remainderS = runDurationS % 60; // remainder seconds not divisible by 60
     
     // TEST ...
     // G4cout << "Finishing Run At: " << G4endl;
-    G4cout << "Run Duration: " << runDurationH << "h " << runDurationM << "m " << remainderS << "s" << G4endl;
+    G4cout << "Run Duration: " << runDurationH << "h " << remainderM << "m " << remainderS << "s" << G4endl;
+    
+    G4cout << "Run Duration (mins): " << runDurationM << "m " << G4endl;
+    
+    // TODO: This prints 3h 215m 45s (not subtracting hours from run duration mins)
     
     return; // TODO: maybe return vals
 }

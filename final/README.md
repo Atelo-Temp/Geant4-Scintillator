@@ -7,10 +7,12 @@ Note, this version uses the GPS volume source instead of a point source
 This version also features improvements to the C++ code (such as extracting code blocks out to helper methods, etc)
 
 New features include:
-- implementation of proper 1024 channel binning
+- implementation of proper 1024 channel binning (converting photons detected to a channel number) (NOTE: May actually leave this to postprocessing, just output per-event data)
 - ability to randomise simulations via seeds (G4 defaults to a repeatable seed for development purposes)
 - automated run time tracking
-- ...
+- 2048 channel binning (via per-event optical photons detected Ntuple output)
+- integration window for optical photon detection at the photocathode ?? (may reduce the photopeaks slight exponential tail, where sometimes, without it, many photons are eventually reaching photocathode and being detected)
+- potentially introducing PMT statistics ?? (NOTE: May actually leave this to postprocessing, just output raw per-event data)
 
 ## Features
 
@@ -115,7 +117,7 @@ Need to define the following values for the scintillator medium: refractive inde
 
 ```bash
 # rm -rf build # NOTE: If it already exists and you want to do a clean build
-mkdir build
+mkdir build # NOTE: If it doesnt yet exist, or has been deleted
 cd build
 cmake -DGeant4_DIR=~/geant4/geant4-v11.3.2/install/lib64/cmake/Geant4/ ../
 make -j 3 final
@@ -138,6 +140,10 @@ NOTE: If you change/edit the CMakeLists.txt, such as adding a new cpp file to th
 
 ```bash
 ./final run.mac
+```
+
+```bash
+./final 137Cs.mac
 ```
 
 ### Visualiser

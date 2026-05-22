@@ -311,7 +311,9 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Factor to vary width of yield distribution
     // MPTCrystal->AddConstProperty("RESOLUTIONSCALE", 0.); // no fluctuation
     // MPTCrystal->AddConstProperty("RESOLUTIONSCALE", 1.); // 1. to start, tune later
-    MPTCrystal->AddConstProperty("RESOLUTIONSCALE", 3.5); // Miller et al (2024)
+    MPTCrystal->AddConstProperty("RESOLUTIONSCALE", 1.8); 
+    // TEST: ^^^ res scale 3.5 = 112.69 FWHM, needs to be 62.25 FWHM to match lab, so seeing if can calc res scale via: 112.69/62.25 = 1.81
+    // MPTCrystal->AddConstProperty("RESOLUTIONSCALE", 3.5); // NOTE: Miller et al (2024)
     // MPTCrystal->AddConstProperty("RESOLUTIONSCALE", 10.); // more gaussian
     // NOTE: A resolution scale of ZERO produces no fluctuation in optical photons generated
     // (sigma = sqrt of mean photons for step * RESOLUTIONSCALE)
