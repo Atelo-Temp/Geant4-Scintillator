@@ -58,7 +58,7 @@ NOTE: This smearing represents PMT statistics / shot noise
 
 >>> TODOS
 
-12) ntuple_fit.cc
+12) ntuple_fit.cc / fit_ntuple.cc
 
 Integrate ntuple handling into custom_stats.cc (i.e. the previous histogram pipeline)
 
@@ -140,4 +140,11 @@ get_path("~/Maestro/LaBr/LaBr_300s_sources/241Am_LaBr_750v_10coarse_3cm.Spe")
 ```c++
 get_path("~/Maestro/CeBr/CeBr_300s_sources/137Cs_CeBr_-1000v_3cm.Spe")
 get_path("~/Maestro/CeBr/CeBr_300s_sources/60Co_CeBr_-1000v_3cm.Spe")
+```
+
+### ntuple_fit.cc
+
+```c++
+range(500,1100) // xlow, xhigh
+fit(800,100) // rough centroid, rough fwhm
 ```

@@ -5,24 +5,23 @@
 #include <TH1.h>
 #include <TTree.h>
 #include <TRandom.h>
-#include <cmath>
 
 // Executes automatically on script start (NOTE: Choose another function name if you wish to manually call it instead) 
 int ntuple_smearing() {
     // std::string fileName = "~/geant4/geant4-v11.3.2/project/data/19_6_final_Ntuple_NaI-Tl_gpsvolsrc_randomseed_EM4-PIXE-cut100um_source-casing_diffusebackpaint_0-96R_sigalpha0-1_rindexAir_pc-20nm-GND-R-QE_3cm_137cs_1024bin_3-5res_1000000event.root";
-    char fileName[512] = "~/geant4/geant4-v11.3.2/project/data/19_6_final_Ntuple_NaI-Tl_gpsvolsrc_randomseed_EM4-PIXE-cut100um_source-casing_diffusebackpaint_0-96R_sigalpha0-1_rindexAir_pc-20nm-GND-R-QE_3cm_137cs_1024bin_3-5res_1000000event.root";
-    char treeName[16] = "EventData;1";
-    char branchName[16] = "NumPhotons";
+    char const fileName[512] = "~/geant4/geant4-v11.3.2/project/data/19_6_final_Ntuple_NaI-Tl_gpsvolsrc_randomseed_EM4-PIXE-cut100um_source-casing_diffusebackpaint_0-96R_sigalpha0-1_rindexAir_pc-20nm-GND-R-QE_3cm_137cs_1024bin_3-5res_1000000event.root";
+    char const treeName[16] = "EventData;1";
+    char const branchName[16] = "NumPhotons";
     
     // Fetch and open root file
-    TFile* in = TFile::Open(fileName);
+    TFile* const in = TFile::Open(fileName);
     
     // Get the TTree from the root file and assign it to the TTree pointer
     TTree* nTuple = nullptr;
     in->GetObject(treeName, nTuple); // NOTE: Also works: TTree* nTuple = in->Get<TTree>(treeName);
     
     // Get the TBranch of interest from the TTree, and assign it to pointer
-    TBranch* eventData = nTuple->GetBranch(branchName);
+    TBranch* const eventData = nTuple->GetBranch(branchName);
     
     // To read a tree, neeed to associate variables with the trees branches
     int entry;
@@ -100,10 +99,10 @@ int ntuple_smearing() {
     in->Close();
 
     // Canvas args
-    Int_t winX = 0; // Top left of screen
-    Int_t winY = 0; // Top left of screen
-    Int_t width = 1200;
-    Int_t height = 800;
+    Int_t const winX = 0; // Top left of screen
+    Int_t const winY = 0; // Top left of screen
+    Int_t const width = 1200;
+    Int_t const height = 800;
     
     // Create a canvas display
     auto c = new TCanvas("c", "Spectrum", winX, winY, width, height);
