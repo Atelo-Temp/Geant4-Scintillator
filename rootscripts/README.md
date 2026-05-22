@@ -47,7 +47,7 @@ Write custom data to the statistics box
 
 Also integrates counts into the fitting pipeline, rather than as a separate method to be called manually as in counts.cc
 
-10) ntuple_binning.cc / plot_ntuples.cc
+10) plot_ntuples.cc (alt: ntuple_binning.cc)
 
 convert per-event photons detected ntuples to 2048 bin histogram
 
@@ -56,32 +56,39 @@ convert per-event photons detected ntuples to 2048 bin histogram
 Apply a gaussian smearing to per-event photon ntuples, in order to fix aliasing issue seen when plotting 2048 bin histogram directly
 NOTE: This smearing represents PMT statistics / shot noise
 
->>> TODOS
-
-12) ntuple_fit.cc / fit_ntuple.cc
+12) ntuple_fit.cc (alt: fit_ntuple.cc)
 
 Integrate ntuple handling into custom_stats.cc (i.e. the previous histogram pipeline)
 
-13) lab_fit.cc
+13) ascii_fit.cc
 
-Fit a lab spectrum using a gaussian + poly fit
+Fit a lab ASCII spectrum using a gaussian fit function
+
+>>> TODOS
+
+14) lab_fit.cc
+
+Fit an ASCII lab spectrum using a gaussian + poly fit function
 
 hpx->GetXaxis()->GetBinLowEdge(...GetXaxis()->GetFirst())
 ...GetXaxis()->GetBinUpEdge(...GetXaxis()->GetLast())
 
-14) any_fit.cc
+15) any_fit.cc
 
 Hybrid fitting, able to handle both ascii files (lab) and root files (simulation)
 ^ maybe also able to determine whether it needs a gaussian or gaus + pol fit
 ^ takes .root / .Spe filename as argument rather than hardcoded
+^ parses the filename to identify whether its .root or .Spe, runs histogramming pipeline for respective file type
 
-15) multi_fit.cc
+16) multi_fit.cc
 
 Able to fit multiple peaks (i.e. 60Co, or even 133Ba)
 
-16) omni_fit.cc
+17) omni_fit.cc
 
 Full functionality of all previous fitting capabilities, plus final touches
+
+TODO: Maybe think of a way to determine if input data has aliasing issue, and needs gaussian smearing
 
 XX) downsampling.cc
 
