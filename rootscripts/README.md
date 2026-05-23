@@ -64,7 +64,22 @@ Integrate ntuple handling into custom_stats.cc (i.e. the previous histogram pipe
 
 Fit a lab ASCII spectrum using a gaussian fit function
 
+14) plot_any.cc (alt: load_any.cc)
+
+To avoid adding unneccessary code to the core principle im trying to address with this macro, am omitting writing loaded hist to outfile, and fitting hist (albeit they are simple additions)
+
 >>> TODOS
+
+15) write_histo.cc (alt: write_hist.cc) (alt: save_histo.cc)
+
+Gives ability to save histograms to root files (handy for saving ROOT Ntuples as smaller files)
+
+^ literally just add: save() method to load_any.cc
+
+Not sure whether to separate out loading .root & .Spe into local hist, and saving said hist...  can just add a simple .save() method, rather than forcing save, so maybe omit this one
+
+Read ASCII file, OR, per-event Ntuple data, and plot a ROOT histogram, then save the histogram (will have to apply smearing to Ntuples still) (saves storing 10+GB .root files in local data, and can reference prior runs/configurations easier)
+^ can use load_root.cc (custom_stats.cc) esque pipeline to load it back for post-processing
 
 14) lab_fit.cc
 

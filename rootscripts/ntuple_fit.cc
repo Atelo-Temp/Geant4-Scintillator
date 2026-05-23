@@ -29,7 +29,8 @@ TCanvas *c = nullptr;
  */
 int load_tree() {
 // int load_tree(char const treeName[16] = "EventData;1") {
-    char const fileName[512] = "~/geant4/geant4-v11.3.2/project/data/19_6_final_Ntuple_NaI-Tl_gpsvolsrc_randomseed_EM4-PIXE-cut100um_source-casing_diffusebackpaint_0-96R_sigalpha0-1_rindexAir_pc-20nm-GND-R-QE_3cm_137cs_1024bin_3-5res_1000000event.root";
+    // char const fileName[512] = "~/geant4/geant4-v11.3.2/project/data/19_6_final_Ntuple_NaI-Tl_gpsvolsrc_randomseed_EM4-PIXE-cut100um_source-casing_diffusebackpaint_0-96R_sigalpha0-1_rindexAir_pc-20nm-GND-R-QE_3cm_137cs_1024bin_3-5res_1000000event.root";
+    char const fileName[512] = "~/geant4/geant4-v11.3.2/project/final/build/output0.root";
     char const treeName[16] = "EventData;1";
     // TODO: likely pass these as params (file name at least, maybe not tree name)
     
@@ -61,7 +62,8 @@ int load_tree() {
  * to account for the higher resolution, we can apply a gaussian smearing
  * to reduce the jagged edges
  */
-int const post_processing(int entry) {
+double const post_processing(int entry) {
+// int const post_processing(int entry) {
 // TODO: int const post_processing(int entry, int nbins = 2048, int xmax = 3500) {
     // In counting statistics: sigma = sqrt(N)
     double const sigma = std::sqrt(entry);
@@ -72,11 +74,22 @@ int const post_processing(int entry) {
     // geometry and photocathode efficiency covers sigma_transfer,
     // and this sigma covers sigma_PMT (but doesnt neccesarily model is accurately)
     
+    // double const sigma = 0.5 * std::sqrt(entry);
+    // double const sigma = entry * (0.08 / 2.355);
+    // NOTE: ^ 1.8 res scale, n * (res lab / 2.355) = 114.02 FWHM
+    
     // Apply gaussian smearing to the photons detected in this event
     double const smeared = gRandom->Gaus(entry, sigma);
+    // TODO: potentially reduce gaussian smearing, reducing from:
+    // sigma = sqrt(n)
+    // to:
+    // sigma = 0.5 * sqrt(n)
+    // reduces FWHM from ~105.35 FWHM (at 1.8 res scale), to 91.16 (still at 1.8 res scale)
+    // NOTE: Impacts FWHM more than i initially thought
     
     // Conversion factor from num optical photons "detected" to 0-2048 channel number
     double const conversion = 2048. / 3500.;
+    // double const conversion = 1024. / 3500.;
     // NOTE: 3500 photons is arbitrary currently, in practice, this value should
     // reflect the upper window limit for the energy region of interest, i.e.:
     // 0 - 2 MeV
@@ -86,10 +99,12 @@ int const post_processing(int entry) {
     
     // Convert entry to channel number
     // int const channel = conversion * smeared; // int channel = std::floor(conversion * entry);
-    double const channel = conversion * smeared; // NOTE: Let H1 handle binning doubles
+    double const channel = conversion * smeared;
+    // NOTE: Let H1 handle binning doubles rather than flooring
     
     // NOTE: Can also apply a gain factor (but would likely want to establish 
     // this value accurately from the physical detector rather than using estimate):
+    // int const gain = 1e6;
     // int const nTotal = entry * gain;
     // double const sigma = gain * std::sqrt(entry);
     // double const smeared = gRandom->Gaus(nTotal, sigma);
@@ -101,6 +116,9 @@ int const post_processing(int entry) {
 
 /*
  * Iterate through tree branch, populating histogram with per-event values
+ * 
+ * TODO: Maybe separate concerns (extract hpx creation), like in ascii_fit.cc & plot_any.cc
+ * (may leave this as is though for progression reference)
  */
 int draw_hist(char const branchName[16] = "NumPhotons") {
     // char const branchName[16] = "NumPhotons";
@@ -120,6 +138,13 @@ int draw_hist(char const branchName[16] = "NumPhotons") {
     int const nbins = 2048; // 2048 channels (bins)
     int const xmin = 0; // min channel
     int const xmax = 2048; // max channel (3500 photons)
+    
+    // int const nbins = 1024; // 2048 channels (bins)
+    // int const xmin = 0; // min channel
+    // int const xmax = 1024; // max channel (3500 photons)
+    
+    // NOTE: 2048 bin FWHM = 105.2, 1024 bin FWHM = 52.8, this is ~50% decrease (0.5019...)
+    // so could use shorter sims with 1024 bins
     
     // Create a histogram (TH1I = integer - channel/counts both ints)
     hpx = new TH1I(

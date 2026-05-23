@@ -13,9 +13,9 @@
 #include <TLatex.h>
 #include <TRandom.h> // TODO: This is unused w/ current format, but will be used for omni_fit.cc
 
-#include "Riostream.h" // ifstream
-
 // C lib
+#include <fstream>
+#include <sstream>
 #include <optional>
 
 // Global root object variables
@@ -233,7 +233,7 @@ int draw_hist() {
         // Increment line counter
         currentLine++;
         
-        // Print 
+        // Print
         std::istringstream stringStream(line);
         std::string lineContent; // contains current line string
         
