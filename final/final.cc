@@ -35,7 +35,8 @@ int main(int argc, char** argv) {
     
     // Passing a time-dependent metric such as the computers system clock ensures
     // that every simulation run produces entirely unique and unpredictable results
-    // CLHEP::HepRandom::setTheSeed(timestamp); 
+    // CLHEP::HepRandom::setTheSeed(timestamp); // NOTE: Option 1
+    // G4Random::setTheSeed(timestamp); // NOTE: Option 2 - from: OpNovice.cc main()
     // NOTE: ^ UNCOMMENT ME TO RANDOMISE SIMULATION RUNS
 
     // Construct the default run manager (NOTE: Factory will auto select MT or Serial based on G4 build)

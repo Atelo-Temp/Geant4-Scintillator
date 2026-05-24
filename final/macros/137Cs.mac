@@ -26,11 +26,11 @@
 
 # Run for X events (1024 bins)
 # due to decay, and optical photons, sim time could fluctuate a lot for same amount of events
-# /run/beamOn 10000 # (~2m)
+/run/beamOn 10000 # (~2m)
 # /run/beamOn 50000 # (~9m)
 # /run/beamOn 100000 # (~17m)     (~21m) (~19m) (~18m)
 # /run/beamOn 200000 # (~38m)
 # /run/beamOn 300000 # (~56m)
 # /run/beamOn 400000 # (~1hr 14m)
 # /run/beamOn 500000 # (~1hr 30m) (~1hr 40m)
-/run/beamOn 1000000 # (~3hr 35m)
+# /run/beamOn 1000000 # (~3hr 35m)

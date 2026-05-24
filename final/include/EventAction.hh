@@ -55,6 +55,14 @@ class EventAction : public G4UserEventAction {
         // Photons absorbed without detection
         void CountAbsorbedPhoton();
         
+        // TEST: Photons lost due to NoRINDEX
+        void CountLostPhoton();
+        void CountBulkAbsorption();
+        void CountKill();
+        
+        // Print particle information (not for use with batch mode, but handy for single runs via visualiser)
+        void Debug();
+        
     protected:
         // Pointer to current run
         RunAction* fRunAction = nullptr;
@@ -67,6 +75,11 @@ class EventAction : public G4UserEventAction {
         
         // Absorbed photon tally
         G4int fAbsorbedPhotons = 0;
+        
+        // TEST: Lost photon tally
+        int fLostPhotons = 0;
+        int fBulkAbsorb = 0;
+        int fKilled = 0;
 };
 
 #endif

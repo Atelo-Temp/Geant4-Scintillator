@@ -9,31 +9,35 @@
 // Electronics smearing (simulating the PMT)
 #include <Randomize.hh>
 
+// TODO: If needed
+// struct LostPhotonMap {
+//     std::string location;
+//     int frequency;
+// };
 
 // Define the constructor
 EventAction::EventAction(RunAction* runAction) { fRunAction = runAction; }
 // EventAction::EventAction(RunAction* runAction) : fRunAction(runAction) {} 
 // NOTE: ^^ I think: "fRunAction(runAction)", does same thing as: "fRunAction = runAction"
 
+// ...
 void EventAction::BeginOfEventAction(const G4Event*) {
     // Reset counters between events
     fTotalPhotons = 0;
     fDetectedPhotons = 0;
     fAbsorbedPhotons = 0;
+    
+    // TEST:
+    fLostPhotons = 0; // NoRINDEX
+    fBulkAbsorb = 0;
+    fKilled = 0;
 }
 
+// ...
 void EventAction::EndOfEventAction(const G4Event*) {
-    // Print to stdout
-//     G4cout << G4endl << "Optical Photons Generated: " << fTotalPhotons << G4endl;
-//     
-//     G4cout << G4endl << "Optical Photons Detected: " << fDetectedPhotons << G4endl;
-//     G4cout << G4endl << "Percent Detected: " << (fDetectedPhotons / fTotalPhotons) * 100 << G4endl;
-//     
-//     G4cout << G4endl << "Optical Photons Absorbed: " << fAbsorbedPhotons << G4endl;
-//     G4cout << G4endl << "Percent Absorbed: " << (fAbsorbedPhotons / fTotalPhotons) * 100 << G4endl;
-    
-    // NOTE: ^ Removed to save time during batch processing, may want an logic statement that 
-    // checks whether in visualisation or batch, as this nice for vis
+    // Log particle information
+    Debug();
+    // NOTE: Disable this if running in batch mode
     
     /////////////////
     // HISTOGRAMMING:
@@ -85,4 +89,40 @@ void EventAction::CountDetectedPhoton() { fDetectedPhotons += 1; }
 // ..
 void EventAction::CountAbsorbedPhoton() { fAbsorbedPhotons += 1; }
 
+// TEST: ..
+void EventAction::CountLostPhoton() { fLostPhotons += 1; }
+// void EventAction::CountLostPhoton(std::string medium) { fLostPhotons += 1; } // TODO: Add medium where each of these things occured (same for absorption, etc)
+void EventAction::CountBulkAbsorption() { fBulkAbsorb += 1; }
+void EventAction::CountKill() { fKilled += 1; }
 
+// ...
+void EventAction::Debug() {
+        // Print to stdout
+    G4cout << G4endl << "Optical Photons Generated: " << fTotalPhotons << G4endl;
+    
+    G4cout << G4endl << "Optical Photons Detected: " << fDetectedPhotons << G4endl;
+    G4cout << G4endl << "Percent Detected: " << (1. * fDetectedPhotons / fTotalPhotons) * 100 << G4endl;
+    
+    G4cout << G4endl << "Optical Photons Absorbed: " << fAbsorbedPhotons << G4endl;
+    G4cout << G4endl << "Percent Absorbed: " << (1. * fAbsorbedPhotons / fTotalPhotons) * 100 << G4endl;
+    
+    G4cout << G4endl << "Optical Photons Detected OR Absorbed: " << fDetectedPhotons + fAbsorbedPhotons << G4endl;
+    G4cout << G4endl << "Percent Detected OR Absorbed: " << ((1. * fDetectedPhotons + fAbsorbedPhotons) / fTotalPhotons) * 100 << G4endl;
+    
+    G4cout << G4endl << "Optical Photons Lost: " << fLostPhotons << G4endl;
+    G4cout << G4endl << "Percent Lost: " << (1. * fLostPhotons / fTotalPhotons) * 100 << G4endl;
+    
+    G4cout << G4endl << "Optical Photons Bulk Absorbed: " << fBulkAbsorb << G4endl;
+    G4cout << G4endl << "Percent Absorbed: " << (1. * fBulkAbsorb / fTotalPhotons) * 100 << G4endl;
+    
+    G4cout << G4endl << "Optical Photons Detected OR Absorbed OR Lost: " << fDetectedPhotons + fAbsorbedPhotons + fLostPhotons << G4endl;
+    G4cout << G4endl << "Percent Detected OR Absorbed OR Lost: " << ((1. * fDetectedPhotons + fAbsorbedPhotons + fLostPhotons) / fTotalPhotons) * 100 << G4endl;
+    
+    G4cout << G4endl << "Optical Photons Detected OR Boundary Absorbed OR Lost OR Bulk Absorbed: " << fDetectedPhotons + fAbsorbedPhotons + fLostPhotons + fBulkAbsorb << G4endl;
+    G4cout << G4endl << "Percent Detected OR Boundary Absorbed OR Lost OR Bulk Absorbed: " << ((1. * fDetectedPhotons + fAbsorbedPhotons + fLostPhotons + fBulkAbsorb) / fTotalPhotons) * 100 << G4endl;
+    
+    G4cout << G4endl << "Killed: " << fKilled << " Vs Bulk Absorb: " << fBulkAbsorb << G4endl;
+    
+    // NOTE: ^ Removed to save time during batch processing, may want an logic statement that 
+    // checks whether in visualisation or batch, as this nice for vis
+}

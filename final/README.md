@@ -152,6 +152,21 @@ NOTE: If you change/edit the CMakeLists.txt, such as adding a new cpp file to th
 ./final
 ```
 
+Then in the visualiser command prompt:
+
+```bash
+/control/execute test.mac
+```
+
+## Cleaning Outfiles
+
+If youre playing around with the visualiser, you may end up with a large number of ".root" outfiles, to clean these:
+
+```bash
+find . -name "*.root" -type f # Ensure you will remove the correct files, inspect the output
+find . -name "*.root" -type f -delete # Then run this command to remove those files
+```
+
 ## Analysis
 
 ### Opening The Histogram
@@ -251,6 +266,12 @@ To quickly view it as a histogram in the TBrowser, enter the following into the 
 // 1024 bins, 0 photons lower bound, 3000 photons upper bound
 EventData->Draw("NumPhotons >> hTotal(1024, 0, 3000", "", "")
 // NOTE: EventData is the name of the ntuple, and NumPhotons is the name of the Ntuple column of interest
+```
+
+For low event counts (i.e. testing a change without a lengthy run time):
+
+```c++
+EventData->Draw("NumPhotons >> hTotal(256, 0, 3500", "", "")
 ```
 
 Since we have per-event data, this can also be easily binned into a root histogram via a root macro, for further post-processing (i.e. fitting, etc).

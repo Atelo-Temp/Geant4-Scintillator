@@ -1,6 +1,7 @@
 // User classes
 #include "SteppingAction.hh"
 #include "DetectorConstruction.hh"
+#include <G4TrackStatus.hh>
 
 // G4 Lib
 #include "G4OpBoundaryProcess.hh"
@@ -47,6 +48,41 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     // Get the post step point object for the particle
     G4StepPoint* endPoint = step->GetPostStepPoint();
     
+    
+    
+//     // >>>>> TEST: #1
+//     if ((track->GetTrackStatus() == fStopAndKill) && (endPoint->GetStepStatus() != fGeomBoundary)) {
+//         fEventAction->CountBulkAbsorption();
+//         
+//         // G4String volume = endPoint->GetTouchable()->GetVolume()->GetName();
+//         // std::string volume = endPoint->GetTouchable()->GetVolume()->GetName();
+//         // fEventAction->CountBulkAbsorption(volume); // 
+//         
+//         // G4cout << "BULK ABSORPTION IN MEDIUM: " << endPoint->GetTouchable()->GetVolume()->GetName() << G4endl; // "Scintillator"
+//         
+//         // if (endPoint->GetTouchable()->GetVolume()->GetName() != "Scintillator") {
+//             // G4cout << "BULK ABSORPTION IN MEDIUM: " << endPoint->GetTouchable()->GetVolume()->GetName() << G4endl; // ....
+//         // }
+//         
+//         if (endPoint->GetTouchable()->GetVolume()->GetName() == "Scintillator") {
+//             // Get distance travelled by photon before bulk absorption
+//             G4double distance = track->GetTrackLength();
+//             
+//             // G4cout << "Distance Travelled Before Bulk Absorption: " << distance << " mm" << G4endl;
+//             G4cout << "Distance Travelled Before Bulk Absorption: " << (distance / 10) << " cm" << G4endl;
+//         }
+//     }
+//     // TEST
+//     
+//     // >>>>> TEST: #2
+//     auto const process = endPoint->GetProcessDefinedStep();
+//     if (process && (process->GetProcessName() == "OpAbsorption")) {
+//         fEventAction->CountKill();
+//     }
+//     // TEST
+    
+    
+    
     // If post step point not at a defined geometric boundary, break
     if (endPoint->GetStepStatus() != fGeomBoundary) return;
     
@@ -60,6 +96,10 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     // TODO: Angular QE
     // Compute incidence angle of PE
     // Weight detection probability
+    
+    // NOTE: Type:
+    // G4OpBoundaryProcessStatus::
+    // to see all available boundary statuses
     
     // This assumes that the volume causing detection is the photocathode
     // as it is the only volume with non-zero efficiency
@@ -103,7 +143,9 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         // i.e. multiple compton scatters inside the detector, for a given photon, will produce rows pertaining to each energy deposit
         
         // NOTE: Likely just make this a method of analysis class (as absorption xyz very similar)
-    } else if (boundaryStatus == Absorption) {
+    } 
+    // ...
+    else if (boundaryStatus == Absorption) {
         // Photon was absorbed without detection
         fEventAction->CountAbsorbedPhoton();
         
@@ -132,7 +174,21 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         // producing a new row (linked to the event ID) for each interaction,
         // i.e. multiple compton scatters inside the detector, for a given photon, will produce rows pertaining to each energy deposit
     } 
-    // else if (boundaryStatus == LambertianReflection) {}
+    // TODO: check no loss via lack of rindex
+    else if (boundaryStatus == G4OpBoundaryProcessStatus::NoRINDEX) {
+        G4cout << G4endl << "OPTICAL PHOTON LOST TO LACK OF RINDEX" << G4endl;
+        G4cout << endPoint->GetTouchable()->GetVolume()->GetName() << G4endl; // "Reflector"
+        
+        fEventAction->CountLostPhoton();
+        
+        // TODO:
+        // std::string volume = endPoint->GetTouchable()->GetVolume()->GetName();
+        // fEventAction->CountLostPhoton(volume);
+    }
+    // NOTE: Is the photon actually being killed though
+    
+    // TODO:
+    // else if (boundaryStatus == LambertianReflection) {}, etc ??
     
     // TODO: Maybe switch case here ^
     // Can also do xyz of reflection position, etc
