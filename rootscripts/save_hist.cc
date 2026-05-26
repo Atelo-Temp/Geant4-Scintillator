@@ -36,9 +36,12 @@ FileType fileType;
 /*
  * Load in plotting and fitting functions
  */
-int plot_any() {
+int save_hist() {
     // Usage
-    std::cout << "\nASCII & ROOT Ntuples to Root Histogram\n\nTo get started, call: plot(\"path.ext\"), passing path to ASCII (.Spe) or ROOT (.root) file as param.\n\n";
+    std::cout << "\n-----------------------------------------------------------------------\n";
+    std::cout << "\nConvert ASCII & ROOT Ntuples to Root Histogram.\n\nTo get started, call: plot(\"path.ext\"), passing path to ASCII (.Spe) or ROOT (.root) file as param.\n";
+    std::cout << "\nTo save the plotted histogram, call save(\"dir/out.root\").\n";
+    std::cout << "\n-----------------------------------------------------------------------\n";
     
     // fin
     return 0;
@@ -54,23 +57,28 @@ int plot_any() {
  * TODO: Handle filenames such as .gitignore ?
  * else if (extDelimiterIdx == 0) {} 
  * NOTE: Kinda dont need to with ext check tho
+ * 
+ * TODO: Not sure about updating path var directly in tilde expansion, maybe just return 
+ * new string in that enclosure
+ * 
+ * TODO: Make arg[0]: std::string const path (so its immutable)
  */
-std::string get_path(std::string path) {
+std::string check_path(std::string path) { // std::string check_path(std::string const path) {
     // Print path to stdout
+    std::cout << "\nUser provided path:\n";
     std::cout << path << "\n";
     
     // Check if string is empty (returns true if string is empty)
     if (path.empty()) {
         // Error message
-        std::cout << "Error: Empty string.\n";
+        std::cout << "Error [check_path()]: Empty string.\n";
         
         // Error value
         return "";
     }
     
     // Directory delimiter
-    // char const dirDelimiter[2] = "/";
-    std::string const dirDelimiter = "/";
+    std::string const dirDelimiter = "/"; // char const
     
     // Find index of last directory delimiter
     size_t const dirDelimiterIdx = path.rfind(dirDelimiter);
@@ -91,12 +99,9 @@ std::string get_path(std::string path) {
     }
     
     // File extension delimiter
-    // char const extDelimiter[2] = ".";
-    std::string const extDelimiter = ".";
+    std::string const extDelimiter = "."; // char const
     
     // Get index of delimiter
-    // auto delimiterIdx = path.find(delimiter);
-    // size_t extDelimiterIdx = path.rfind(extDelimiter);
     size_t const extDelimiterIdx = fileName.rfind(extDelimiter);
     // NOTE: "find()" searches from left to right, so if the path contains any period
     // in directory names or earlier in the file name, it will return the index of that 
@@ -113,9 +118,7 @@ std::string get_path(std::string path) {
     }
     
     // Get substring from index of delimiter to the end of the string
-    // auto token = path.substr(delimiterIdx, path.size());
-    // std::string token = path.substr(extDelimiterIdx);
-    std::string const token = fileName.substr(extDelimiterIdx);
+    std::string const token = fileName.substr(extDelimiterIdx); // (extDelimiterIdx, path.size())
     // NOTE: Can omit path.size() as second param, defaults to end of string
     // NOTE: 0, delimiterIdx would get everything prior to delimiter
     
@@ -123,10 +126,8 @@ std::string get_path(std::string path) {
     // std::cout << token << std::endl;
     
     // Acceptable file extensions
-    // const char* spe = ".Spe";
-    // const char* root = ".root";
-    std::string const spe = ".Spe";
-    std::string const root = ".root";
+    std::string const spe = ".Spe"; // const char*
+    std::string const root = ".root"; // const char*
     
     // Check path ends with valid extension, reject invalid file type
     if (token != spe && token != root) {
@@ -138,45 +139,23 @@ std::string get_path(std::string path) {
     }
     // If its an ASCII file extension, log it and set ASCII flag
     else if (token == spe) {
-        std::cout << "\nASCII file detected.\n\n";
+        // std::cout << "\nASCII file detected.\n\n";
+        std::cout << "\nASCII file detected.\n";
         fileType = FileType::ASCII;
     }
     // If its a ROOT file extension, log it and set ROOT flag
     else if (token == root) {
-        std::cout << "\nRoot file detected.\n\n";
+        // std::cout << "\nRoot file detected.\n\n";
+        std::cout << "\nRoot file detected.\n";
         fileType = FileType::ROOT;
     }
-    
-    // THIS DOES NOT WORK
-    //
-    // const char* tilde = "~"; // const, as C++ does not allow conversion from string literal to char*
-    // const char* char0 = &path.at(0); // cast from "char" to "const char *" with ampersand (&)
-    // 
-    // // Replace tilde if passed
-    // if (std::strcmp(char0, tilde) == 0) { ... }
-    // NOTE: char0 will be full string in this case, hence clause will not trigger
 
-    // THIS WORKS
-    //
-    // char tilde[2] = "~";
-    // 
-    // // Get reference to character at [0], compare it to
-    // if (path.at(0) == *tilde) { ... }
-    
-    // THIS ALSO WORKS
-    //
-    // std::string tilde = "~";
-    // 
-    // // Get reference to character at [0], compare it to
-    // if (path.at(0) == tilde) { ... }
-
-    // THIS ALSO ALSO WORKS (and prolly cleanest tbh ?)
-    std::string const tilde = "~";
+    // Replace tilde if passed
+    std::string const tilde = "~"; // char tilde[2]
 
     // If reference to character at [0] is tilde character
     if (path[0] == tilde) {
         // Get the home path (~) from the environment variable
-        // char* const home = getenv("HOME");
         char const* home = getenv("HOME");
         // std::cout << home << std::endl; // debug
         
@@ -185,9 +164,22 @@ std::string get_path(std::string path) {
         // std::cout << trimmedPath << std::endl; // debug
         
         // Update the path, replacing "~" with "/home/user" (NOTE: Not sure if this is "okay" to do), but is simple
-        path = home + trimmedPath; // TODO: Not sure about updating path var directly, maybe just return new string here
+        path = home + trimmedPath; 
+        // TODO: Not sure about updating path var directly, maybe just return new string here
+        
+        // ...
+        // std::string expandedPath = home + trimmedPath; // TODO
+        
+        // Tilde expansion was successful
+        std::cout << "\nPath has been expanded:\n";
         std::cout << path << "\n";
+        // NOTE: This is now an absolute path
+        
+        // return expandedPath; // TODO
     }
+    
+    // Confirmation status
+    std::cout << "\nPath is valid.\n";
     
     // No errors, all good
     return path;
@@ -282,12 +274,14 @@ int load_file(std::string path) {
     // Attempt to load the ASCII file into memory
     if (fileType == FileType::ASCII) {
         status = load_ascii(path);
-        std::cout << "\nASCII file has been loaded into memory.\n\n";
+        // std::cout << "\nASCII file has been loaded into memory.\n\n";
+        std::cout << "\nASCII file has been loaded into memory.\n";
     }
     // Attempt to load the ROOT file into memory
     else if (fileType == FileType::ROOT) {
         status = load_root(path);
-        std::cout << "\nROOT file has been loaded into memory.\n\n";
+        // std::cout << "\nROOT file has been loaded into memory.\n\n";
+        std::cout << "\nROOT file has been loaded into memory.\n";
     }
     // Reject invalid usage
     else {
@@ -575,7 +569,7 @@ int create_canvas() {
         return 1;
     }
     
-    // TODO: \/\/\/\/\/\/\/\/\/ MAYBE EXTRACT THIS OUT TBH
+    // TODO: \/\/\/\/\/\/\/\/\/ MAYBE EXTRACT THIS OUT TBH (render_hist())
     
     // Handle missing histogram
     if (!hpx) {
@@ -606,7 +600,7 @@ int create_canvas() {
  */
 int plot(std::string fileName) {
     // Check provided path is valid (will return empty string if not valid)
-    std::string path = get_path(fileName);
+    std::string path = check_path(fileName);
     
     if (path.empty()) {
         printf("Aborting: Invalid path error!\n");
@@ -647,6 +641,131 @@ int plot(std::string fileName) {
     
     // No errors, all good
     return 0;
+}
+
+/*
+ * Prompts user for input, reads response, returns success/fail val based on response
+ */
+int prompt_user(std::string const &question = "Do you wish to overwrite existing file?") {
+    // Prompt user for input
+    std::cout << "\n" << question << "\n";
+    std::cout << "[y/n]: ";
+    
+    // Store user input
+    std::string userInput;
+    
+    // Enter user input loop
+    while (true) {
+        // Capture the line
+        std::getline(std::cin, userInput);
+        // NOTE: std::cin >> userInput;
+        
+        // Handle yes/no reponse, or invalid input
+        if (userInput == "y") {
+            return 0;
+        } 
+        else if (userInput == "n") {
+            return 1;
+        }
+        // If userInput.empty(), or invalid char, etc
+        else {
+            // Return to previous line, move to start of prev line, clear stdout
+            std::cout << "\033[A" << "\r" << "\033[2K" << "[y/n]: " << std::flush;
+            
+            // NOTE: "\033[A" = move the cursor up one line
+            // "\r" = move the cursor to the beginning of that line
+            // "033[2K" = clear everything from the cursor down to the bottom the screen
+            
+            // NOTE: Flush ensures the reset sequence prints to the screen immediately
+            // without waiting for a standard neline "\n" to force a bufffer flush
+        }
+        // NOTE: Else doesnt really need enclosure here
+    }
+}
+
+/*
+ * Check if file already exists, if it does, check if user wants to overwrite
+ * 
+ * TODO: Edge case? if (temp && !temp->IsOpen())
+ * 
+ * NOTE: Try/catch not needed here, open doesnt appear to throw, just prints error
+ * to stdout and sets temp = nullptr
+ */
+int check_file(char const* path) {
+    // Attempt to open file with provided filename
+    auto temp = TFile::Open(path, "READ"); // NOTE: Read only mode
+    
+    // If file already exists and was opened
+    if (temp && temp->IsOpen()) { // if (temp && !temp->IsZombie()) {
+        // printf("\nError [check_file()]: File already exists!\n");
+        std::cerr << "\nError [check_file()]: File already exists!\n";
+        
+        // Get user response
+        int abort = prompt_user(); // NOTE: 0 = overwrite, 1 = abort
+        
+        // Close the readonly file
+        temp->Close();
+        
+        if (!abort) printf("\nOverwriting existing file...\n");
+        
+        return abort;
+    }
+    
+    // If the file does not already exist (!temp & !temp->IsOpen()) 
+    return 0;
+}
+
+/*
+ * TODO: This would currently accept a .Spe outfile extension, wanna limit it to .root really
+ * 
+ * TODO: Maybe excessive but check if outfile closed after .Close()
+ */
+int save(std::string path) {
+    // Check provided path is valid (will return empty string if not valid)
+    std::string validPath = check_path(path);
+    
+    if (validPath.empty()) {
+        printf("\nError {save()}: Invalid path error!\n");
+        return 1;
+    }
+    
+    // Convert from: std::string, to: const char*
+    auto convertedPath = validPath.c_str();
+    
+    // Check if file already exists, and if so, whether to overwrite
+    int invalidPath = check_file(convertedPath);
+    
+    if (invalidPath) {
+        printf("\nAborting: Please call save() with a new path.\n");
+        return 1;
+    }
+    
+    // Open outfile in recreate mode (creates ROOT file, replacing it if it already exists)
+    auto outfile = TFile::Open(convertedPath, "RECREATE");
+    
+    // Handle incorrect path
+    if (!outfile->IsOpen()) {
+        printf("\nError [save()]: Couldnt create/open outfile!\n");
+        return 1;
+    }
+    
+    // Handle missing histogram
+    if (!hpx) {
+        printf("\nError (save()): Histogram not found!\n");
+        return 1;
+    }
+    
+    // Write the histogram object to the root file
+    outfile->WriteObject(hpx, "Spectrum");
+    
+    // All done
+    outfile->Close();
+    
+    // Confirmation status
+    printf("\nFile has been saved.\n");
+    
+    // No errors, all good
+    return 0; 
 }
 
 /*

@@ -170,3 +170,29 @@ get_path("~/Maestro/CeBr/CeBr_300s_sources/60Co_CeBr_-1000v_3cm.Spe")
 range(500,1100) // xlow, xhigh
 fit(800,100) // rough centroid, rough fwhm
 ```
+
+### plot_any.cc
+
+```c++
+// From ./rootscripts
+plot("../data/21_final_Ntuple_NaI-Tl_gpsvolsrc_randomseed_EM4-PIXE-cut100um_source-casing_diffusebackpaint_0-96R_sigalpha0-1_rindexAir_pc-20nm-GND-R-QE_3cm_137cs_1024bin_1-8res_1000000event.root")
+```
+
+```c++
+// Absolute pathing
+plot("~/geant4/geant4-v11.3.2/project/data/21_final_Ntuple_NaI-Tl_gpsvolsrc_randomseed_EM4-PIXE-cut100um_source-casing_diffusebackpaint_0-96R_sigalpha0-1_rindexAir_pc-20nm-GND-R-QE_3cm_137cs_1024bin_1-8res_1000000event.root")
+```
+
+### save_hist.cc
+
+```c++
+// From ./rootscripts
+plot("../data/21_final_Ntuple_NaI-Tl_gpsvolsrc_randomseed_EM4-PIXE-cut100um_source-casing_diffusebackpaint_0-96R_sigalpha0-1_rindexAir_pc-20nm-GND-R-QE_3cm_137cs_1024bin_1-8res_1000000event.root")
+save("../data/21_hist.root")
+```
+
+```c++
+// Absolute pathing
+plot("~/geant4/geant4-v11.3.2/project/data/21_final_Ntuple_NaI-Tl_gpsvolsrc_randomseed_EM4-PIXE-cut100um_source-casing_diffusebackpaint_0-96R_sigalpha0-1_rindexAir_pc-20nm-GND-R-QE_3cm_137cs_1024bin_1-8res_1000000event.root")
+save("~/geant4/geant4-v11.3.2/project/data/21_hist.root")
+```
