@@ -293,7 +293,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // (i.e. it is the mean free path returned by the GetMeanFreePath method)
     // std::vector<G4double> absorptionLengthNaI = {30.*cm, 30.*cm, 30.*cm};
     // std::vector<G4double> absorptionLengthNaI = {50.*cm, 50.*cm, 50.*cm}; // increased collection at the photocathode
-    std::vector<G4double> absorptionLengthNaI = {56.234 * cm, 31.623 * cm, 0.794 * cm}; // Brown (2021) (corrigendum) & Miller et al (2024)
+    // std::vector<G4double> absorptionLengthNaI = {56.234 * cm, 31.623 * cm, 0.794 * cm}; // Brown (2021) (corrigendum) & Miller et al (2024)
+    std::vector<G4double> absorptionLengthNaI = {56.234 * cm, 100 * cm, 0.794 * cm}; // TEST: Establish mean distance travelled before detection at PC
     // ..
     MPTCrystal->AddProperty("ABSLENGTH", energy, absorptionLengthNaI); // NOTE: Trivial in that the process merely kills the particle
     // NOTE: This has effect on air too (WITHOUT SPECIFYING THIS, SIM WILL HANG INDEFINITELY, WHEN AIR RINDEX SPECIFIED)
@@ -572,7 +573,6 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
      * 
      * Whereas alumina powder will not degrade or yellow under intense UV light or high 
      * heat, and it is also extremely hard (scratch resistant) (Mohs hardness of 9.0).
-     * 
      */
     
     ///////////////////////////////
@@ -596,10 +596,10 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // NOTE: Reflectors are typically diffuse (ground), as it promotes greater light collection
     
     // Specify surface roughness (For back painted surface)
-    // reflectorSurface->SetSigmaAlpha(0); // No specular lobe constant, so ...
+    reflectorSurface->SetSigmaAlpha(0); // No specular lobe constant, so ...
     // reflectorSurface->SetSigmaAlpha(0.023); // Mechanically polished - Janecek et al (2010)
     // reflectorSurface->SetSigmaAlpha(0.1); // Almost polished (specular)
-    // reflectorSurface->SetSigmaAlpha(0.2); // Ground polished - Janecek et al (2010) (~12 deg)
+    // reflectorSurface->SetSigmaAlpha(0.2); // Ground - Janecek et al (2010) (~12 deg)
     // reflectorSurface->SetSigmaAlpha(0.25); // Ground polished (partially diffuse)
     // reflectorSurface->SetSigmaAlpha(0.35);
     // reflectorSurface->SetSigmaAlpha(0.4);
@@ -643,6 +643,11 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // NO, THIS IS FOR polished CRYSTAL->PMT WINDOW INTERFACE (sigma alpha = 0, SL = 1)
     
     // NOTE: JUST LEAVE IT AT: LAMBERTIAN = 1, see notes in jsdoc comment block above
+    
+    // TEST: EXPLICIT LAMBERTIAN = 1
+    // std::vector<G4double> dlcReflector = {1., 1., 1.}; // Diffuse lobe constant (lambertian)
+    // MPTReflectorSurf->AddProperty("DIFFUSELOBECONSTANT", energy, dlcReflector);
+    // TEST
     
     // TEST
     // std::vector<G4double> efficiencyReflector = {0., 0., 0.};
@@ -769,6 +774,9 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     std::vector<G4double> reflectivityAl = {0.9, 0.9, 0.9};
     MPTAlSurface->AddProperty("REFLECTIVITY", energy, reflectivityAl);
     aluminiumSurface->SetMaterialPropertiesTable(MPTAlSurface);
+    
+    // TODO: USE REAL/IMAGINARY RINDICES INSTEAD OF FLAT VALUE (refractiveindex.info - Al)
+    // ^ only relevant if hermetic seal is in contact with PMT window
     
     /*
      * TRANSMISSION SURFACES ...
@@ -909,7 +917,11 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // 
     // std::vector<G4double> reflectivityScoring = {0.21, 0.21, 0.21}; // Reflectivity: ~21% @500nm (Harmer et al [2012])
     // std::vector<G4double> reflectivityScoring = {0.05, 0.05, 0.05};
-    std::vector<G4double> reflectivityScoring = {0.25, 0.18, 0.13}; // Optical properties of bialkali photocathodes - Motta (2004)
+    
+     // std::vector<G4double> reflectivityScoring = {0., 0., 0.}; // TODO: TEST
+     // std::vector<G4double> reflectivityScoring = {1., 1., 1.}; // TODO: TEST
+    
+    // std::vector<G4double> reflectivityScoring = {0.25, 0.18, 0.13}; // Optical properties of bialkali photocathodes - Motta (2004)
     std::vector<G4double> efficiencyScoring = {0.08, 0.27, 0.26}; // QE: 0.08 @550nm, ~0.27 @415nm, ~0.26 @325nm (KNOLL)
     // TODO: PC polished w/ just new R, QE
     
@@ -920,8 +932,19 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // TODO: Transmittance = 33% @500nm (Harmer et al [2012])
     
     // NOTE: Using same energy as other MPTS has no effect on output spectrum at all (vs "energyScoring")
-    MPTPhotocathode->AddProperty("REFLECTIVITY", energy, reflectivityScoring); // 1 minus the absorption coeffcient
+    // MPTPhotocathode->AddProperty("REFLECTIVITY", energy, reflectivityScoring); // 1 minus the absorption coeffcient
     MPTPhotocathode->AddProperty("EFFICIENCY", energy, efficiencyScoring); // Chance of an absorbed photon to be detected
+    
+    
+    // TEST TEST TEST TEST Motta (2004) - Optical properties of bialkali photocathodes
+    std::vector<G4double> realRindexScoring = {3.20, 2.38, 1.92}; // n (@550nm, @415nm, @325nm)
+    std::vector<G4double> imaginaryRinexScoring = {0.63, 1.71, 1.69}; // k
+    // (@545nm, @410nm, @380nm) <- closest available datapoints (NOTE: 325 pretty far off 380, but bulk absorption high here)
+    // maybe see if there is another dateset for confluence, or interpolate for a val closer to 325nm
+    MPTPhotocathode->AddProperty("REALRINDEX", energy, realRindexScoring);
+    MPTPhotocathode->AddProperty("IMAGINARYRINDEX", energy, imaginaryRinexScoring);
+    // TEST TEST TEST TEST
+    
     
     // ...
     photocathodeSurface->SetMaterialPropertiesTable(MPTPhotocathode);

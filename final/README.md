@@ -371,6 +371,12 @@ EventData->Draw("NumPhotons >> hTotal(256, 0, 3500", "", "")
 
 Since we have per-event data, this can also be easily binned into a root histogram via a root macro, for further post-processing (i.e. fitting, etc).
 
+- Distance Travelled By Detected Photons
+
+```c++
+TrackData->Draw("Distance >> hTotal(256, 0, 3000", "", "")
+```
+
 - iEvent: 
 
 The number of hits per event, in 100 bins (x10^3 = 100,000 events), so 1000 events per bin

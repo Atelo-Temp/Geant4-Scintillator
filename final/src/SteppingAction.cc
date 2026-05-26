@@ -1,5 +1,6 @@
 // User classes
 #include "SteppingAction.hh"
+#include "AnalysisManager.hh"
 #include "DetectorConstruction.hh"
 #include <G4TrackStatus.hh>
 
@@ -50,7 +51,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     
     
     
-//     // >>>>> TEST: #1
+    // >>>>> TEST TEST TEST: #1 - find photons lost via bulk absorption
 //     if ((track->GetTrackStatus() == fStopAndKill) && (endPoint->GetStepStatus() != fGeomBoundary)) {
 //         fEventAction->CountBulkAbsorption();
 //         
@@ -69,20 +70,33 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
 //             G4double distance = track->GetTrackLength();
 //             
 //             // G4cout << "Distance Travelled Before Bulk Absorption: " << distance << " mm" << G4endl;
-//             G4cout << "Distance Travelled Before Bulk Absorption: " << (distance / 10) << " cm" << G4endl;
+//             // G4cout << "Distance Travelled Before Bulk Absorption: " << (distance / 10) << " cm" << G4endl;
+//             
+//             // TODO: Ntuples for bulk absorption distance
 //         }
-            // return;
+//         // No need to proceed, exit early
+//         // return;
 //     }
-//     // TEST
-//     
-//     // >>>>> TEST: #2
+    // TEST
+    
+    // >>>>> TEST TEST TEST: #2
 //     auto const process = endPoint->GetProcessDefinedStep();
 //     if (process && (process->GetProcessName() == "OpAbsorption")) {
 //         fEventAction->CountKill();
-    // return;
+//         // fEventAction->CountBulkAbsorption();
+//         // TODO: ^ This is essentially a duplicate method, useful for debugging,
+//         // but just use one or the other if this code is included in actual runs
+//         
+//         // No need to proceed, exit early
+//         return;
 //     }
-//     // TEST
+    // TEST - NOTE: #2 AND #1 ARE FUNCTIONALLY EQUIVALENT
     
+    
+    // NOTE: Instead of returning inside one of those code blocks,
+    // can just let this next clause do so ....
+    
+    // NOTE: OpRayleigh, OpAbsorption, OpBoundary, OpScintillation (relevant process names)
     
     
     // If post step point not at a defined geometric boundary, break
@@ -125,8 +139,19 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         double y = detectionPosition[1];
         double z = detectionPosition[2];
         
-        // TEST: Get the global time (TODO: For timing window)
+        // TEST TEST TEST
+        // Get the global time (TODO: For timing window)
         // auto detectTime = endPoint->GetGlobalTime();
+        // NOTE: May actually need to store the time at the first detection of a photon for the current event 
+        // (which would produce first avalanche in current event, beginning the charge integration process)
+        // then compare that to easch subsequent detection
+        // i.e.
+        // if (!fIntegrationStart) fIntegrationStart = endPoint->GetGlobalTime();
+        // else time = endPoint->GetGlobalTime() - fIntegrationStart;
+        // NOTE: Would want to store fIntegrationStart in fEventAction btw, and provide a setter function,
+        // like fEventAction->CountDetectedPhoton(), as it would need to be nullified at the start of each event,
+        // again much like photon counts
+        // TEST TEST TEST
         
         // Get pointer to analysis manager singleton
         auto analysisManager = G4AnalysisManager::Instance();
@@ -139,6 +164,14 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         
         // Mark this row as complete (for Ntuple with passed ID)
         analysisManager->AddNtupleRow(0); // Ntuple ID = 0
+        
+        // TEST TEST TEST
+        // Get distance travelled by photon before detection
+        G4double distance = track->GetTrackLength();
+        analysisManager->FillNtupleDColumn(2, 0, distance);
+        analysisManager->AddNtupleRow(2);
+        // G4cout << "Distance Travelled Before Bulk Absorption: " << distance << " mm" << G4endl;
+        // TEST TEST TEST
         
         // For every photon that enters the detector and interacts, each interaction will call "ProcessHits()",
         // producing a new row (linked to the event ID) for each interaction,

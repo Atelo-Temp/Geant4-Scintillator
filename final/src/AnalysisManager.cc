@@ -26,9 +26,11 @@ void AnalysisManager::CreateHistogram() {
     );
     // NOTE: 100 bins from 0->1 MeV
     
+    ////////////////
+    // PHOTON COORDS
+    ////////////////
+    
     // Create nTuples to store more in root file
-    // analysisManager->CreateNtuple("Photons", "Photons"); // name, title
-    // analysisManager->CreateNtuple("Photons Data", "Photon Coordinates"); // name, title
     analysisManager->CreateNtuple("StepData", "Photon Coordinates"); // name, title
     
     // Define columns and rows iniside the tuple
@@ -46,16 +48,30 @@ void AnalysisManager::CreateHistogram() {
     analysisManager->CreateNtupleDColumn("aZ"); // y position of the photon
     
     // Mark the definition of the tuple columns as completed
-    // analysisManager->FinishNtuple(0);
-    analysisManager->FinishNtuple(); // dont need to pass 0 here, automatically finishes ID = 0
+    analysisManager->FinishNtuple(); // === analysisManager->FinishNtuple(0);
+    // NOTE: Dont need to pass 0 here, automatically finishes ID = 0
     
-    // TEST \/\/\/\/\/\/\/\/\/
-    // Create Ntuple ID = 1
-    // analysisManager->CreateNtuple("Optical Data", "Photon Counts Per Event");
-    analysisManager->CreateNtuple("EventData", "Photon Counts Per Event");
+    ////////////////
+    // PHOTON COUNTS
+    ////////////////
+    
+    // Store per-event photon detection data in an Ntuple
+    analysisManager->CreateNtuple("EventData", "Photon Counts Per Event"); // Create Ntuple ID = 1
     analysisManager->CreateNtupleIColumn("NumPhotons"); // Column 0: integer count
     analysisManager->FinishNtuple(); // automatically finishes ID = 1
     // NOTE: Second call to createNtuple automatically assigns ID = 1
+    
+    ////////////////////////////////
+    // DETECTED PHOTON TRACK LENGTHS
+    ////////////////////////////////
+    
+    /// TEST TEST TEST
+    analysisManager->CreateNtuple("TrackData", "Detected Photon Track Length");
+    analysisManager->CreateNtupleDColumn("Distance");
+    analysisManager->FinishNtuple(); // ID = 2
+    // NOTE: Could just add this to Ntuple(1), as its still per event data, just do another column 
+    // ^^ no, its not per event data, need the distance travelled by every photon detected,
+    // which needs to come from stepping action
 }
 
 // TODO: Extract file handling logic from RunAction
