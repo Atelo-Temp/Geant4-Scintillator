@@ -68,9 +68,7 @@ Fit a lab ASCII spectrum using a gaussian fit function
 
 To avoid adding unneccessary code to the core principle im trying to address with this macro, am omitting writing loaded hist to outfile, and fitting hist (albeit they are simple additions)
 
->>> TODOS
-
-15) write_histo.cc (alt: write_hist.cc) (alt: save_histo.cc)
+15) save_hist.cc (alt: write_histo.cc, write_hist.cc, save_histo.cc)
 
 Gives ability to save histograms to root files (handy for saving ROOT Ntuples as smaller files)
 
@@ -81,25 +79,33 @@ Not sure whether to separate out loading .root & .Spe into local hist, and savin
 Read ASCII file, OR, per-event Ntuple data, and plot a ROOT histogram, then save the histogram (will have to apply smearing to Ntuples still) (saves storing 10+GB .root files in local data, and can reference prior runs/configurations easier)
 ^ can use load_root.cc (custom_stats.cc) esque pipeline to load it back for post-processing
 
-14) lab_fit.cc
+16) exponential_fit.cc
+
+TODO: Just whipped up a rough draft of fit(), update it to match refined fit() methodology in ascii_fit()
+
+TODO: Need to be able to swap between "int" and "double" when reading from TTree branch entries (was using int for num photons, but distance is double)
+
+>>> TODOS
+
+16) lab_fit.cc
 
 Fit an ASCII lab spectrum using a gaussian + poly fit function
 
 hpx->GetXaxis()->GetBinLowEdge(...GetXaxis()->GetFirst())
 ...GetXaxis()->GetBinUpEdge(...GetXaxis()->GetLast())
 
-15) any_fit.cc
+17) any_fit.cc
 
 Hybrid fitting, able to handle both ascii files (lab) and root files (simulation)
 ^ maybe also able to determine whether it needs a gaussian or gaus + pol fit
 ^ takes .root / .Spe filename as argument rather than hardcoded
 ^ parses the filename to identify whether its .root or .Spe, runs histogramming pipeline for respective file type
 
-16) multi_fit.cc
+18) multi_fit.cc
 
 Able to fit multiple peaks (i.e. 60Co, or even 133Ba)
 
-17) omni_fit.cc
+19) omni_fit.cc
 
 Full functionality of all previous fitting capabilities, plus final touches
 
