@@ -36,7 +36,7 @@ void EventAction::BeginOfEventAction(const G4Event*) {
 // ...
 void EventAction::EndOfEventAction(const G4Event*) {
     // Log particle information
-    Debug();
+    // Debug();
     // NOTE: Disable this if running in batch mode
     
     /////////////////

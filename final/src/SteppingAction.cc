@@ -71,6 +71,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
 //             // G4cout << "Distance Travelled Before Bulk Absorption: " << distance << " mm" << G4endl;
 //             G4cout << "Distance Travelled Before Bulk Absorption: " << (distance / 10) << " cm" << G4endl;
 //         }
+            // return;
 //     }
 //     // TEST
 //     
@@ -78,6 +79,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
 //     auto const process = endPoint->GetProcessDefinedStep();
 //     if (process && (process->GetProcessName() == "OpAbsorption")) {
 //         fEventAction->CountKill();
+    // return;
 //     }
 //     // TEST
     
@@ -176,8 +178,13 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     } 
     // TODO: check no loss via lack of rindex
     else if (boundaryStatus == G4OpBoundaryProcessStatus::NoRINDEX) {
-        G4cout << G4endl << "OPTICAL PHOTON LOST TO LACK OF RINDEX" << G4endl;
-        G4cout << endPoint->GetTouchable()->GetVolume()->GetName() << G4endl; // "Reflector"
+        // G4cout << G4endl << "OPTICAL PHOTON LOST TO LACK OF RINDEX" << G4endl;
+        // G4cout << endPoint->GetTouchable()->GetVolume()->GetName() << G4endl; // "Reflector"
+        
+        // if (endPoint->GetTouchable()->GetVolume()->GetName() != "Reflector") {
+        //     G4cout << G4endl << "OPTICAL PHOTON LOST TO LACK OF RINDEX" << G4endl;
+        //     G4cout << endPoint->GetTouchable()->GetVolume()->GetName() << G4endl; // "Reflector"
+        // }
         
         fEventAction->CountLostPhoton();
         
@@ -187,11 +194,13 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     }
     // NOTE: Is the photon actually being killed though
     
-    // TODO:
+    // TODO: With lambertian reflection set to 1 at reflector surface,
+    // could check if boundary volume is "Reflector", and if so, plot the angle
+    // of reflection (to generate a plot of the lambertian distribution)
     // else if (boundaryStatus == LambertianReflection) {}, etc ??
+    // Can also do xyz of reflection position, etc
     
     // TODO: Maybe switch case here ^
-    // Can also do xyz of reflection position, etc
 }
 
 // Find the boundary process and assign it to the class property "fBoundary"

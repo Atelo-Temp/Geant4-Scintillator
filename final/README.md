@@ -158,6 +158,101 @@ Then in the visualiser command prompt:
 /control/execute test.mac
 ```
 
+Centre camera on the detector:
+
+```bash
+/vis/viewer/centreOn Scintillator
+```
+
+Set view vector:
+
+```bash
+# Sets view vector from (0,0,0) to (x,y,z)
+# /vis/viewer/set/viewpointVector -10 0 0 # vector from (0,0,0) to (-10,0,0)
+/vis/viewer/set/viewpointVector -180 0 90
+```
+
+Set view angle:
+
+```bash
+/vis/viewer/set/viewpointThetaPhi 330
+```
+
+Set the zoom:
+
+```bash
+/vis/viewer/zoom 4
+```
+
+Produce a section view (cut) of the geometry:
+
+```bash
+# Crystal origin is at x = 0, y = 0, z = 10 cm:
+/vis/viewer/addCutawayPlane 0 0 10 cm
+```
+
+TODO: Partial section cut of geometry:
+
+```bash
+/vis/viewer/addCutawayPlane 0 0 0 cm 1 0 0 # cut along the X-axis
+/vis/viewer/addCutawayPlane 0 0 0 cm 0 -1 0 # cut along the Y-axis
+```
+
+Change rotation style:
+
+```bash
+/vis/viewer/set/rotationStyle freeRotation
+```
+
+Hide the world box:
+
+```bash
+/vis/geometry/set/visibility World 0 false
+```
+
+Set light to come from directly above the geometry
+
+```bash
+/vis/viewer/set/lightsVector 0 1 0
+```
+
+
+
+TODO: ADD TO VIS MACRO
+
+```bash
+/vis/viewer/centreOn Scintillator
+/vis/viewer/zoom 6
+/vis/viewer/set/viewpointVector -180 90 90
+```
+
+TODO: CUSTOM VIS MACROS FOR SCREENSHOTS
+
+HALF-CUT
+
+```bash
+/vis/viewer/centreOn Scintillator
+/vis/viewer/zoom 6
+/vis/viewer/set/viewpointVector -180 90 90
+/vis/geometry/set/visibility Table 0 false
+/vis/geometry/set/visibility Casing 0 false
+/vis/geometry/set/visibility World 0 false
+/vis/viewer/addCutawayPlane 0 0 10 cm
+```
+
+QUARTER-CUT
+
+```bash
+/vis/viewer/centreOn Scintillator
+/vis/viewer/zoom 6
+/vis/viewer/set/viewpointVector -180 90 90
+/vis/geometry/set/visibility Table 0 false
+/vis/geometry/set/visibility Casing 0 false
+/vis/geometry/set/visibility World 0 false
+/vis/viewer/addCutawayPlane 0 0 0 cm 1 0 0 # cut along the X-axis
+/vis/viewer/addCutawayPlane 0 0 0 cm 0 -1 0 # cut along the Y-axis
+```
+
 ## Cleaning Outfiles
 
 If youre playing around with the visualiser, you may end up with a large number of ".root" outfiles, to clean these:

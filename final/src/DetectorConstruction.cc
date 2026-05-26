@@ -249,19 +249,22 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     auto MPTCrystal = new G4MaterialPropertiesTable();
     // NOTE: Need at least: refractive index, emission spectrum, absorption length, yield, decay time
     
-    // Wavelength range listed for NaI (refractiveindex.info)
-    // std::vector<G4double> energy = {1.9587*eV, 2.3991*eV, 2.8437*eV}; // Wavelength (~436nm - 633nm)    TODO: This could be refined to emi range
-    // std::vector<G4double> energy = {1.239841939*eV/0.633, 1.239841939*eV/0.436}; // 436 nm - 633 nm (smallest must go first)
+    // Energy range of NaI:Tl emission spectrum
     // NOTE: Visible light ranges from ~400 nm (violet) to ~700 nm (red)
     // TODO: See EMI notes
-    std::vector<G4double> energy = {2.25425 * eV, 2.98756 * eV, 3.81488 * eV}; // (550 nm, 415 nm, 325 nm) - (green, violet, long wavelength ultraviolet) (hence most of the spectrum in blue-violet range)
-    // 3 sources say max @ 415 nm
+    std::vector<G4double> energy = {2.25425 * eV, 2.98756 * eV, 3.81488 * eV}; // (550 nm, 415 nm, 325 nm) // TODO: Add an intermediary wavelength between 550->415, and 415->325
+    // NOTE: (green, violet, long wavelength ultraviolet) (hence most of the spectrum in blue-violet range)
     //
     // One says:
-    // 325-525nm, max @ 410 nm
+    // 325-550nm, max @ 415 nm // TODO: STATE REF
+    //
+    // Another says:
+    // 325-525nm, max @ 410 nm // TODO: STATE REF
     // 
     // Another says:
-    // 340-520nm, with max @ 410nm
+    // 340-520nm, with max @ 410nm // TODO: STATE REF
+    //
+    // NOTE: 3 sources say max @ 415 nm
     
     // Refractive index (n) - The ratio of speed of light in air/vaccum (c) to SOL in medium (v) (NOTE: n = (c / v))
     // std::vector<G4double> rindex = {1.7779, 1.8043, 1.8391}; // A function of wavelength (~436nm - 633nm)
@@ -277,8 +280,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // The energy spectrum of the emitted scintillation photons
     // NOTE: This is essential to generate the correct number of photons (25156 for 662 keV, instead of 5-10)
     // std::vector<G4double> emission = {1., 1., 1.}; // same amount of photons for each wavelength
-    std::vector<G4double> emission = {0.1, 1., 0.1}; // emission max @ 415 nm
-    // std::vector<G4double> emission = {0.01, 1., 0.01}; // NOTE: No different to 0.1 upper/lower
+    // std::vector<G4double> emission = {0.1, 1., 0.1}; // emission max @ 415 nm (NOTE: No different to 0. upper/lower)
+    std::vector<G4double> emission = {0., 1., 0.}; // emission max @ 415 nm (NOTE: No different to 0.1 upper/lower)
     MPTCrystal->AddProperty("SCINTILLATIONCOMPONENT1", energy, emission); // "Fast component"
     // NOTE: Tells Geant4 how many photons for each wavelength (or energy)
     // The scintillation photons will have a spectrum, depending on wavelength,
@@ -288,10 +291,10 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     // Absorption length is the average distance travelled by a photon before being absorbed by the medium 
     // (i.e. it is the mean free path returned by the GetMeanFreePath method)
-    std::vector<G4double> absorptionLengthNaI = {30.*cm, 30.*cm, 30.*cm};
-    // std::vector<G4double> absorptionLength = {50.*cm, 50.*cm, 50.*cm}; // increased collection at the photocathode
-    // std::vector<G4double> absorptionLength = {56.234 * cm, 31.623 * cm, 0.794 * cm}; // Brown (2021) (corrigendum) & Miller et al (2024)
-    
+    // std::vector<G4double> absorptionLengthNaI = {30.*cm, 30.*cm, 30.*cm};
+    // std::vector<G4double> absorptionLengthNaI = {50.*cm, 50.*cm, 50.*cm}; // increased collection at the photocathode
+    std::vector<G4double> absorptionLengthNaI = {56.234 * cm, 31.623 * cm, 0.794 * cm}; // Brown (2021) (corrigendum) & Miller et al (2024)
+    // ..
     MPTCrystal->AddProperty("ABSLENGTH", energy, absorptionLengthNaI); // NOTE: Trivial in that the process merely kills the particle
     // NOTE: This has effect on air too (WITHOUT SPECIFYING THIS, SIM WILL HANG INDEFINITELY, WHEN AIR RINDEX SPECIFIED)
     // NOTE: At the ultraviolet threshold, the self-absorption edge is hit, where the
@@ -333,7 +336,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // NOTE: ^^^^ No, not direct conversion at all, 1.8 = ~105.35 FWHM (so ~51% reduction of res scale = 6.5% reduction of FWHM)
     //
     // TODO: RUN SIM WITH RES SCALE = 1
-    MPTCrystal->AddConstProperty("RESOLUTIONSCALE", 1); // NOTE: True val probably 1 +/- some %
+    // MPTCrystal->AddConstProperty("RESOLUTIONSCALE", 1); // NOTE: True val probably 1 +/- some %
     // MPTCrystal->AddConstProperty("RESOLUTIONSCALE", 0.5);
     // MPTCrystal->AddConstProperty("RESOLUTIONSCALE", 0);
     // NOTE: Zero might be excessive, and not very realistic as it implies no variance
@@ -345,7 +348,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // sigma = 0.5 * sqrt(n)
     // reduces FWHM even more, from ~105.35 FWHM (at 1.8 res scale), to 91.16 (still at 1.8 res scale)
     //
-    // MPTCrystal->AddConstProperty("RESOLUTIONSCALE", 3.5); // NOTE: Miller et al (2024)
+    MPTCrystal->AddConstProperty("RESOLUTIONSCALE", 3.5); // NOTE: Miller et al (2024)
     // MPTCrystal->AddConstProperty("RESOLUTIONSCALE", 10.); // more gaussian
     // NOTE: A resolution scale of ZERO produces no fluctuation in optical photons generated
     // (sigma = sqrt of mean photons for step * RESOLUTIONSCALE)
@@ -364,27 +367,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     NaI->SetMaterialPropertiesTable(MPTCrystal);
     
     /*
-     * REFRACTIVE INDICES
-     * 
-     * (Of materials beyond the scintillator)
-     * 
-     * NOTE: Scintillation photons will be "killed" when attempting to leave the crystal
-     * if the medium it is entering has no refractive index defined, 
-     * hiding need for reflector material
-     * 
-     * NOTE: If absorption length is not specified above, giving air a rindex will cause sim to hang indefinitely
-     */
-    
-    // Assign a refractive index to air, using the same energy vector as above
-    auto MPTAir = new G4MaterialPropertiesTable();
-    std::vector<G4double> rindexAir = {1., 1., 1.}; // MPT2->AddProperty("RINDEX", "Air") NOTE: Default available
-    MPTAir->AddProperty("RINDEX", energy, rindexAir);
-    // air->SetMaterialPropertiesTable(MPTAir);
-    
-    // TODO: Test removing this (to identify any air gaps)
-    
-    /*
-     * REFLECTOR SURFACE DEFINITIONS:
+     * >>> REFLECTOR SURFACE & MATERIAL DEFINITIONS:
      * 
      * These are the defaults for the optical surface:
      * G4OpticalSurface("ReflectorSurface", glisur, polished, dielectric_dielectric)
@@ -392,14 +375,15 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
      * The "GLISUR" and "UNIFIED" models appear to be almost identical in all cases below (tested),
      * leaning towards "UNIFIED" as there is a chart in docs explicitly stating functionality.
      * 
-     * NOTE: In cases where "UNIFIED" is specified, but reflection probability constants are not,
-     * the default becomes Lambertian reflection.
-     * 
      * The "dielectric_dielectric" interface is appropriate for crystal->alumina interface,
-     * "dielectric_lut" is also available, however the look up tables are currently limited, and need downloading.
+     * "dielectric_lut" is also available, however the look up tables are currently limited,
+     * and need downloading.
      * 
      * Hence, all following finishes listed will be using:
      * G4OpticalSurface("name", unified, X, dielectric_dielectric || dielectric_metal)
+     * 
+     * 
+     * >>> SURFACE FINISHES:
      * 
      * With the non-painted finishes:
      * - Polished
@@ -413,47 +397,41 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
      * NOTE: The mechanism will be decided based on the supplied energy dependent vectors,
      * but refraction is not very desireable for a reflector material as light will escape.
      * 
-     * NOTE: Also, the use of a "polished" or "ground" surface here, 
-     * without giving the reflector material itself a refractive index,
-     * means optical photons will be killed instead of reflected.
+     * NOTE: Also, the use of a "polished" or "ground" surface here, without giving the
+     * reflector material itself a refractive index, means optical photons will be killed
+     * instead of reflected.
      * 
-     * With the front painted finishes, the only interaction mechanisms will be:
+     * With any of the painted finishes, the only interaction mechanisms will be:
      * - Reflection
      * - Absorption
      * 
-     * NOTE: No refraction, suitable for a reflector material, 
-     * reflection probability must be set by "REFLECTIVITY" property.
+     * NOTE: No refraction, suitable for a reflector material, reflection probability must 
+     * be set by "REFLECTIVITY" property.
      * 
-     * Front painted finishes prevent refraction (no transmission), but still allow for absorption:
+     * NOTE: I have tested each of the 6 surface finishes. No paint allows refraction,
+     * painted does not.
+     * 
+     * Front painted finishes:
      * - PolishedFrontPainted (specular spike reflection)
      * - GroundFrontPainted (lambertian reflection - diffuse)
      * 
-     * NOTE: Both are suitable (as they prevent refraction, incident light will only absorb or reflect),
+     * NOTE: These are for paints that are physically bound to the crystal, i.e., white paint ??
      * 
-     * Eliminating possibility for visible light photons to penetrate alumina reflector seems suitable (painted options).
-     * 
-     * Back painted finishes prevent refraction (no transmission), but allow for custom reflection mechanics:
+     * Back painted finishes:
      * - PolishedBackPainted (specular spike, specular lobe, backscatter, lambertian)
      * - GroundBackPainted (specular spike, specular lobe, backscatter, lambertian)
      * 
-     * NOTE: Pretty sure refraction can occur with back painted actually
+     * NOTE: These are for reflective surfaces that have an air gap (i.e. teflon, dry 
+     * packed powder reflectors), or a binding medium (i.e. optical epoxy to bind powder
+     * reflectors to the crystal)
      * 
-     * SigmaAlpha to specify surface roughness...
-     * 
-     * NOTE: RINDEX must be specified (for surface) for back painted afaik (tested with and without)
-     * 
-     * Back painted allows for; setting sigma alpha, and individual reflection constants
-     * I.e. ground front painted only lambertian, but ground back painted may be one of four
      * 
      * NOTE: With a "painted" surface finish, it seems the rindex, or an MPT,
      * doesnt need to be assigned to the Al203 material, spectrum remains the same either way.
      * 
-     * NOTE: SigmaAlpha only seems to have an effect on BackPainted (not FrontPainted)
      * 
      * 
-     * 
-     * 
-     * >>> REFLECTIVITY / TRANSMITTANCE
+     * >>> REFLECTIVITY / TRANSMITTANCE:
      * 
      * Reflectivity is defined as:
      * 
@@ -473,13 +451,13 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
      * (it is absorbed at the surface)
      * 
      * i.e. (REFLECTIVITY = 1, TRANSMITTANCE = 0): No photons killed
-     * i.e. (REFLECTIVITY = 0.96, TRANSMITTANCE = 0): 4% of photons are killed
+     * i.e. (REFLECTIVITY = 0.96, TRANSMITTANCE = 0): 4% chance of photon being killed at boundary
      * 
      * - 2) If the roll is LESS than REFLECTIVITY, the photon survives and goes on to the physics 
      * calculations
      * 
      * i.e. (REFLECTIVITY = 1, TRANSMITTANCE = 0): All photons undergo physics calculations
-     * i.e. (REFLECTIVITY = 0.96, TRANSMITTANCE = 0): 96% go to calcs
+     * i.e. (REFLECTIVITY = 0.96, TRANSMITTANCE = 0): 96% chance to go to calcs
      * 
      * - 3) If the roll is between REFLECTIVITY and (REFLECTIVITY + TRANSMITTANCE), the photon
      * undergoes forced transmission (passing straight through to the next volume, completely
@@ -492,13 +470,14 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
      * 
      * 
      * Hence, for a dielectric_dielectric surface, setting reflectivity to 0 means most 
-     * photons will be killed on contact with the surface, whereas reflectivity of 1 means 
+     * photons will be killed on contact with the surface, whereas reflectivity of 1 means
+     * almost all photons will undergo physics calculations.
      * 
      * NOTE: Shouldnt all photons be killed on contact with surface w/ 0?
      * ^ yet when it is zero, im still getting photons lost (when no rindex set for aluminium)
      * 
      * 
-     * >>> REFLECTION CONSTANTS
+     * >>> SURFACE REFLECTION CONSTANTS:
      * 
      * Defaults to:
      * - specular spike constant = 0
@@ -509,6 +488,19 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
      * If any of the other constants are set to non-0 values:
      * - diffuse lobe constant (lambertian) = (1 - sum of other constants)
      * 
+     * - Specular lobe constant:
+     * Represents the reflection probability about the normal of a micro facet (local normal).
+     * 
+     * - Specular spike constant:
+     * The probability of reflection about the average surface normal.
+     * 
+     * - Diffuse lobe constant:
+     * The probability of internal Lambertian reflection.
+     * 
+     * - Back-scatter spike constant:
+     * The probability of several reflections within a deep groove with the end result
+     * being exact back-scattering.
+     * 
      * NOTE: Powder reflections scatter deep within grain structures, destroying any 
      * directional memory relative to the macro-surface, hence "specular lobe constant"
      * should be kept near or at zero.
@@ -518,23 +510,68 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
      * kept near or at zero.
      * 
      * 
+     * >>> SIGMA ALPHA:
+     * 
+     * SigmaAlpha is used specify surface roughness of the exit medium.
+     * 
+     * NOTE: This is only applicable to:
+     * - Ground
+     * - Polished Back Painted
+     * - Ground Back Painted
+     * 
+     * The facet normal is chosen from a gaussian distribution with this sigma.
+     * 
+     * NOTE: Unit is radians.
+     * 
+     * NOTE: Estimating this is very difficult, so may be best omitted
+     * 
+     * For back painted options:
+     * 
+     * If defining a dry packed reflector such as Al2O3, which has a tiny air gap between 
+     * the crystal and the reflector, sigma alpha refers to the crystal->air interface,
+     * or the outside of the crystal. Not the roughness of the reflector surface itself.
+     * 
+     * 
+     * >>> REFRACTIVE INDICES:
+     * 
+     * RINDEX must be specified both for the surface, and the secondary medium, for the
+     * back painted finishes. I.e., set rindex of air to the surface, and rindex of Al2O3 
+     * to the material itself.
+     * 
+     * (Of materials beyond the scintillator)
+     * 
+     * NOTE: Scintillation photons will be "killed" when attempting to leave the crystal
+     * if the medium it is entering has no refractive index defined, hiding the need for 
+     * a reflector material
+     * 
+     * 
+     * >>> ABSORPTION LENGTH:
+     * 
+     * When giving surrounding media a rindex (beyond the crystal), if absorption 
+     * length is not specified, it defaults to a near infinite value, 
+     * 
+     * NOTE: In a geometry of only: crystal->air this will cause sim to hang almost 
+     * indefinitely
+     * 
      * 
      * >>> MATERIAL CHOICE
      * 
-     * Rather than just having a polished aluminium reflector, reflectors such as alumina powders are often used.
+     * Rather than just having a polished aluminium reflector, reflectors such as alumina 
+     * powders are often used.
      * 
      * This is because while aluminium can be highly reflective, it has an extremely short
-     * attenuation length for visible light (10-20 nm). Whereas alumina powders have an extremely
-     * low bulk absorption coefficient. This allows the optical photons (not reflected at or very 
-     * close to the surface) to undergo extensive scattering in the reflector medium (in the granular matrix)
+     * attenuation length for visible light (10-20 nm). Whereas alumina powders have an 
+     * extremely low bulk absorption coefficient. This allows the optical photons (not 
+     * reflected at or very close to the surface) to undergo extensive scattering in the 
+     * reflector medium (in the granular matrix)
      * 
      * While teflon may provide greater reflectivity than alumina in the visible and 
      * near-UV spectrums, prolonged exposure to high-energy UV or radiation, may cause it 
-     * to slightly discolor or degrade over time. Is is also very soft (low hardness), so can
-     * be prone to scratching.
+     * to slightly discolor or degrade over time. Is is also very soft (low hardness), so 
+     * can be prone to scratching.
      * 
-     * Whereas alumina powder will not degrade or yellow under intense UV light or high heat, 
-     * and it is also extremely hard (scratch resistant) (Mohs hardness of 9.0).
+     * Whereas alumina powder will not degrade or yellow under intense UV light or high 
+     * heat, and it is also extremely hard (scratch resistant) (Mohs hardness of 9.0).
      * 
      */
     
@@ -545,16 +582,24 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Reflector MPT (definining probability of reflection, or else absorption)
     auto MPTReflectorSurf = new G4MaterialPropertiesTable();
     
-    // Unified model, polished front painted so refraction does not occur, dielectric-dielectric interface
-    // auto reflectorSurface = new G4OpticalSurface("ReflectorSurface", unified, polishedfrontpainted, dielectric_dielectric);
-    // NOTE: Reflectors are typically diffuse (ground) for better results, will see how much difference it makes in sim
-    //
-    // auto reflectorSurface = new G4OpticalSurface("ReflectorSurface", unified, groundfrontpainted, dielectric_dielectric);
-    //
+    // NOTE: The polished and ground finishes allow for refraction
+    // NOTE: Front painted do not allow refraction to occur
+    // NOTE: These are for paints that are physically bound to the crystal
+    
+    // NOTE: Back painted do not allow refraction to occur
+    // UNIFIED model, ground back painted (same as ground but with a back-paint), dielectric-dielectric interface (crystal->reflector)
     auto reflectorSurface = new G4OpticalSurface("ReflectorSurface", unified, groundbackpainted, dielectric_dielectric);
+    // NOTE: Back painted implies the presence of a tiny gap between the two media, i.e.
+    // an air gap for dry packed powders or teflon, or 
+    // NOTE: Lambertian reflector attached to scintillator crystal surface
+    
+    // NOTE: Reflectors are typically diffuse (ground), as it promotes greater light collection
     
     // Specify surface roughness (For back painted surface)
-    reflectorSurface->SetSigmaAlpha(0.1); // Almost polished (specular)
+    // reflectorSurface->SetSigmaAlpha(0); // No specular lobe constant, so ...
+    // reflectorSurface->SetSigmaAlpha(0.023); // Mechanically polished - Janecek et al (2010)
+    // reflectorSurface->SetSigmaAlpha(0.1); // Almost polished (specular)
+    // reflectorSurface->SetSigmaAlpha(0.2); // Ground polished - Janecek et al (2010) (~12 deg)
     // reflectorSurface->SetSigmaAlpha(0.25); // Ground polished (partially diffuse)
     // reflectorSurface->SetSigmaAlpha(0.35);
     // reflectorSurface->SetSigmaAlpha(0.4);
@@ -562,10 +607,17 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // reflectorSurface->SetSigmaAlpha(0.75); // Rough powder (strongly diffuse)
     // reflectorSurface->SetSigmaAlpha(1); // Strongly diffuse
     
-    // Reflection probability as a function of wavelength (1 = all photons will be reflected (Default val))
+    // TODO: IM PRETTY SURE SIGMA ALPHA IS SURFACE ROUGHNESS OF CRYSTAL, NOT REFLECTOR
+    // ^ at Crystal->air gap interface, it probably is fairly rough
+    // WOULD REFLECTION CONSTANTS ALSO BE THE SAME (crystal->air gap interface)
+    
+    // Reflection probability as a function of wavelength 
+    // NOTE: Default value: 1 = all photons will undergo reflection/refraction calculation
     // std::vector<G4double> reflectivityReflector = {0.9, 0.9, 0.9}; // Rough est val
     // std::vector<G4double> reflectivityReflector = {0.94, 0.94, 0.94}; // 96% alumina -> 94% reflectance
-    std::vector<G4double> reflectivityReflector = {0.96, 0.96, 0.96}; // 99.7% alumina -> 96% reflectance @500-2000nm
+    // std::vector<G4double> reflectivityReflector = {0.96, 0.96, 0.96}; // 99.7% alumina -> 96% reflectance @500-2000nm
+    std::vector<G4double> reflectivityReflector = {0.98, 0.98, 0.98};
+    // std::vector<G4double> reflectivityReflector = {0.99, 0.99, 0.99};
     // std::vector<G4double> reflectivityReflector = {1., 1., 1.};
     // std::vector<G4double> reflectivityReflector = {0.1, 0.1, 0.1};
     // std::vector<G4double> reflectivityReflector = {0., 0., 0.};
@@ -586,6 +638,11 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // std::vector<G4double> bsReflector = {0.01, 0.01, 0.01}; // Backscatter constant
     // NOTE: Defaults to specular spike = 0, specular lobe = 0, backscatter = 0, diffuse lobe (lambertian) = 1
     // if other values are set to non-0, diffuse lobe constant (lambertian) will be 1 - sum of other components
+    
+    // TODO: I THINK IT MAY BE BEST TO GO FOR HIGH SPECULAR LOBE ? IF IT IS FOR Crystal->Air gap INTERFACE ???
+    // NO, THIS IS FOR polished CRYSTAL->PMT WINDOW INTERFACE (sigma alpha = 0, SL = 1)
+    
+    // NOTE: JUST LEAVE IT AT: LAMBERTIAN = 1, see notes in jsdoc comment block above
     
     // TEST
     // std::vector<G4double> efficiencyReflector = {0., 0., 0.};
@@ -608,9 +665,10 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     // TEST: 4OpBoundaryProcessStatus::NoRINDEX is being flagged at "Reflector" volume
     auto MPTReflector = new G4MaterialPropertiesTable();
+    
     std::vector<G4double> rindexAlumina = {1.78, 1.78, 1.78}; // Al2O3
     MPTReflector->AddProperty("RINDEX", energy, rindexAlumina); // NOTE: THIS DOES CHANGE SPECTRA EVER SO SLIGHTLY
-    Al2O3->SetMaterialPropertiesTable(MPTReflector);
+    
     // NOTE: Dont add reflectivity to the material, just the surface
     
     // NOTE: By adding RINDEX to Al2O3, NoRINDEX now being flagged at "Hermetic Seal" & "Casing"
@@ -619,6 +677,12 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // TODO: Set this high (is infinite currently)
     // std::vector<G4double> absorptionLengthAlumina = {400 * cm, 400 * cm, 400 * cm};
     // MPTReflector->AddProperty("ABSLENGTH", energy, absorptionLengthAlumina);
+    // NOTE: Dont need this... photons dont enter the medium
+    
+    // TEST
+    Al2O3->SetMaterialPropertiesTable(MPTReflector);
+    
+    // NOTE: UNCOMMENT ME ^^^^^^^^^^^^^^^^^^^
     
     
     /*
@@ -684,14 +748,17 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // ALUMINIUM MATERIAL PROPERTIES
     ////////////////////////////////
     
-    auto MPTAl = new G4MaterialPropertiesTable();
+    // auto MPTAl = new G4MaterialPropertiesTable();
     // std::vector<G4double> rindexAl = {0.59062, 0.33593, 0.22053};
 //     std::vector<G4double> absLengthAl = {15 * nm, 15 * nm, 15 * nm};
     // MPTAl->AddProperty("RINDEX", energy, rindexAl);
-    Al->SetMaterialPropertiesTable(MPTAl);
+    // Al->SetMaterialPropertiesTable(MPTAl);
     
     // NOTE: No photons lost to NoRINDEX with rindex omitted here, but accurate rindex
     // likely impacts reflection
+    
+    // NOTE: Absorption length not needed with dielectric_metal interface, photon can only
+    // be absorbed or reflected (not refracted)
     
     ///////////////////////////////////////////////
     // ENCLOSURE & HERMETIC SEAL SURFACE PROPERTIES
@@ -736,7 +803,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     auto MPTGrease = new G4MaterialPropertiesTable();
     
     // Dielectric polished surface, allowing refraction
-    // auto greaseSurface = new G4OpticalSurface("GreaseSurface", unified, polished, dielectric_dielectric);
+    auto greaseSurface = new G4OpticalSurface("GreaseSurface", unified, polished, dielectric_dielectric);
     
     // Refractive index of optical grease (1.46 @ 589.3 nm)
     std::vector<G4double> rindexGrease = {1.46, 1.46, 1.46}; // TODO: Refractive index matching ...
@@ -760,7 +827,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     auto MPTWindow = new G4MaterialPropertiesTable();
     
     // Dielectric polished surface, allowing refraction
-    // auto windowSurface = new G4OpticalSurface("WindowSurface", unified, polished, dielectric_dielectric);
+    auto windowSurface = new G4OpticalSurface("WindowSurface", unified, polished, dielectric_dielectric);
     
     // Refractive index of borosilicate glass (1.53024 @ 404.7 nm - SCHOTT BK7 Datasheet)
     // std::vector<G4double> rindexBorosilicate = {1.53, 1.53, 1.53};
@@ -840,18 +907,23 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     // Bialkali photocathode (K--Cs, i.e. K2CsSb or K-Cs-Sb)
     // 
-    std::vector<G4double> reflectivityScoring = {0.21, 0.21, 0.21}; // Reflectivity: ~21% @500nm
-    // std::vector<G4double> reflectivityScoring = {0., 0., 0.};
-    std::vector<G4double> efficiencyScoring = {0.08, 0.27, 0.26}; // QE: 0.08 @550nm, ~0.27 @415nm, ~0.26 @325nm 
+    // std::vector<G4double> reflectivityScoring = {0.21, 0.21, 0.21}; // Reflectivity: ~21% @500nm (Harmer et al [2012])
+    // std::vector<G4double> reflectivityScoring = {0.05, 0.05, 0.05};
+    std::vector<G4double> reflectivityScoring = {0.25, 0.18, 0.13}; // Optical properties of bialkali photocathodes - Motta (2004)
+    std::vector<G4double> efficiencyScoring = {0.08, 0.27, 0.26}; // QE: 0.08 @550nm, ~0.27 @415nm, ~0.26 @325nm (KNOLL)
     // TODO: PC polished w/ just new R, QE
+    
+    // TODO: Real/imaginary rindices instead of reflectivity? Takes into account incident angle.
     
     // TODO: IQE vs EQE (this is EQE afaik)
     // TODO: Anti-reflective coating? So likely much less than 21% reflectivity?
+    // TODO: Transmittance = 33% @500nm (Harmer et al [2012])
     
     // NOTE: Using same energy as other MPTS has no effect on output spectrum at all (vs "energyScoring")
     MPTPhotocathode->AddProperty("REFLECTIVITY", energy, reflectivityScoring); // 1 minus the absorption coeffcient
     MPTPhotocathode->AddProperty("EFFICIENCY", energy, efficiencyScoring); // Chance of an absorbed photon to be detected
     
+    // ...
     photocathodeSurface->SetMaterialPropertiesTable(MPTPhotocathode);
     
     // NOTE: Only seeing ~1% of the total optical photons being "DETECTED" on full energy deposition
@@ -860,6 +932,18 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     // Bialkali material has a broad spectra response from 170-560 nm
     // photocathode spectral response should match the emission spectrum of the scintillator used
+    
+    /*
+     * ...
+     */
+    
+    // Assign a refractive index to air, using the same energy vector as above
+    auto MPTAir = new G4MaterialPropertiesTable();
+    std::vector<G4double> rindexAir = {1., 1., 1.}; // MPT2->AddProperty("RINDEX", "Air") NOTE: Default available
+    MPTAir->AddProperty("RINDEX", energy, rindexAir);
+    // air->SetMaterialPropertiesTable(MPTAir);
+    
+    // TODO: Test removing this (to identify any air gaps)
     
     
     /////////
@@ -1044,15 +1128,19 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     // Silicon gel with ~same thickness as reflector (2.3495 mm as per schematics)
     // NOTE: Some sources say only 0.1 mm thickness is suggested though ^ (and less kinda makes sense)
+    // NOTE: Some sources say only 10-50 um thickness
+    // NOTE: OST Photonics 2" NaI schematic states 2mm gel thickness
         
     // ... the optical grease will then be pressed against the PMT window
+    // G4double greaseThickness = reflectorThickness; // Same thickness as reflector (2.3495 mm)
+    G4double greaseThickness = 25 * um; // TEST
     
     // Optical grease (transmitting incident optical photons to the PMT window)
     auto grease = new G4Tubs(
         "OpticalGrease",
         crystalInnerRad, // 0cm
         crystalOuterRad, // same radius as crystal (slots into reflector)
-        reflectorThickness * 0.5, // same thickness as reflector (will be multiplied by 2 on placement)
+        greaseThickness * 0.5, // (will be multiplied by 2 on placement)
         startAngle, // 0 deg
         endAngle // 360 deg (full span)
     );
@@ -1061,7 +1149,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     auto greaseLog = new G4LogicalVolume(grease, PDMS, "OpticalGrease");
     
     // Translation along Z axis (relative to crystal origin)
-    G4double greaseZ = crystalZ + (crystalHeight * 0.5) + (reflectorThickness * 0.5);
+    G4double greaseZ = crystalZ + (crystalHeight * 0.5) + (greaseThickness * 0.5); // TEST
     // NOTE: Places it on crystal Z (centre of the crystal), 
     // translates it by half the crystal height (to account for it being centre of crystal),
     // due to 0.5 reflector thickness being placed either side of its origin,
@@ -1084,7 +1172,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // PHOTOMULTIPLIER TUBE:
     ////////////////////////
 
-    // NOTE: Will likely just be the window (OPTICAL WINDOW)
+    // NOTE: Just modelling the PMT window (OPTICAL WINDOW)
     
     G4double windowThick = 0.2 * cm; // 2mm according to hamamatsu handbook
     
@@ -1102,7 +1190,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     auto windowLog = new G4LogicalVolume(window, borosilicate, "OpticalWindow");
     
     // Translation along Z axis (relative to optical grease origin)
-    G4double windowZ = greaseZ + (reflectorThickness * 0.5) + (windowThick * 0.5);
+    G4double windowZ = greaseZ + (greaseThickness * 0.5) + (windowThick * 0.5); // TEST
     // NOTE: Places it on grease Z (centre of the grease),
     // translates it by half the grease height (to account for it being centre of grease),
     // due to 0.5 window thickness being placed either side of window origin,
@@ -1168,7 +1256,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // ALUMINIUM ENCLOSURE:
     ///////////////////////
         
-    // Enclosure is 3.225' outer diameter according to ortec spec, and 0.2' thickness
+    // Enclosure is 3.225' outer diameter according to ortec spec, and 0.2' thickness (0.508mm)
     // G4double inchToCM = 2.54;
     G4double enclosureThick = 0.0508 * cm; // NOTE: 0.02' => 0.508 mm (added to both sides in Z direction)
     G4double enclosureOuterRad = ((3.225 * 2.54) / 2) * cm; // NOTE: 3.225' dia => 8.1915cm dia => 4.09575 cm outer rad
@@ -1260,7 +1348,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     );
     
     // Translation along Z axis (relative to optical window origin)
-    G4double sealZ = windowZ;
+    // G4double sealZ = windowZ;
+    G4double sealZ = crystalZ + (crystalHeight * 0.5) + reflectorThickness + (sealLength * 0.5); // TEST
     
     // Place the seal
     G4VPhysicalVolume* sealPhys = new G4PVPlacement(
@@ -1433,31 +1522,39 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Define the border between the crystal and the reflector
     auto crystalReflectorBorder = new G4LogicalBorderSurface("CrystalToReflector", crystalPhys, reflectorPhys, reflectorSurface);
 
+    // NOTE: Crystal->Grease, and Grease->Window surfaces are not explicitly needed when rindex of each is passed
+    // will default to: GLISUR, polished, dielectric_dielectric
+    // ^ maybe do it just to explicitly pick UNIFIED
+    auto crystalGreaseBorder = new G4LogicalBorderSurface("CrystalToGrease", crystalPhys, greasePhys, greaseSurface);
+    auto greaseWindowBorder = new G4LogicalBorderSurface("GreaseToWindow", greasePhys, windowPhys, windowSurface);
+    // NOTE: After testing, adding these two borders produces an identical spectrum to just 
+    // leaving these two borders as default
+    
     // TEST \/\/\/\/
     // Define the border between the reflector and enclosure
-    auto reflectorEnclosureBorder = new G4LogicalBorderSurface("ReflectorToEnclosure", reflectorPhys, enclosurePhys, aluminiumSurface);
+    // auto reflectorEnclosureBorder = new G4LogicalBorderSurface("ReflectorToEnclosure", reflectorPhys, enclosurePhys, aluminiumSurface);
     //
     // Define the border between the reflector and hermetic seal
-    auto reflectorSealBorder = new G4LogicalBorderSurface("ReflectorToSeal", reflectorPhys, sealPhys, aluminiumSurface);
+    // auto reflectorSealBorder = new G4LogicalBorderSurface("ReflectorToSeal", reflectorPhys, sealPhys, aluminiumSurface);
     // TEST ^^^^^^^
+    
+    // NOTE: ^^^ These are not needed, as groundbackpainted prevents refraction
     
     // TODO: Border back from: (enclosurePhys -> reflectorPhys) & (sealPhys - reflectorPhys)
     // auto enclosureReflectorBorder = new G4LogicalBorderSurface("EnclosureToReflector", enclosurePhys, reflectorPhys, reflectorSurface);
     // auto enclosureSealBorder = new G4LogicalBorderSurface("SealToReflector", sealPhys, reflectorPhys, reflectorSurface);
-    // ..
     // TODO: Border back from reflectorPhys->crystalPhys
     // auto reflectorCrystalBorder = new G4LogicalBorderSurface("ReflectorToCrystal", reflectorPhys, crystalPhys, reflectorSurface);
-    // NOTE: I DONT THINK THESE ARE ACTUALLY NEEDED
+    
+    // NOTE: ^^^ I DONT THINK THESE ARE ACTUALLY NEEDED
     
     // Define the border between the optical window and the hermetic seal
-    auto windowSealBorder = new G4LogicalBorderSurface("WindowToSeal", windowPhys, sealPhys, aluminiumSurface);
+    // auto windowSealBorder = new G4LogicalBorderSurface("WindowToSeal", windowPhys, sealPhys, aluminiumSurface); // NOTE: UNCOMMENT ME
+    
+    auto windowSealBorder = new G4LogicalBorderSurface("WindowToReflector", windowPhys, reflectorPhys, reflectorSurface); // TEST (for 25 um grease geom)
     
     // Define the border between the optical window and the photocathode
     auto windowPhotocathodeBorder = new G4LogicalBorderSurface("WindowToPhotocathode", windowPhys, photocathodePhys, photocathodeSurface);
-    
-    // NOTE: Crystal->Grease, and Grease->Window surfaces are not explicitly needed when rindex of each is passed
-    // will default to: GLISUR, polished, dielectric_dielectric
-    // ^ maybe do it just to explicitly pick UNIFIED
     
     
     /////////////
