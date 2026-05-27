@@ -2,7 +2,6 @@
 #include "SteppingAction.hh"
 #include "AnalysisManager.hh"
 #include "DetectorConstruction.hh"
-#include <G4TrackStatus.hh>
 
 // G4 Lib
 #include "G4OpBoundaryProcess.hh"
@@ -15,6 +14,7 @@
 #include "G4OpticalPhoton.hh"
 #include "G4Step.hh"
 #include "G4AnalysisManager.hh"
+#include <G4TrackStatus.hh>
 
 // Random seeding
 #include "G4RandomTools.hh"
@@ -30,6 +30,9 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     // Get kinetic energy of particle
     // Flag it as an escape x-ray
     // Add to running total escaped energy tracker
+    
+    // TODO: If particle is gamma (for optical photon temporal profile)
+    // set fStartTime to local time
     
     // If particle is not an optical photon, break
     if (track->GetDefinition() != G4OpticalPhoton::OpticalPhotonDefinition()) {
@@ -48,7 +51,6 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     
     // Get the post step point object for the particle
     G4StepPoint* endPoint = step->GetPostStepPoint();
-    
     
     
     // >>>>> TEST TEST TEST: #1 - find photons lost via bulk absorption
@@ -80,16 +82,31 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     // TEST
     
     // >>>>> TEST TEST TEST: #2
-//     auto const process = endPoint->GetProcessDefinedStep();
-//     if (process && (process->GetProcessName() == "OpAbsorption")) {
-//         fEventAction->CountKill();
-//         // fEventAction->CountBulkAbsorption();
+    // ...
+    G4VProcess const* process = endPoint->GetProcessDefinedStep();
+    // ...
+    if (!process) return; // NOTE: Not sure about this return
+    
+    // if ((track->GetTrackStatus() == fStopAndKill) && (endPoint->GetStepStatus() != fGeomBoundary)) {
+    // if (process && (process->GetProcessName() == "OpAbsorption") && (endPoint->GetStepStatus() != fGeomBoundary)) {
+    if ((process->GetProcessName() == "OpAbsorption") && (endPoint->GetStepStatus() != fGeomBoundary)) { // NOTE: not sure the double check for boundary is needed, it would be "OpBoundary" otherwise
+        // fEventAction->CountKill();
+        fEventAction->CountBulkAbsorption();
 //         // TODO: ^ This is essentially a duplicate method, useful for debugging,
 //         // but just use one or the other if this code is included in actual runs
+    
+        // TEST TEST TEST
+        // Get distance travelled by photon before detection
+        G4double distance = track->GetTrackLength();
+        auto analysisManager = G4AnalysisManager::Instance();
+        analysisManager->FillNtupleDColumn(3, 1, distance); // id = 3, column = 1, value = distance travelled
+        analysisManager->AddNtupleRow(3); // finish row for Ntuple id = 3
+        // G4cout << "Distance Travelled Before Bulk Absorption: " << distance << " mm" << G4endl;
+        // TEST TEST TEST
 //         
 //         // No need to proceed, exit early
 //         return;
-//     }
+    }
     // TEST - NOTE: #2 AND #1 ARE FUNCTIONALLY EQUIVALENT
     
     
@@ -101,6 +118,8 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     
     // If post step point not at a defined geometric boundary, break
     if (endPoint->GetStepStatus() != fGeomBoundary) return;
+    
+    // if (process->GetProcessName() != "OpBoundary") return; // TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST
     
     // If at a boundary ...
     G4OpBoundaryProcessStatus boundaryStatus = fBoundary->GetStatus();
@@ -124,20 +143,32 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         fEventAction->CountDetectedPhoton();
         
         // TODO: May be worth double checking the boundary is the photocathode
-        // although since its only one with efficiency vector, it will be
+        // ...although since its only one with efficiency vector, it will be
         
         // G4cout << endPoint->GetTouchable()->GetVolume()->GetName() << G4endl; // "Scoring"
-        // auto x = endPoint->GetTouchable()->GetVolume()->GetName();
-        // if (x != "Photocathode") G4cout << x << G4endl;
+        // auto detectionVolume = endPoint->GetTouchable()->GetVolume()->GetName();
+        // if (detectionVolume != "Photocathode") G4cout << detectionVolume << G4endl;
         
         // if (endPoint->GetTouchable()->GetVolume() == fScoringVolume)
         // NOTE: Get fScoringVolume via public method on DetectorConstruction
+        
+        // Get pointer to analysis manager singleton
+        auto analysisManager = G4AnalysisManager::Instance();
         
         // Get (x, y, z) coordinates at point where optical photon detected by photocathode
         G4ThreeVector detectionPosition = endPoint->GetPosition();
         double x = detectionPosition[0];
         double y = detectionPosition[1];
         double z = detectionPosition[2];
+        
+        // Store this data in the nTuples (create a few rows) (IColumn = int, DColumn = double)
+        analysisManager->FillNtupleDColumn(0, 0, x); // NtupleID = 0, 0th column, x
+        analysisManager->FillNtupleDColumn(0, 1, y); // NtupleID = 0, 1st column, y
+        analysisManager->FillNtupleDColumn(0, 2, z); // NtupleID = 0, 2nd column, z
+        // NOTE: Takes tuple ID (0 as we only made one), column number in this row, and the entry
+        
+        // Mark this row as complete (for Ntuple with passed ID)
+        analysisManager->AddNtupleRow(0); // Ntuple ID = 0
         
         // TEST TEST TEST
         // Get the global time (TODO: For timing window)
@@ -153,24 +184,21 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         // again much like photon counts
         // TEST TEST TEST
         
-        // Get pointer to analysis manager singleton
-        auto analysisManager = G4AnalysisManager::Instance();
-        
-        // Store this data in the nTuples (create a few rows) (IColumn = int, DColumn = double)
-        analysisManager->FillNtupleDColumn(0, 0, x); // id, 0th column, x
-        analysisManager->FillNtupleDColumn(0, 1, y); // id, 1st column, y
-        analysisManager->FillNtupleDColumn(0, 2, z); // id, 2nd column, z
-        // NOTE: Takes tuple ID (0 as we only made one), column number in this row, and the entry
-        
-        // Mark this row as complete (for Ntuple with passed ID)
-        analysisManager->AddNtupleRow(0); // Ntuple ID = 0
+        // TEST TEST TEST
+        // Get distance travelled by photon before detection (from creation to absorption in PC)
+        G4double distance = track->GetTrackLength();
+        analysisManager->FillNtupleDColumn(3, 0, distance); // NtupleID = 3, column = 0, val = distance
+        // analysisManager->AddNtupleRow(2); // finish row for NtupleID = 3 // NOTE: OMIT THIS IF USING SAME NTUPLE FOR ALL TRACK DATA
+        // G4cout << "Distance Travelled Before Detection: " << distance << " mm" << G4endl;
+        // TEST TEST TEST
         
         // TEST TEST TEST
-        // Get distance travelled by photon before detection
-        G4double distance = track->GetTrackLength();
-        analysisManager->FillNtupleDColumn(2, 0, distance);
-        analysisManager->AddNtupleRow(2);
-        // G4cout << "Distance Travelled Before Bulk Absorption: " << distance << " mm" << G4endl;
+        // Get time of flight information (local time gives time since photon birth until now, i.e. birth to detection)
+        G4double time = track->GetLocalTime(); 
+        analysisManager->FillNtupleDColumn(3, 1, time); // NtupleID = 3, column = 1, val = time
+        analysisManager->AddNtupleRow(3); // Finish row for NtupleID = 3 // NOTE: NOW THAT ALL TRACK DATA WRITTEN, ADD THE ROW
+        // NOTE: This method loses relative timing between different photons if they 
+        // were created at different points along the primary particles track
         // TEST TEST TEST
         
         // For every photon that enters the detector and interacts, each interaction will call "ProcessHits()",
@@ -179,7 +207,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         
         // NOTE: Likely just make this a method of analysis class (as absorption xyz very similar)
     } 
-    // ...
+    // If an optical photon is absorbed without detection at a boundary (i.e., reflector or photocathode)
     else if (boundaryStatus == Absorption) {
         // Photon was absorbed without detection
         fEventAction->CountAbsorbedPhoton();
@@ -187,29 +215,29 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         // TODO: Can get absorption volume via same process as above,
         // counts absorptions in crystal vs reflector, vs photocathode
         
+        // Get pointer to analysis manager singleton
+        auto analysisManager = G4AnalysisManager::Instance();
+        
         // Get (x, y, z) coordinates at point where optical photon absorbed by reflector or photocathode
         G4ThreeVector absorptionPosition = endPoint->GetPosition();
         double x = absorptionPosition[0];
         double y = absorptionPosition[1];
         double z = absorptionPosition[2];
         
-        // Get pointer to analysis manager singleton
-        auto analysisManager = G4AnalysisManager::Instance();
-        
         // Store this data in the nTuples (create a few rows) (IColumn = int, DColumn = double)
-        analysisManager->FillNtupleDColumn(0, 3, x); // id, 3rd column, x
-        analysisManager->FillNtupleDColumn(0, 4, y); // id, 4th column, y
-        analysisManager->FillNtupleDColumn(0, 5, z); // id, 5th column, z
+        analysisManager->FillNtupleDColumn(1, 0, x); // NtupleID = 1, 3rd column, x
+        analysisManager->FillNtupleDColumn(1, 1, y); // NtupleID = 1, 4th column, y
+        analysisManager->FillNtupleDColumn(1, 2, z); // NtupleID = 1, 5th column, z
         // NOTE: Takes tuple ID (0 as we only made one), column number in this row, and the entry
         
         // Mark this row as complete (for Ntuple with passed ID)
-        analysisManager->AddNtupleRow(0); // Ntuple ID = 0
+        analysisManager->AddNtupleRow(1); // Ntuple ID = 1
         
         // For every photon that enters the detector and interacts, each interaction will call "ProcessHits()",
         // producing a new row (linked to the event ID) for each interaction,
         // i.e. multiple compton scatters inside the detector, for a given photon, will produce rows pertaining to each energy deposit
     } 
-    // TODO: check no loss via lack of rindex
+    // Check no loss via lack of rindex
     else if (boundaryStatus == G4OpBoundaryProcessStatus::NoRINDEX) {
         // G4cout << G4endl << "OPTICAL PHOTON LOST TO LACK OF RINDEX" << G4endl;
         // G4cout << endPoint->GetTouchable()->GetVolume()->GetName() << G4endl; // "Reflector"
@@ -219,13 +247,13 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         //     G4cout << endPoint->GetTouchable()->GetVolume()->GetName() << G4endl; // "Reflector"
         // }
         
+        // Photon was killed due to lack of rindex
         fEventAction->CountLostPhoton();
         
         // TODO:
         // std::string volume = endPoint->GetTouchable()->GetVolume()->GetName();
         // fEventAction->CountLostPhoton(volume);
     }
-    // NOTE: Is the photon actually being killed though
     
     // TODO: With lambertian reflection set to 1 at reflector surface,
     // could check if boundary volume is "Reflector", and if so, plot the angle

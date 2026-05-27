@@ -13,6 +13,7 @@ New features include:
 - 2048 channel binning (via per-event optical photons detected Ntuple output)
 - integration window for optical photon detection at the photocathode ?? (may reduce the photopeaks slight exponential tail, where sometimes, without it, many photons are eventually reaching photocathode and being detected)
 - potentially introducing PMT statistics ?? (NOTE: May actually leave this to postprocessing, just output raw per-event data)
+- expanded statistics (distance travelled by detected photons, distance travelled by bulk absorbed photons, time of flight for optical photons, number of reflections before detection, etc)
 
 ## Features
 
@@ -347,7 +348,7 @@ new TBrowser
 
 i.e.:
 
-- Optical Photons Detected Per Event
+- Optical Photons Detected Per Event:
 
 This Ntuple contains the number of optical photons "detected" at the photocathode each event.
 
@@ -377,6 +378,14 @@ Since we have per-event data, this can also be easily binned into a root histogr
 TrackData->Draw("Distance >> hTotal(256, 0, 3000", "", "")
 ```
 
+- Time of Flight:
+
+...
+
+- Distance Travelled By Absorbed Photons:
+
+...
+
 - iEvent: 
 
 The number of hits per event, in 100 bins (x10^3 = 100,000 events), so 1000 events per bin
@@ -387,9 +396,7 @@ implying 0 hits, or multiple hits for a single photon, or somewhere inbetween.
 
 NOTE: Perhaps electrons liberated creating additional photons too, etc.
 
-- X, Y, Z, Positions: 
-
-Most of the photons enter the detector at (0, 0)
+- X, Y, Z, Positions:
 
 X & Y:
 Since the photon is shot in a straight line along Z, there is a noticeable peak at X=0 & Y=0,
@@ -413,9 +420,29 @@ or compton scattering (partial deposition in one step)
 
 > NOTE: A 3D heatmap of detector interactions can also be seen by typing the following in the root stdin with a TBrowser open:
 
+Surface plot
+
 ```C++
 // compare (x,y,z), no cut, surface plot
-Photons->Draw("fX:fY:fZ", "", "surf");
+StepDataDetection->Draw("fX:fY:fZ", "", "surf"); // detection coords
+StepDataAbsorption->Draw("aX:aY:aZ", "", "surf"); // absorption coords
+```
+
+Box plot
+
+```C++
+// compare (x,y,z), no cut, box plot
+StepDataDetection->Draw("fX:fY:fZ", "", "box2"); // detection coords
+StepDataAbsorption->Draw("aX:aY:aZ", "", "box2"); // absorption coords
+```
+
+Heatmap
+
+```c++
+// Heatmap of detection (x,y) on the photocathode surface plane
+StepDataDetection->Draw("fX:fY", "", "colz");
+// Heatmap of boundary absorption in the 2d plane
+StepDataAbsorption->Draw("aX:aY", "", "colz");
 ```
 
 - Global Time: 

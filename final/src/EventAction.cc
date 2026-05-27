@@ -53,17 +53,22 @@ void EventAction::EndOfEventAction(const G4Event*) {
         analysisManager->FillH1(0, fDetectedPhotons); // (id, value) only one histo, so id = 0
         // NOTE: On full 662 keV energy deposited will add to counts for that bin, etc
         
-        // TEST \/\/\/\/\/\/\/\/\/
-        // ...
-        analysisManager->FillNtupleIColumn(1, 0, fDetectedPhotons); // ntuple ID, column ID, fill value
+        // Fill the per-event total detected photons ntuple
+        analysisManager->FillNtupleIColumn(2, 0, fDetectedPhotons); // ntuple ID, column ID, fill value
         // NOTE: Only 1 column, hence column ID = 0
-        analysisManager->AddNtupleRow(1); // Saves row for Ntuple ID = 1
+        analysisManager->AddNtupleRow(2); // Save the row for Ntuple ID = 2
         // ...
+        
+        // TEST: DEBUGGING THE HIGH COUNTS OF NEAR-ZERO DETECTIONS SINCE ADDING Al2O3 RINDEX
+        // if (fDetectedPhotons < 10) {
+        //     G4cout << "LOW PHOTON COUNT: " << fDetectedPhotons << G4endl;
+        // }
     }
     // NOTE: If using multiple histograms for any reason (i.e. two detectors)
     // make sure to mark appropriate ID
 }
 
+// NOTE: Probably not gonna do this \/\/\/\/\/\/\/\/ per-event data + post-processing is just more flexible
 // NOTE: fDetectedPhotons should be an int (likewise with fTotal, and fAbsorbed)...
 // void EventAction::ConvertToChannel(G4double detectedPhotons) {
 //     /* NOTE: Can either convert directly from fDetectedPhotons to channel number (0-1024),
