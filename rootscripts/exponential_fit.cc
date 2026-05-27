@@ -35,6 +35,9 @@ FileType fileType;
 
 /*
  * Load in plotting and fitting functions
+ * 
+ * NOTE: Executes automatically on script start (shares name with the macro file)
+ * NOTE: Choose another function name if you wish to manually call it instead
  */
 int exponential_fit() {
     // Usage
@@ -238,6 +241,13 @@ int load_root(std::string path) {
  * TODO: May want to consider interactive prompt, i.e. check for tree names in root file,
  * then ask user for input to choose said tree
  * ^ same for branches
+ * 
+ * ^ could print out tree/branch names line by line with an index, i.e.:
+ * 1) Tree A
+ * 2) Tree B
+ * etc ...
+ * 
+ * Then just get user to input the integer, rather than typing full name
  */
 int load_tree() {
     // Handle incorrect path
@@ -258,6 +268,10 @@ int load_tree() {
         return 1;
     }
     
+    // TODO: For dynamic hist upper limit setting
+    // nbins = nTuple->GetMaximum("Distance");
+    // NOTE: would have to store in global variable
+    
     // No errors, all good
     return 0;
 }
@@ -266,6 +280,10 @@ int load_tree() {
  * Executes ASCII or ROOT file procedures based on file type flag
  * 
  * TODO: Assumes Ntuple in root file
+ * 
+ * TODO: Check what objects are in the root file 
+ * ^ (if there is no histogram, go the Ntuple route)
+ * ^ if there is a histogram
  */
 int load_file(std::string path) {
     // Success status
@@ -299,6 +317,10 @@ int load_file(std::string path) {
 
 /*
  * Instantiate a ROOT histogram object
+ * 
+ * TODO: Have user specify whether hist params should be automatically calculated,
+ * via finding max value from dataset (+say 5-10% for xmax), and either calulating nbins, or leaving at 1024-4096 bins
+ * or if theyd like a specific setup (i.e. 2048 channels)
  */
 int create_hist() {
     // Histogram args
@@ -306,7 +328,11 @@ int create_hist() {
     // int const xmin = 0; // min channel
     // int const xmax = 2048; // max channel (3500 photons)
     
-    int const nbins = 1024; // 2048 channels (bins)
+    // int const nbins = 21; // 2048 channels (bins) // NOTE: Too few
+    // int const nbins = 200; // 2048 channels (bins) // NOTE: Too few 
+    // int const nbins = 1024; // 2048 channels (bins) // NOTE: Good
+    int const nbins = 2048; // 2048 channels (bins) // NOTE: Decent
+    // int const nbins = 4096; // 2048 channels (bins) // NOTE: Almost too many (but less compressed than 2048 on log scale)
     int const xmin = 0; // min channel
     int const xmax = 3000; // max channel (3500 photons)
     
@@ -328,7 +354,7 @@ int create_hist() {
     }
     
     // X-axis title
-    hpx->SetXTitle("Channels");
+    hpx->SetXTitle("Distance (mm)");
     
     // No errors, all good
     return 0;
@@ -531,24 +557,23 @@ int fill_hist_ascii() {
 }
 
 /*
- * ...
+ * Router for histogram fill methodology, switches based on input file type
  * 
  * TODO: draw_hist_root() <- From ROOT histogram
  */
 int draw_hist() {
-    // ...
-    int status;
+    // If hist is not filled by one means or another defaults to error
+    int status = 1;
     
-    // ...
+    // Switch on file type, set status to 0 if hist was filled successfully
     if (fileType == FileType::ASCII) {
         status = fill_hist_ascii();
     }
-    // ...
     else if (fileType == FileType::ROOT) {
         status = fill_hist_ntuple();
     }
     
-    // ...
+    // Success message
     if (status == 0) {
         std::cout << "\nHistogram has been populated.\n\n";
     }
@@ -558,7 +583,10 @@ int draw_hist() {
 }
 
 /*
- * ...
+ * Instantiates a canvas object, populating the global variable, then renders a 
+ * histogram on the canvas
+ * 
+ * TODO: Maybe separate out histogram rendering
  */
 int create_canvas() {
     // Canvas args
@@ -603,7 +631,8 @@ int create_canvas() {
 }
 
 /*
- * Executes automatically on script start (NOTE: Choose another function name if you wish to manually call it instead) 
+ * Validate file path, load file into memory, instantiate histogram, fill histogram,
+ * instantiate canvas, render histogram
  */
 int plot(std::string fileName) {
     // Check provided path is valid (will return empty string if not valid)
@@ -651,7 +680,96 @@ int plot(std::string fileName) {
 }
 
 /*
- * Automatically find exponential centroid, derive rms/low/high, fit a gaussian to it, and display the fit
+ * Automatically find exponential centroid, derive hist low/high, fit convolution of 
+ * exponential rise and decay to the data, and display the fit
+ * 
+ * TODO: This didnt quite fit to my data, but it may come in handy at a later date
+ * 
+ * TODO: Define a top level: fit(), method, which directs you to exponential, double_exponential, etc, etc
+ * 
+ * TODO: This needs updating with some of the updated error handling from ascii_fit.cc
+ */
+int rise_and_decay() {
+    // Find the tallest point in the current histogram range
+    int const maxBin = hpx->GetMaximumBin();
+    double const peakX = hpx->GetXaxis()->GetBinCenter(maxBin); // get the x-axis location of max counts bin
+    double const peakY = hpx->GetBinContent(maxBin); // get the y-axis number of counts for max bin, i.e. amplitude
+    
+    // Define the fit window (low & high)
+    // NOTE: the region of the histogram ROOT is allowed to use for the fit.
+    // (it’s a fit window, not a Gaussian width parameter)
+    // The Gaussian itself mathematically extends to infinity.    
+    double const low = hpx->GetXaxis()->GetXmin();
+    double const high = hpx->GetXaxis()->GetXmax();
+    
+    
+    // Automate rise time (tau_rise)
+    // NOTE: Estimate rise time by looking backwards to 10% of the peak
+    int riseBin = maxBin;
+    
+    // While current bin greater than min bin, and current bin value still greater than 10% of the peak
+    while ((riseBin > 1) && (hpx->GetBinContent(riseBin) > (peakY * 0.1))) {
+        riseBin--;
+    }
+    
+    // ...
+    double x_rise = hpx->GetBinCenter(riseBin); // grab center of rise bin
+    double estimated_tau_rise = (peakX - x_rise) * 0.5; // Rise is usually sharper // TODO: Comments
+    
+    if (estimated_tau_rise <= 0) estimated_tau_rise = 1.; // Fallback safety
+    
+    
+    // Automate decay constant (tau_fall)
+    // NOTE: Find the point where the signal drops to 37% (1/e) of its peak after the max
+    int fallBin = maxBin;
+    
+    // While current bin less than max bins, and current bin value still greater than 1/e of the peak
+    while ((fallBin < hpx->GetNbinsX()) && (hpx->GetBinContent(fallBin) > peakY * 0.368)) {
+        fallBin++;
+    }
+    
+    // ...
+    double x_fall = hpx->GetBinCenter(fallBin);
+    double estimated_tau_fall = x_fall - peakX; // TODO: Comments
+    
+    if (estimated_tau_fall <= 0) estimated_tau_fall = 10.0; // Fallback safety
+    
+    // Define and initialise double exponential fit (fast rise component & slow fall component)
+    auto pulseFit = new TF1("fitFn", "[0]*(exp(-(x-[1])/[3]) - exp(-(x-[1])/[2]))", low, high);
+    // A*(exp(-(x-[x_rise])/[tau_fall]) - exp(-(x-[x_rise])/[tau_rise]))
+    // Where: A = amplitude, x_rise = delay time, tau_rise = rise time constant, tau_fall = decay time constant
+    
+    // ...
+    pulseFit->SetParameters(peakY, x_rise, estimated_tau_rise, estimated_tau_fall);
+    pulseFit->SetParNames("Amplitude", "t0", "tau_rise", "tau_fall");
+
+    // Enforce limits so the fitter doesnt swap rise and fall constants
+    pulseFit->SetParLimits(2, 0.01, estimated_tau_fall);
+    pulseFit->SetParLimits(3, estimated_tau_fall * 0.1, estimated_tau_fall * 10.);
+
+    // ...
+    auto result = hpx->Fit(pulseFit, "RS");
+    // "R" = use the range of the function
+    // "S" = return a TFitResultPtr for further analysis
+    // "M" = improves the fit quality
+    
+    // Draw the fit line (ROOT internally stores the fit function with the histogram after fitting)
+    hpx->GetFunction("fitFn")->Draw("SAME");
+    // NOTE: The "HIST" option suppresses drawing associated functions (including fits),
+    // hence why "hpx->Draw()" works here instead of drawing the fit fn (but we lose the histogram view),
+    // and why "hpx->Draw("HIST")" doesnt work alone, so calling draw on the stored fn is the way,
+    // it is also not enough to just call Modified() & Update().
+    
+    printf("Peak X: %f, Peak Y: %f", peakX, peakY);
+    
+    // TODO: Display relevant fit values in top right info box post-fit (chi^2, centroid, etc)
+    
+    return 0;
+}
+
+/*
+ * Automatically find exponential centroid, derive hist low/high, fit convolution of 
+ * exponential rise and decay to the data, and display the fit
  * 
  * TODO: This didnt quite fit to my data, but it may come in handy at a later date
  * 
@@ -706,6 +824,8 @@ int double_exponential_fit() {
     
     // Define and initialise double exponential fit (fast rise component & slow fall component)
     auto pulseFit = new TF1("fitFn", "[0]*(exp(-(x-[1])/[3]) - exp(-(x-[1])/[2]))", low, high);
+    // A*(exp(-(x-[x_rise])/[tau_fall]) - exp(-(x-[x_rise])/[tau_rise]))
+    // Where: A = amplitude, x_rise = delay time, tau_rise = rise time constant, tau_fall = decay time constant
     
     // ...
     pulseFit->SetParameters(peakY, x_rise, estimated_tau_rise, estimated_tau_fall);
@@ -737,6 +857,10 @@ int double_exponential_fit() {
 
 /*
  * TODO: Needs faster rise time to fit to the photon distance travelled data
+ * 
+ * 1) Log normal
+ * 2) Gamma Distribution
+ * 3) ExGaussian
  */
 int fit() {
     // Find the tallest point in the current histogram range

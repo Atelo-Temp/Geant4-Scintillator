@@ -85,27 +85,43 @@ TODO: Just whipped up a rough draft of fit(), update it to match refined fit() m
 
 TODO: Need to be able to swap between "int" and "double" when reading from TTree branch entries (was using int for num photons, but distance is double)
 
+17) any_fit.cc (alt: fit_any.cc)
+
+Hybrid fitting, able to handle both ascii files (lab) and root files (simulation)
+
+NOTE: Just reintroduces fitting to save_hist.cc
+
+NOTE: Rather than trying to expanding on fitting capabilities etc, previous fitting macros havent had the user specified path functionality, or save functionality,
+so integrating that is a good stepping stone to a comprehensive fitting macro
+
+- Takes .root / .Spe filename as argument rather than hardcoded
+- Parses the filename to identify whether its .root or .Spe, runs histogramming pipeline for respective file type
+
 >>> TODOS
 
-16) lab_fit.cc
+18) lab_fit.cc
 
 Fit an ASCII lab spectrum using a gaussian + poly fit function
 
 hpx->GetXaxis()->GetBinLowEdge(...GetXaxis()->GetFirst())
 ...GetXaxis()->GetBinUpEdge(...GetXaxis()->GetLast())
 
-17) any_fit.cc
+19) any_fit.cc (alt: smart_fit.cc)
 
 Hybrid fitting, able to handle both ascii files (lab) and root files (simulation)
 ^ maybe also able to determine whether it needs a gaussian or gaus + pol fit
 ^ takes .root / .Spe filename as argument rather than hardcoded
 ^ parses the filename to identify whether its .root or .Spe, runs histogramming pipeline for respective file type
 
-18) multi_fit.cc
+NOTE: I think this main functionality should be determining whether to use gaus or gaus + pol
+^ maybe even whether to use exponential etc
+^ sinice 17) kinda ticks most of these other boxes, but trying to fit smart fitting would overcrowd 17)
+
+20) multi_fit.cc
 
 Able to fit multiple peaks (i.e. 60Co, or even 133Ba)
 
-19) omni_fit.cc
+21) omni_fit.cc
 
 Full functionality of all previous fitting capabilities, plus final touches
 

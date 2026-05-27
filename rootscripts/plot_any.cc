@@ -35,6 +35,9 @@ FileType fileType;
 
 /*
  * Load in plotting and fitting functions
+ * 
+ * NOTE: Executes automatically on script start (shares name with the macro file)
+ * NOTE: Choose another function name if you wish to manually call it instead
  */
 int plot_any() {
     // Usage
@@ -530,24 +533,23 @@ int fill_hist_ascii() {
 }
 
 /*
- * ...
+ * Router for histogram fill methodology, switches based on input file type
  * 
  * TODO: draw_hist_root() <- From ROOT histogram
  */
 int draw_hist() {
-    // ...
-    int status;
+    // If hist is not filled by one means or another defaults to error
+    int status = 1;
     
-    // ...
+    // Switch on file type, set status to 0 if hist was filled successfully
     if (fileType == FileType::ASCII) {
         status = fill_hist_ascii();
     }
-    // ...
     else if (fileType == FileType::ROOT) {
         status = fill_hist_ntuple();
     }
     
-    // ...
+    // Success message
     if (status == 0) {
         std::cout << "\nHistogram has been populated.\n\n";
     }
@@ -557,7 +559,10 @@ int draw_hist() {
 }
 
 /*
- * ...
+ * Instantiates a canvas object, populating the global variable, then renders a 
+ * histogram on the canvas
+ * 
+ * TODO: Maybe separate out histogram rendering
  */
 int create_canvas() {
     // Canvas args
@@ -602,7 +607,8 @@ int create_canvas() {
 }
 
 /*
- * Executes automatically on script start (NOTE: Choose another function name if you wish to manually call it instead) 
+ * Validate file path, load file into memory, instantiate histogram, fill histogram,
+ * instantiate canvas, render histogram
  */
 int plot(std::string fileName) {
     // Check provided path is valid (will return empty string if not valid)
