@@ -217,16 +217,6 @@ Set light to come from directly above the geometry
 /vis/viewer/set/lightsVector 0 1 0
 ```
 
-
-
-TODO: ADD TO VIS MACRO
-
-```bash
-/vis/viewer/centreOn Scintillator
-/vis/viewer/zoom 6
-/vis/viewer/set/viewpointVector -180 90 90
-```
-
 TODO: CUSTOM VIS MACROS FOR SCREENSHOTS
 
 HALF-CUT
@@ -375,16 +365,22 @@ Since we have per-event data, this can also be easily binned into a root histogr
 - Distance Travelled By Detected Photons
 
 ```c++
-TrackData->Draw("Distance >> hTotal(256, 0, 3000", "", "")
+TrackData->Draw("DetectionDistance >> hTotal(2048, 0, 3500", "", "") // distance is in mm
 ```
 
-- Time of Flight:
+- Time of Flight
 
-...
+Time elapsed from optical photon birth, to optical photon detection at the photocathode.
 
-- Distance Travelled By Absorbed Photons:
+```c++
+TrackData->Draw("TimeOfFlight >> hTotal(4096, 0, 30", "", "") // time is in nanoseconds
+```
 
-...
+- Distance Travelled By Bulk Absorbed Photons (non-boundary absorption):
+
+```c++
+TrackDataAbsorb->Draw("AbsorptionDistance >> hTotal(2048, 0, 4000", "", "") // distance is in mm
+```
 
 - iEvent: 
 

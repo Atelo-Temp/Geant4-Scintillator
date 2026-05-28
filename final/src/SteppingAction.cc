@@ -81,7 +81,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
 //     }
     // TEST
     
-    // >>>>> TEST TEST TEST: #2
+    // >>>>> TEST TEST TEST: #2 - Track photons lost via bulk absorption in the crystal (and window/grease to a far lesser extent)
     // ...
     G4VProcess const* process = endPoint->GetProcessDefinedStep();
     // ...
@@ -96,11 +96,11 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
 //         // but just use one or the other if this code is included in actual runs
     
         // TEST TEST TEST
-        // Get distance travelled by photon before detection
+        // Get distance travelled by photon before bulk absorption
         G4double distance = track->GetTrackLength();
         auto analysisManager = G4AnalysisManager::Instance();
-        analysisManager->FillNtupleDColumn(3, 1, distance); // id = 3, column = 1, value = distance travelled
-        analysisManager->AddNtupleRow(3); // finish row for Ntuple id = 3
+        analysisManager->FillNtupleDColumn(4, 0, distance); // id = 4, column = 0, value = distance travelled
+        analysisManager->AddNtupleRow(4); // finish row for Ntuple id = 4
         // G4cout << "Distance Travelled Before Bulk Absorption: " << distance << " mm" << G4endl;
         // TEST TEST TEST
 //         
@@ -188,7 +188,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         // Get distance travelled by photon before detection (from creation to absorption in PC)
         G4double distance = track->GetTrackLength();
         analysisManager->FillNtupleDColumn(3, 0, distance); // NtupleID = 3, column = 0, val = distance
-        // analysisManager->AddNtupleRow(2); // finish row for NtupleID = 3 // NOTE: OMIT THIS IF USING SAME NTUPLE FOR ALL TRACK DATA
+        // analysisManager->AddNtupleRow(3); // finish row for NtupleID = 3 // NOTE: OMIT THIS IF USING SAME NTUPLE FOR ALL TRACK DATA
         // G4cout << "Distance Travelled Before Detection: " << distance << " mm" << G4endl;
         // TEST TEST TEST
         

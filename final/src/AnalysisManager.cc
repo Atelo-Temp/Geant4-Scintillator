@@ -39,9 +39,10 @@ void AnalysisManager::CreateHistogram() {
     // analysisManager->CreateNtupleIColumn("iEvent"); // I = integer (event number)
     
     // Detection positions
-    analysisManager->CreateNtupleDColumn("fX"); // D = double (float maybe fine, but double gives increased precision) // store x position (may not need for now but in future may be useful)
+    analysisManager->CreateNtupleDColumn("fX"); // x position of the photon
     analysisManager->CreateNtupleDColumn("fY"); // y position of the photon
     analysisManager->CreateNtupleDColumn("fZ"); // y position of the photon
+    // NOTE: D = double (float maybe fine, but double gives increased precision)
     
     // Mark the definition of the tuple columns as completed
     analysisManager->FinishNtuple(); // NOTE: === FinishNtuple(0);
@@ -63,7 +64,7 @@ void AnalysisManager::CreateHistogram() {
     // NOTE: Second call to createNtuple automatically assigns ID = 1
     
     // Absorption positions
-    analysisManager->CreateNtupleDColumn("aX"); // D = double (float maybe fine, but double gives increased precision) // store x position (may not need for now but in future may be useful)
+    analysisManager->CreateNtupleDColumn("aX"); // x position of the photon
     analysisManager->CreateNtupleDColumn("aY"); // y position of the photon
     analysisManager->CreateNtupleDColumn("aZ"); // y position of the photon
     
@@ -87,7 +88,7 @@ void AnalysisManager::CreateHistogram() {
     
     // TEST TEST TEST
     analysisManager->CreateNtuple("TrackData", "Detected Photon Track Length"); // ID = 3
-    analysisManager->CreateNtupleDColumn("DetectionDistance");
+    analysisManager->CreateNtupleDColumn("DetectionDistance"); // Column = 0
     // analysisManager->FinishNtuple(); // ID = 3
     // NOTE: Could just add this to Ntuple(0), as its still step based data, just do another column
     // although, this and subsequent Ntuples are more macro track related than micro step related
@@ -100,7 +101,7 @@ void AnalysisManager::CreateHistogram() {
     
     // TEST TEST TEST
     // analysisManager->CreateNtuple("TrackData", "Detected Photon Lifetime");
-    analysisManager->CreateNtupleDColumn("TimeOfFlight");
+    analysisManager->CreateNtupleDColumn("TimeOfFlight"); // Column = 1
     analysisManager->FinishNtuple(); // ID = 3
     // NOTE: Could just add this to Ntuple(0), as its still step based data, just do another column
     
@@ -112,7 +113,7 @@ void AnalysisManager::CreateHistogram() {
     
     // TEST TEST TEST
     analysisManager->CreateNtuple("TrackDataAbsorb", "Bulk Absorbed Photon Track Length");
-    analysisManager->CreateNtupleDColumn("AbsorptionDistance");
+    analysisManager->CreateNtupleDColumn("AbsorptionDistance"); // Column = 0
     analysisManager->FinishNtuple(); // ID = 4
     // NOTE: Could just add this to Ntuple(0), as its still step based data, just do another column
     
