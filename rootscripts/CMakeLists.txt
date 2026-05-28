@@ -5,6 +5,12 @@ cmake_minimum_required(VERSION 3.16...3.27)
 project(rootscripts LANGUAGES CXX)
 
 #----------------------------------------------------------------------------
+# Enforce c++20 globally
+#
+# set(CMAKE_CXX_STANDARD 20)
+# set(CMAKE_CXX_STANDARD_REQUIRED)
+
+#----------------------------------------------------------------------------
 # Create compile_commands.json for C++ LSP
 #
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
@@ -34,7 +40,7 @@ target_link_libraries(rootscripts PRIVATE
     ROOT::Tree # NTuples
     ROOT::Graf # Graphs?
     ROOT::Gpad # TCanvas (Graphics?)
-    )
+)
 
 
 

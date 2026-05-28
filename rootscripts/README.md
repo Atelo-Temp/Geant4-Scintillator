@@ -66,24 +66,42 @@ Fit a lab ASCII spectrum using a gaussian fit function
 
 14) plot_any.cc (alt: load_any.cc)
 
+Introduces user filename input, similar to ascii_canvas.cc, but more comprehensive
+
+Also disambiguates between ROOT and ASCII input files, handling each via dedicated helper functions
+
+NOTE: Currently only works with ROOT Ntuples (not ROOT hists, etc), also has hardcoded tree/branch names (will visit solutions for this in a new macro soon)
+
 To avoid adding unneccessary code to the core principle im trying to address with this macro, am omitting writing loaded hist to outfile, and fitting hist (albeit they are simple additions)
 
 15) save_hist.cc (alt: write_histo.cc, write_hist.cc, save_histo.cc)
 
 Gives ability to save histograms to root files (handy for saving ROOT Ntuples as smaller files)
 
-^ literally just add: save() method to load_any.cc
-
-Not sure whether to separate out loading .root & .Spe into local hist, and saving said hist...  can just add a simple .save() method, rather than forcing save, so maybe omit this one
+NOTE: Literally just adds: save() method to load_any.cc
 
 Read ASCII file, OR, per-event Ntuple data, and plot a ROOT histogram, then save the histogram (will have to apply smearing to Ntuples still) (saves storing 10+GB .root files in local data, and can reference prior runs/configurations easier)
 ^ can use load_root.cc (custom_stats.cc) esque pipeline to load it back for post-processing
 
-16) exponential_fit.cc
+16) onmi_plot.cc (alt: hybrid_plot.cc) (alt: plot_cli.cc)
 
-TODO: Just whipped up a rough draft of fit(), update it to match refined fit() methodology in ascii_fit()
+NOTE: This should have been named plot_any.cc tbh (maybe rename plot_any to something else, as it kinda doesnt plot any as is) (also omni feels like it should be saved for final fitting macro)
+
+Was briefly named exponential fit, but going to separate out file loading and exponential fitting into two separate macros
+
+Implements multiple root object type handling, by reading root file for available objects, prompting user with object choice, then providing filtered list of names matching that object choice, before finally loading and then plotting said named object choice
 
 TODO: Need to be able to swap between "int" and "double" when reading from TTree branch entries (was using int for num photons, but distance is double)
+
+>>> TODOS
+
+17) exponential_fit.cc
+
+NOTE: The prior work done on this has been extracted out to omni_plot.cc, as handling multiple root object inputs, and tree/branch names, is quite an involved process, and dont want to implement too many new features into a single
+
+TODO: Make a copy of omni_fit.cc when its done, then just reintroduce fitting
+
+TODO: Currently just whipping up a rough draft of fit(), need to update it to match refined fit() methodology in ascii_fit()
 
 17) any_fit.cc (alt: fit_any.cc)
 
@@ -96,8 +114,6 @@ so integrating that is a good stepping stone to a comprehensive fitting macro
 
 - Takes .root / .Spe filename as argument rather than hardcoded
 - Parses the filename to identify whether its .root or .Spe, runs histogramming pipeline for respective file type
-
->>> TODOS
 
 18) lab_fit.cc
 

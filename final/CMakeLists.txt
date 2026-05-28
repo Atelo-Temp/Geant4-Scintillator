@@ -1,8 +1,14 @@
 #----------------------------------------------------------------------------
 # Setup the project
 #
-cmake_minimum_required(VERSION 3.16...3.27)
+cmake_minimum_required(VERSION 3.16...3.27) # always first
 project(final)
+
+#----------------------------------------------------------------------------
+# Enforce c++17 globally
+#
+# set(CMAKE_CXX_STANDARD 17) # NOTE: Geant4 compiled against C++ 17 by default
+# set(CMAKE_CXX_STANDARD_REQUIRED)
 
 #----------------------------------------------------------------------------
 # Create compile_commands.json for C++ LSP
