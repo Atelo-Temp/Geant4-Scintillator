@@ -78,7 +78,7 @@ To avoid adding unneccessary code to the core principle im trying to address wit
 
 Gives ability to save histograms to root files (handy for saving ROOT Ntuples as smaller files)
 
-NOTE: Literally just adds: save() method to load_any.cc
+NOTE: Literally just adds: save() method to plot_any.cc
 
 Read ASCII file, OR, per-event Ntuple data, and plot a ROOT histogram, then save the histogram (will have to apply smearing to Ntuples still) (saves storing 10+GB .root files in local data, and can reference prior runs/configurations easier)
 ^ can use load_root.cc (custom_stats.cc) esque pipeline to load it back for post-processing
