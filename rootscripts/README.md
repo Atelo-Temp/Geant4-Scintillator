@@ -143,6 +143,10 @@ Full functionality of all previous fitting capabilities, plus final touches
 
 TODO: Maybe think of a way to determine if input data has aliasing issue, and needs gaussian smearing
 
+22) dimension_plotter.cc
+
+Introduce 2D and 3D histogramming and fitting
+
 XX) downsampling.cc
 
 Convert a 2048 bin lab spectrum to 1024 bins

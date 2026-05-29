@@ -18,6 +18,7 @@
 // C lib
 #include <fstream>
 #include <sstream>
+#include <optional>
 // #include <stdexcept>
 // #include <unordered_set>
 
@@ -240,6 +241,7 @@ int prompt_user_int(int low, int high) {
     
     // NOTE: Could bring converted out here, and break on passing checks, then return at end of function
     
+    // Start the read stdin loop
     while (true) {
         // ...
         std::cout << "[int]: ";
@@ -262,23 +264,25 @@ int prompt_user_int(int low, int high) {
         try {
             // ...
             if (userInput == "q") exit(0); // NOTE: Provide an exit without keyboard interrupt
+            // if (userInput == "q") gApplication->Terminate(0); // TODO: exit also ends root session
             
             // ...
             // converted = std::stoi(userInput); // NOTE: If this fails, converted = -1 still
             converted = std::stoi(userInput, &numChars);
             
+            // ....
             if (numChars != userInput.size()) throw std::invalid_argument("Trailing characters.");
         }
         // ..
         catch (const std::invalid_argument& e) {
             if (strcmp(e.what(), "stoi")) std::cerr << e.what() << std::endl; // print trailing chars message, but not "stoi" default error msg
-            std::cerr << "Invalid argument!\n" << std::endl;
-            continue;
+            std::cerr << "Invalid argument!\n";
+            continue; // skip logic check below, and try take input again
         }
         // ..
         catch (const std::out_of_range& e) {
-            std::cerr << "Out of range\n" << std::endl;
-            continue;
+            std::cerr << "Out of range\n";
+            continue; // skip
         }
         
         // ...
@@ -322,6 +326,13 @@ int load_root_file(std::string path) {
     return 0;
 }
 
+// ...
+struct SelectionReturnType {
+    int selectedTypeIdx;
+    std:: string selectedObjectType;
+    std::unordered_map<std::string, std::vector<std::string>> categoryMap;
+};
+
 /*
  * TTree (Ntuple), TH1D (1D Histogram)
  * 
@@ -343,12 +354,19 @@ int load_root_file(std::string path) {
  * 
  * TODO: Will need to append GetName() with ";1" to match tree name
  * NOTE: Histos dont have branches
+ * 
+ * TODO: If there is only one object type, select that by default, skip prompt
+ * 
+ * TODO: Not sure whether to define some of these maps in load_root, and pass in pointers
+ * to this function, or leave as is, will revisit this design choice later
  */
-int select_root_type() {
+// int select_root_type() {
+std::optional<SelectionReturnType> select_root_type() {
     // Handle unloaded root file (i.e., via calling this method directly, or some bug)
     if (!inROOT) {
         printf("\nError: File not found!\n");
-        return 1;
+        // return 1;
+        return std::nullopt;
     }
     
     // inROOT->ls();
@@ -361,7 +379,8 @@ int select_root_type() {
     // ...
     if (!entries) {
         std::cerr << "\nError: Failed to get ROOT file keys.\n";
-        return 1;
+        // return 1;
+        return std::nullopt;
     }
     
     // std::cout << "LAST INDEX: " << entries->LastIndex() << std::endl; // 5
@@ -369,24 +388,42 @@ int select_root_type() {
     
     // inROOT->GetFileCounter();
     
+    // ...
     // std::cout << "\nPlease enter a number from the options below:\n";
-    std::cout << "\nWhat object type would you like to access? (type a number from the options below):\n";
+    // std::cout << "\nWhat object type would you like to access? (type a number from the options below):\n";
+    std::cout << "\nWhat object type would you like to access? (type a number from the options below, or enter q to exit):\n";
     
-    // TList* entries = inROOT->GetList(); // NOTE: This doesnt work with loop below, pretty sure you have to do address thing like in branch iteration
+    // TList* entries = inROOT->GetList(); // NOTE: This doesnt work with loop below, pretty sure you have to do address thing, like in branch iteration
     
     // ...
     // std::unordered_set<std::string> objectTypes = {}; // NOTE: will automatically create std::string copy of const char*
-    std::unordered_set<std::string_view> objectTypes = {};
+    std::unordered_set<std::string_view> objectTypes = {}; // NOTE: ...
+    // NOTE: Key: 
     
     // ...
-    std::unordered_map<int, std::string> objectMap = {};
+    std::unordered_map<int, std::string> objectMap = {}; // NOTE: ...
+    // NOTE: 
+    
+    // ...
+    std::unordered_map<std::string, std::vector<std::string>> categoryMap = {}; // NOTE: ...
+    // NOTE: Key: "TTree", "TH1D", etc
+    // Value: {"EventData", "TrackData", etc}, {"PhotonsSpectrum"}
     
     // ...
     for (int i = 0; i < entries->GetSize(); i++) {
-        // ...
-        TObject* entry = entries->At(i);
-        // std::cout << i << ": " << entry->GetName() << std::endl; // NOTE: Prints the name of each object (EventData, TrackData, etc)
+        // Get the TKey* at index i
+        TObject* entry = entries->At(i); // TKey*
+        // NOTE: Since we called GetListOfKeys(), this is actually a TKey*, TList* iteration just defaults to TObject*
+        
+        // TKeys are different to TObjects because ...
+        
+        // Get the name that was assigned to the ROOT object (Ntuple, TH1D, etc) at creation (i.e., EventData, TrackData, etc)
+        char const* objectName = entry->GetName();
+        // std::cout << i << ": " << objectName << std::endl; // NOTE: Prints the name of each object (EventData, TrackData, etc)
         // TODO: STORE THESE NAMES IN A MAP UNDER KEY OF TTree, TH1D, etc
+        
+        // std::cout << "FILE TYPE A: " << inROOT->GetType(objectName) << std::endl; // TEST: Prints: 0
+        // NOTE: I think this is more for checking 
         
         // ..
         // auto x = entry->IsA(); // Returns TClass*
@@ -394,16 +431,19 @@ int select_root_type() {
         
         // entry->InheritsFrom(TTree::Class());
         
-        // if (entry->IsA() == TTree::Class()) {
-        // if (entry->InheritsFrom(TTree::Class())) {
-//         if (entry->IsA()->InheritsFrom(TTree::Class())) {
+        // if (entry->IsA() == TTree::Class()) { // NOTE: Doesnt work
+        // if (entry->InheritsFrom(TTree::Class())) { // NOTE: Doesnt work
+//         if (entry->IsA()->InheritsFrom(TTree::Class())) { // NOTE: Doesnt work
 //             std::cout << "IS TTREE\n";
 //         }
-//         else if (entry->IsA() == TH1::Class()) {
+//         else if (entry->IsA() == TH1::Class()) { // NOTE: Doesnt work
 //             std::cout << "IS TH1\n";
 //         }
 //         
-        // std::cout << "CLASSNAME: " << entry->IsA()->GetActualClass(entry)->GetName();
+        // std::cout << "CLASSNAME: " << entry->IsA()->GetActualClass(entry)->GetName() << std::endl; // TEST: Prints: TKey
+        // TODO: Could do a safety check here, check GetName() returns TKey BEFORE static_cast ...?
+        
+        // std::cout << "OBJECT NAME:" << TClass::GetClass(objectName) << std::endl; // TEST: Prints: 0
         
         // ...
         // auto key = dynamic_cast<TKey*>(entry);
@@ -412,7 +452,6 @@ int select_root_type() {
         // if there was any doubt about it being TKeys, static_cast would not be safe
         
         // std::cout << "CLASSNAME: " << key->GetClassName() << std::endl;
-        
         // std::cout << "CLASSNAME: " << entry->IsA()->GetName() << std::endl; // "TKey"
         
         // ..
@@ -426,27 +465,49 @@ int select_root_type() {
         // if (objectTypes.find(key->GetClassName())) objectTypes.insert(key->GetClassName());
         // if (objectTypes.contains(key->GetClassName())) objectTypes.insert(key->GetClassName());
         
-        auto name = key->GetClassName();
-        // std::cout << "CLASSNAME: " << name << std::endl;
+        // Returns the type of object this key is associated with (i.e., TTree, TH1D, etc)
+        char const* objectType = key->GetClassName();
+        // std::cout << "CLASSNAME: " << objectType << std::endl;
         
-        // if (objectTypes.find(name) == objectTypes.end()) { // .find returns key if found, or .end() if not found
-        // if (!objectTypes.count(name)) { // returns: not found = 0, found = 1
-        //     objectTypes.insert(name);
+        // If they object type key already exists in the object, pull the existing entry,
+        // add the new name to the vector, update the entry in the map
+        if (categoryMap.count(objectType)) { // NOTE: returns: not found = 0, found = 1 (number of elements with key = 0 || 1)
+            std::vector<std::string> existing = categoryMap.at(objectType); // Get entry for provided key
+            existing.push_back(objectName); // append new entry to the vector
+            categoryMap[objectType] = existing; // update map entry associated with this key
+        }
+        // Otherwise, make the first entry under that object type
+        else {
+            std::vector<std::string> entry = { objectName };
+            categoryMap[objectType] = entry;
+        }
+        
+        // ...
+        // if (objectTypes.find(objectType) == objectTypes.end()) { // .find returns key if found, or .end() if not found
+        // if (!objectTypes.count(objectType)) { // returns: not found = 0, found = 1
+        //     objectTypes.insert(objectType);
         //     std::cout << "NEW KEY\n";
         // }
         // else std::cout << "DUPLICATE KEY\n";
         
-        std::pair pair = objectTypes.insert(name); // NOTE: Automatically only adds on unique
+        // Add unique object types to the set
+        std::pair pair = objectTypes.insert(objectType); // NOTE: Automatically only adds on unique
         // NOTE: insert returns a pair of: iterator & success status
         
         // If success status = true, item was inserted, else status = false
         if (pair.second) {
-            const int itemNo = objectTypes.size();
-            // std::cout << "NEW KEY: " << name << std::endl;
-            std::cout << itemNo << ") " << name << std::endl;
+            // ...
+            int const itemNo = objectTypes.size();
             
-            // objectMap.insert(itemNo, name);
-            objectMap[itemNo] = name; // NOTE: Inserts if missing, updates if present
+            // ..
+            // std::cout << "NEW KEY: " << objectType << std::endl;
+            std::cout << itemNo << ") " << objectType << std::endl;
+            
+            // ...
+            objectMap[itemNo] = objectType; // NOTE: Inserts if missing, updates if present
+            // NOTE: objectMap.insert(itemNo, objectType); requires iterator as arg[0],
+            // i.e. if you want to re-enter a recently removed const iterator, not add
+            // a new item
         }
     }
     // NOTE: Either just get all names now, and determine what object type is later
@@ -454,24 +515,43 @@ int select_root_type() {
     
     // std::unique(uniqueObjects);
     
-    std::cout << "SET SIZE: " << objectTypes.size() << std::endl;
-    std::cout << "MAP SIZE: " << objectMap.size() << std::endl;
+    // std::cout << "SET SIZE: " << objectTypes.size() << std::endl;
+    // std::cout << "MAP SIZE: " << objectMap.size() << std::endl;
     
-    int res = prompt_user_int(1, objectMap.size());
+    if (objectMap.size() == 1) {
+        std::cout << "\nOnly one object type found, selecting...\n";
+        // TODO: 
+    }
     
-    std::cout << "USER SELECTED INT: " << res << std::endl;
+    // Have the user select from one of the available options
+    int const selectedTypeIdx = prompt_user_int(1, objectMap.size()); // each integer is mapped to an object type
+    // NOTE: Non-zero based indexing feels more appropriate for this, with options starting
+    // at one, and going up to the size of the map
+    std::cout << "USER SELECTED INT: " << selectedTypeIdx << std::endl;
     
-    std::string objectType = objectMap.at(res); // Retrieve the string associate with the integer key
+    // ...
+    std::string selectedObjectType = objectMap.at(selectedTypeIdx); // Retrieve the string associate with the integer key
     // NOTE: Equivalent to .get() in typescript
+    std::cout << "USER SELECTED OBJECT: " << selectedObjectType << std::endl;
     
-    std::cout << "USER SELECTED OBJECT: " << objectType << std::endl;
+    // std::cout << "FILE TYPE B: " << inROOT->GetType(objectType.c_str()) << std::endl; // TEST: Prints: 0
     
     // Or print all object types, and show list of only those
+    
+    // TODO: MAY NEED TO DO A GLOBAL FLAG, IF SELECTED == TTREE
+    
+    // ...
+    struct SelectionReturnType result { selectedTypeIdx, selectedObjectType, categoryMap };
+    
+    // ...
+    return result;
+    
+    // NOTE: Not sure if accessing categoryMap here and returning "filteredObjects" is 
+    // bit beyond scope of this function, or appropriate, will decide later
     
     // TODO: May need to return vector containing object names matching object type
     // just return that and success/fail message, may need std::optional return type 
     // for this function and return std::nullopt on failed error checks above
-    return 0;
 }
 
 /*
@@ -481,9 +561,62 @@ int select_root_type() {
  * TODO: May need to return vector from select root type and pass it into this function from load_root()
  * 
  * NOTE: Can probably reuse prompt_user_int(), just passing in low = 1 and new high value
+ * 
+ * TODO: If there is only one object, select that name by default, skip prompt
+ * 
+ * NOTE: Pass by const reference (SelectionReturnType const&), instead of the object itself, 
+ * or a pointer (as long as the argument cannot be null).
+ * 
+ * This eliminates the needf for manual pointer dereferencing and null checks
+ * 
+ * Destructuring the params using: "auto const&" ensures the compiler creates reference
+ * bindings directly to the memory address insside the struct, guaranteeing a zero-copy operation
  */
-int select_root_object() {
-    return 1;
+// int select_root_object(int selectedTypeIdx, std::string selectedObjectType, std::unordered_map<std::string, std::vector<std::string>> categoryMap) {
+// std::string select_root_object(SelectionReturnType* params) {
+// std::string select_root_object(SelectionReturnType const* params) {
+std::string select_root_object(SelectionReturnType const& selectionParams) {
+    
+    // int selectedTypeIdx, std::string selectedObjectType, std::unordered_map<std::string, std::vector<std::string>> categoryMap
+    
+    // Destructure the param object
+    auto const& [selectedTypeIdx, selectedObjectType, categoryMap] = selectionParams;
+    // NOTE: Zero copies, no pointer syntax
+    
+    // NOTE: For: SelectionReturnType const* params:
+    // if (!params) ..
+    // const auto& [selectedTypeIdx, selectedObjectType, categoryMap] = *params; 
+    // dereference pointer, bind by reference to avoid copies
+    
+    
+    std::cout << "\nShowing options for: " << selectedTypeIdx << " - " << selectedObjectType << std::endl;
+    std::cout << "\nWhat object would you like to access? (type a number from the options below, or enter q to exit):\n";
+    
+    // Get a list of all objects matching the chosen type
+    std::vector<std::string>filteredObjects = categoryMap.at(selectedObjectType);
+    
+    // If there is only one object matching that type, select it by default
+    // if (filteredObjects.size() == 1) return filteredObjects.at(0);
+    if (filteredObjects.size() == 1) {
+        std::cout << "\nOnly one object matching requested type found, selecting...\n";
+        return filteredObjects[0];
+    }
+    
+    // ...
+    for (int i = 0; i < filteredObjects.size(); i++) {
+        // ...
+        std::cout << (i + 1) << ") " << filteredObjects[i] << std::endl;
+    }
+    
+    // ...
+    int const selectedObjectIdx = prompt_user_int(1, filteredObjects.size());
+    std::cout << "USER SELECTED INT: " << selectedObjectIdx << std::endl;
+    
+    // ...
+    std::string selectedObjectName = filteredObjects.at(selectedObjectIdx - 1); // NOTE: Make selection zero-indexed again (minus 1)
+    std::cout << "USER SELECTED OBJECT: " << selectedObjectName << std::endl;
+    
+    return selectedObjectName;
 }
 
 /*
@@ -499,6 +632,8 @@ int load_root_object() {
  * Have user choose desired branch name (similar to select root type)
  * 
  * NOTE: Can probably reuse prompt_user_int(), just passing in low = 1 and new high value
+ * 
+ * TODO: If there is only one branch, select that name by default, skip prompt
  */
 int select_tree_branch() {
     return 1;
@@ -579,9 +714,15 @@ int load_root(std::string path) {
         std::cerr << "\nError: Failed to load root file into memory.\n";
     }
     
-    select_root_type(); // choose TTree (Ntuple), TH1D (1D Hist), etc
+    auto result = select_root_type(); // choose TTree (Ntuple), TH1D (1D Hist), etc
     
-    select_root_object(); // get tree/hist/etc name
+    if (!result) {
+        std::cerr << "\nError: Failed to get user selection for object type.\n";
+    }
+    
+    SelectionReturnType success = result.value();
+    
+    select_root_object(success); // get tree/hist/etc name
     
     load_root_object(); // load root object with said name
     
