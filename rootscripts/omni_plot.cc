@@ -38,6 +38,14 @@ enum class FileType {
 // Active file type flag
 FileType fileType;
 
+// ..
+enum class RootObjectType {
+    TTree,
+    TH1D
+};
+
+RootObjectType rootObjectType;
+
 
 // TODO: Remove undefined behaviour integers: int x; // Set them equal to default val
 // NOTE: undefined string = "", so not as much of an issue
@@ -209,7 +217,7 @@ int load_ascii(std::string path) {
     
     // Ensure file was found, exit with error if its not
     // NOTE: No need to reprompt, user can just call the function again
-    if (!inASCII.is_open()) {
+    if (!inASCII || !inASCII.is_open()) {
         // Error message
         std::cout << "Error: File not found.\n";
         
@@ -217,12 +225,47 @@ int load_ascii(std::string path) {
         return 1;
     };
     
+    // Success message
+    std::cout << "\nASCII file has been loaded into memory.\n";
+    
     // No errors, all good
     return 0;
 }
 
 /*
- * Prompts user for input, parses response, validates it, returns valid response as integer
+ * Open ROOT file containing ROOT objects, load it into local memory, check its not empty 
+ * (i.e., contains at least one ROOT object)
+ */
+int load_root_file(std::string path) {
+    // Convert: std::string, to: char const*
+    char const *charPath = path.c_str();
+    
+    // Fetch and open root file
+    inROOT = TFile::Open(charPath);
+    
+    // Handle incorrect path
+    if (!inROOT) {
+        printf("\nError: ROOT file not found!\n");
+        return 1;
+    }
+    
+    // Handle no ROOT objects being found (i.e. TTree, TH1D, etc)
+    if (inROOT->GetNkeys() == 0) {
+        std::cerr << "\nError: ROOT file is empty, closing file.\n";
+        inROOT->Close();
+        return 1;
+    }
+    
+    // Success message
+    std::cout << "\nROOT file has been loaded into memory.\n";
+    
+    // No errors, all good
+    return 0;
+}
+
+/*
+ * Prompts user for integer input in specified range, parses response, validates it, 
+ * returns valid response as integer
  * 
  * TODO: "0001" will pass
  * also "    1" will pass
@@ -231,6 +274,9 @@ int load_ascii(std::string path) {
  * 
  * TODO: This could be if (converted >= low && converted <= high) { return converted; }
  * then the std::cout could be taken outside of enclosure
+ * 
+ * TODO: Could just read number of chars equal to high, instead of user having to press enter
+ * ^ but this wouldnt work if low was 1 digit, and high was 2 digits
  */
 int prompt_user_int(int low, int high) {
     // Prompt user for input
@@ -295,37 +341,6 @@ int prompt_user_int(int low, int high) {
     }
 }
 
-/*
- * Open ROOT file containing ROOT objects, load it into local memory, check its not empty 
- * (i.e., contains at least one ROOT object)
- */
-int load_root_file(std::string path) {
-    // Convert: std::string, to: char const*
-    char const *charPath = path.c_str();
-    
-    // Fetch and open root file
-    inROOT = TFile::Open(charPath);
-    
-    // Handle incorrect path
-    if (!inROOT) {
-        printf("\nError: ROOT file not found!\n");
-        return 1;
-    }
-    
-    // Handle no ROOT objects being found (i.e. TTree, TH1D, etc)
-    if (inROOT->GetNkeys() == 0) {
-        std::cerr << "\nError: ROOT file is empty, closing file.\n";
-        inROOT->Close();
-        return 1;
-    }
-    
-    // Success message
-    std::cout << "\nROOT file has been loaded into memory.\n";
-    
-    // No errors, all good
-    return 0;
-}
-
 // ...
 struct SelectionReturnType {
     int selectedTypeIdx;
@@ -383,16 +398,21 @@ std::optional<SelectionReturnType> select_root_type() {
         return std::nullopt;
     }
     
+    // ...
     // std::cout << "LAST INDEX: " << entries->LastIndex() << std::endl; // 5
     // std::cout << "SIZE: " << entries->GetSize() << std::endl; // 6
     
+    // ...
     // inROOT->GetFileCounter();
     
     // ...
     // std::cout << "\nPlease enter a number from the options below:\n";
     // std::cout << "\nWhat object type would you like to access? (type a number from the options below):\n";
-    std::cout << "\nWhat object type would you like to access? (type a number from the options below, or enter q to exit):\n";
+    // std::cout << "\nWhat object type would you like to access? (type a number from the options below, or enter q to exit):\n";
+    // std::cout << "\nShowing ROOT object types available:\n";
+    std::cout << "\nShowing ROOT object types available in file: " << inROOT->GetName() << "\n";
     
+    // ...
     // TList* entries = inROOT->GetList(); // NOTE: This doesnt work with loop below, pretty sure you have to do address thing, like in branch iteration
     
     // ...
@@ -518,27 +538,49 @@ std::optional<SelectionReturnType> select_root_type() {
     // std::cout << "SET SIZE: " << objectTypes.size() << std::endl;
     // std::cout << "MAP SIZE: " << objectMap.size() << std::endl;
     
-    if (objectMap.size() == 1) {
-        std::cout << "\nOnly one object type found, selecting...\n";
-        // TODO: 
-    }
+    // ...
+    int selectedTypeIdx = -1;
     
-    // Have the user select from one of the available options
-    int const selectedTypeIdx = prompt_user_int(1, objectMap.size()); // each integer is mapped to an object type
-    // NOTE: Non-zero based indexing feels more appropriate for this, with options starting
-    // at one, and going up to the size of the map
-    std::cout << "USER SELECTED INT: " << selectedTypeIdx << std::endl;
+    // ..
+    if (objectMap.size() == 0) {
+        std::cerr << "\nError: ROOT object map is empty.\n";
+        return std::nullopt;
+    }
+    // ...
+    else if (objectMap.size() == 1) {
+        // ...
+        std::cout << "\nOnly one ROOT object type found, selecting...\n";
+        selectedTypeIdx = 1;
+        // TODO: 
+    } else {
+        // ...
+        std::cout << "\nWhat ROOT object type would you like to access? (type a number from the options above, or enter q to exit):\n";
+        
+        // Have the user select from one of the available options
+        selectedTypeIdx = prompt_user_int(1, objectMap.size()); // each integer is mapped to an object type
+        // NOTE: Non-zero based indexing feels more appropriate for this, with options starting
+        // at one, and going up to the size of the map
+        // std::cout << "USER SELECTED INT: " << selectedTypeIdx << std::endl;
+    }
     
     // ...
     std::string selectedObjectType = objectMap.at(selectedTypeIdx); // Retrieve the string associate with the integer key
     // NOTE: Equivalent to .get() in typescript
-    std::cout << "USER SELECTED OBJECT: " << selectedObjectType << std::endl;
+    // std::cout << "USER SELECTED OBJECT: " << selectedObjectType << std::endl;
     
     // std::cout << "FILE TYPE B: " << inROOT->GetType(objectType.c_str()) << std::endl; // TEST: Prints: 0
     
     // Or print all object types, and show list of only those
     
     // TODO: MAY NEED TO DO A GLOBAL FLAG, IF SELECTED == TTREE
+    
+    // ...
+    if (selectedObjectType == "TTree") {
+        rootObjectType = RootObjectType::TTree;
+    }
+    else if (selectedObjectType == "TH1D") {
+        rootObjectType = RootObjectType::TH1D;
+    }
     
     // ...
     struct SelectionReturnType result { selectedTypeIdx, selectedObjectType, categoryMap };
@@ -576,9 +618,6 @@ std::optional<SelectionReturnType> select_root_type() {
 // std::string select_root_object(SelectionReturnType* params) {
 // std::string select_root_object(SelectionReturnType const* params) {
 std::string select_root_object(SelectionReturnType const& selectionParams) {
-    
-    // int selectedTypeIdx, std::string selectedObjectType, std::unordered_map<std::string, std::vector<std::string>> categoryMap
-    
     // Destructure the param object
     auto const& [selectedTypeIdx, selectedObjectType, categoryMap] = selectionParams;
     // NOTE: Zero copies, no pointer syntax
@@ -588,12 +627,18 @@ std::string select_root_object(SelectionReturnType const& selectionParams) {
     // const auto& [selectedTypeIdx, selectedObjectType, categoryMap] = *params; 
     // dereference pointer, bind by reference to avoid copies
     
-    
-    std::cout << "\nShowing options for: " << selectedTypeIdx << " - " << selectedObjectType << std::endl;
-    std::cout << "\nWhat object would you like to access? (type a number from the options below, or enter q to exit):\n";
+    // ...
+    std::cout << "\nShowing options for object type: " << selectedTypeIdx << " - " << selectedObjectType << std::endl;
+    // std::cout << "\nWhat object would you like to access? (type a number from the options below, or enter q to exit):\n";
     
     // Get a list of all objects matching the chosen type
     std::vector<std::string>filteredObjects = categoryMap.at(selectedObjectType);
+    
+    // ...
+    for (int i = 0; i < filteredObjects.size(); i++) {
+        // ...
+        std::cout << (i + 1) << ") " << filteredObjects[i] << std::endl;
+    }
     
     // If there is only one object matching that type, select it by default
     // if (filteredObjects.size() == 1) return filteredObjects.at(0);
@@ -603,40 +648,17 @@ std::string select_root_object(SelectionReturnType const& selectionParams) {
     }
     
     // ...
-    for (int i = 0; i < filteredObjects.size(); i++) {
-        // ...
-        std::cout << (i + 1) << ") " << filteredObjects[i] << std::endl;
-    }
+    std::cout << "\nWhat object would you like to access? (type a number from the options above, or enter q to exit):\n";
     
     // ...
     int const selectedObjectIdx = prompt_user_int(1, filteredObjects.size());
-    std::cout << "USER SELECTED INT: " << selectedObjectIdx << std::endl;
+    // std::cout << "USER SELECTED INT: " << selectedObjectIdx << std::endl;
     
     // ...
     std::string selectedObjectName = filteredObjects.at(selectedObjectIdx - 1); // NOTE: Make selection zero-indexed again (minus 1)
-    std::cout << "USER SELECTED OBJECT: " << selectedObjectName << std::endl;
+    // std::cout << "USER SELECTED OBJECT: " << selectedObjectName << std::endl;
     
     return selectedObjectName;
-}
-
-/*
- * TODO: Small function, literally just loading the object into memory
- */
-int load_root_object() {
-    return 1;
-}
-
-/*
- * Print valid branch names for selected TTree object
- * 
- * Have user choose desired branch name (similar to select root type)
- * 
- * NOTE: Can probably reuse prompt_user_int(), just passing in low = 1 and new high value
- * 
- * TODO: If there is only one branch, select that name by default, skip prompt
- */
-int select_tree_branch() {
-    return 1;
 }
 
 /*
@@ -656,7 +678,7 @@ int select_tree_branch() {
  * 
  * Then just get user to input the integer, rather than typing full name
  */
-int load_tree() { // (char const* treeName)
+int load_tree(char const* treeName) { // (char const* treeName)
     // Handle incorrect path
     if (!inROOT) {
         printf("Error: File not found!\n");
@@ -664,10 +686,10 @@ int load_tree() { // (char const* treeName)
     }
     
     // TODO: Have this passed as param
-    char const treeName[16] = "TrackData;1";
+    // char const treeName[16] = "TrackData;1";
     
     // Get the TTree from the root file and assign it to the TTree pointer
-    inROOT->GetObject(treeName, nTuple); // NOTE: Also works: TTree* nTuple = in->Get<TTree>(treeName);
+    inROOT->GetObject<TTree>(treeName, nTuple); // NOTE: Also works: TTree* nTuple = in->Get<TTree>(treeName);
     
     // Handle missing ntuple (incorrect tree name, etc)
     if (!nTuple) {
@@ -686,10 +708,68 @@ int load_tree() { // (char const* treeName)
 }
 
 /*
+ * Print valid branch names for selected TTree object
  * 
+ * Have user choose desired branch name (similar to select root type)
+ * 
+ * NOTE: Can probably reuse prompt_user_int(), just passing in low = 1 and new high value
+ * 
+ * TODO: If there is only one branch, select that name by default, skip prompt
  */
-int load_root_hist() {
-   return 1; 
+int select_tree_branch() {
+    // std::cout << "\nShowing options for object type: " << selectedTypeIdx << " - " << selectedObjectType << std::endl;
+    // std::cout << "\nShowing branches in TTree: " << selectedTypeIdx << " - " << selectedObjectType << std::endl;
+    
+    return 1;
+}
+
+/*
+ * ...
+ */
+int load_root_hist(char const* histName) {
+    // Handle incorrect path
+    if (!inROOT) {
+        std::cerr << "\nError: File not found!\n";
+        return 1;
+    }
+    
+    // Load the histogram object with the specified name into memory
+    inROOT->GetObject<TH1>(histName, hpx);
+    
+    // Handle missing histogram
+    if (!hpx) {
+        std::cerr << "\nError (create_hist()): Histogram not found!\n";
+        return 1;
+    }
+    
+    // Success message
+    std::cout << "\nROOT histogram loaded.\n";
+    
+    return 0; 
+}
+
+/*
+ * TODO: Small function, literally just loading the object into memory
+ */
+int load_root_object(std::string const& objectName) {
+    // ...
+    char const* name = objectName.c_str();
+    
+    // ...
+    int loaded = -1;
+    
+    // ...
+    if (rootObjectType == RootObjectType::TTree) {
+        loaded = load_tree(name);
+        loaded = select_tree_branch();
+    }
+    else if (rootObjectType == RootObjectType::TH1D) {
+        loaded = load_root_hist(name);
+    } else {
+        loaded = 1;
+    }
+    
+    return loaded;
 }
 
 /*
@@ -708,23 +788,39 @@ int load_root_hist() {
  * TODO: Will need helper function for histos too
  */
 int load_root(std::string path) {
+    // ....
     int loadError = load_root_file(path);
     
     if (loadError) {
-        std::cerr << "\nError: Failed to load root file into memory.\n";
+        std::cerr << "\nError: Failed to load ROOT file into memory.\n";
+        return 1;
     }
     
-    auto result = select_root_type(); // choose TTree (Ntuple), TH1D (1D Hist), etc
+    // ....
+    auto success = select_root_type(); // choose TTree (Ntuple), TH1D (1D Hist), etc
     
-    if (!result) {
+    if (!success) {
         std::cerr << "\nError: Failed to get user selection for object type.\n";
+        return 1;
     }
     
-    SelectionReturnType success = result.value();
+    // ...
+    SelectionReturnType result = success.value();
     
-    select_root_object(success); // get tree/hist/etc name
+    // ...
+    std::string objectName = select_root_object(result); // get tree/hist/etc name
     
-    load_root_object(); // load root object with said name
+    if (objectName.empty()) {
+        std::cerr << "\nError: ROOT object name is empty\n";
+    }
+    
+    // ....
+    int loadObjectError = load_root_object(objectName); // load root object with said name
+    
+    if (loadObjectError) {
+        std::cerr << "\nError: Failed to access ROOT object\n";
+        return 1;
+    }
     
     // No errors, all good
     return 0;
@@ -747,7 +843,7 @@ int load_file(std::string path) {
     if (fileType == FileType::ASCII) {
         status = load_ascii(path);
         // std::cout << "\nASCII file has been loaded into memory.\n\n";
-        std::cout << "\nASCII file has been loaded into memory.\n";
+        // std::cout << "\nASCII file has been loaded into memory.\n";
     }
     // Attempt to load the ROOT file into memory
     else if (fileType == FileType::ROOT) {
@@ -759,11 +855,6 @@ int load_file(std::string path) {
     else {
         std::cout << "Error (load_file()): File type not set.\n";
         return 1;
-    }
-    
-    // TODO: TEMP (assumes ntuples, not root histo, in .root) (need to make it flexible)
-    if ((status == 0) && (fileType == FileType::ROOT)) {
-        status = load_tree();
     }
     
     return status;
@@ -1031,8 +1122,18 @@ int create_canvas() {
 /*
  * Validate file path, load file into memory, instantiate histogram, fill histogram,
  * instantiate canvas, render histogram
+ * 
+ * TODO: create_hist() & draw_hist()
+ * should only be called if its ROOT Ntuple, or ASCII
+ * ^ if its ROOT Histogram, hpx pointer will already be populated
  */
 int plot(std::string fileName) {
+    
+    if (hpx) {
+        hpx->Delete();
+        hpx = nullptr;
+    }
+    
     // Check provided path is valid (will return empty string if not valid)
     std::string path = check_path(fileName);
     
@@ -1052,20 +1153,25 @@ int plot(std::string fileName) {
     // TODO: Maybe here, if filetype == root, do load Hist, or TTree logic
     // ^ or just do it in load_file
     
-    // Attempt to instantiate histogram object
-    int const histError = create_hist();
+    // TODO: This enlosure feels a bit dirty, likely a better way to do this
+    if ((fileType != FileType::ROOT) && (rootObjectType != RootObjectType::TH1D)) {
     
-    if (histError) {
-        printf("Aborting: Create hist error!\n");
-        return 1;
-    }
+        // Attempt to instantiate histogram object
+        int const histError = create_hist();
+        
+        if (histError) {
+            printf("Aborting: Create hist error!\n");
+            return 1;
+        }
+        
+        // Attempt to populate histogram from ASCII or ROOT file
+        int const drawError = draw_hist();
+        
+        if (drawError) {
+            printf("Aborting: Draw hist error!\n");
+            return 1;
+        }
     
-    // Attempt to populate histogram from ASCII or ROOT file
-    int const drawError = draw_hist();
-    
-    if (drawError) {
-        printf("Aborting: Draw hist error!\n");
-        return 1;
     }
     
     // Attempt to create canvas and paint the histogram
@@ -1081,274 +1187,11 @@ int plot(std::string fileName) {
 }
 
 /*
- * Automatically find exponential centroid, derive hist low/high, fit convolution of 
- * exponential rise and decay to the data, and display the fit
- * 
- * TODO: This didnt quite fit to my data, but it may come in handy at a later date
- * 
- * TODO: Define a top level: fit(), method, which directs you to exponential, double_exponential, etc, etc
- * 
- * TODO: This needs updating with some of the updated error handling from ascii_fit.cc
+ * TODO ...
  */
-int rise_and_decay() {
-    // Find the tallest point in the current histogram range
-    int const maxBin = hpx->GetMaximumBin();
-    double const peakX = hpx->GetXaxis()->GetBinCenter(maxBin); // get the x-axis location of max counts bin
-    double const peakY = hpx->GetBinContent(maxBin); // get the y-axis number of counts for max bin, i.e. amplitude
-    
-    // Define the fit window (low & high)
-    // NOTE: the region of the histogram ROOT is allowed to use for the fit.
-    // (it’s a fit window, not a Gaussian width parameter)
-    // The Gaussian itself mathematically extends to infinity.    
-    double const low = hpx->GetXaxis()->GetXmin();
-    double const high = hpx->GetXaxis()->GetXmax();
-    
-    // Automate rise time (tau_rise)
-    // NOTE: Estimate rise time by looking backwards to 10% of the peak
-    int riseBin = maxBin;
-    
-    // While current bin greater than min bin, and current bin value still greater than 10% of the peak
-    while ((riseBin > 1) && (hpx->GetBinContent(riseBin) > (peakY * 0.1))) {
-        riseBin--;
-    }
-    
-    // ...
-    double x_rise = hpx->GetBinCenter(riseBin); // grab center of rise bin
-    double estimated_tau_rise = (peakX - x_rise) * 0.5; // Rise is usually sharper // TODO: Comments
-    
-    if (estimated_tau_rise <= 0) estimated_tau_rise = 1.; // Fallback safety
-    
-    // Automate decay constant (tau_fall)
-    // NOTE: Find the point where the signal drops to 37% (1/e) of its peak after the max
-    int fallBin = maxBin;
-    
-    // While current bin less than max bins, and current bin value still greater than 1/e of the peak
-    while ((fallBin < hpx->GetNbinsX()) && (hpx->GetBinContent(fallBin) > peakY * 0.368)) {
-        fallBin++;
-    }
-    
-    // ...
-    double x_fall = hpx->GetBinCenter(fallBin);
-    double estimated_tau_fall = x_fall - peakX; // TODO: Comments
-    
-    if (estimated_tau_fall <= 0) estimated_tau_fall = 10.0; // Fallback safety
-    
-    // Define and initialise double exponential fit (fast rise component & slow fall component)
-    auto pulseFit = new TF1("fitFn", "[0]*(exp(-(x-[1])/[3]) - exp(-(x-[1])/[2]))", low, high);
-    // A*(exp(-(x-[x_rise])/[tau_fall]) - exp(-(x-[x_rise])/[tau_rise]))
-    // Where: A = amplitude, x_rise = delay time, tau_rise = rise time constant, tau_fall = decay time constant
-    
-    // ...
-    // pulseFit->SetParameters(peakY, x_rise, estimated_tau_rise, estimated_tau_fall);
-    pulseFit->SetParameters(peakY, 0, estimated_tau_rise, estimated_tau_fall);
-    pulseFit->SetParNames("Amplitude", "t0", "tau_rise", "tau_fall");
-
-    // Enforce limits so the fitter doesnt swap rise and fall constants
-    pulseFit->SetParLimits(2, 0.01, estimated_tau_fall);
-    pulseFit->SetParLimits(3, estimated_tau_fall * 0.1, estimated_tau_fall * 10.);
-
-    // ...
-    auto result = hpx->Fit(pulseFit, "RS");
-    // "R" = use the range of the function
-    // "S" = return a TFitResultPtr for further analysis
-    // "M" = improves the fit quality
-    
-    // Draw the fit line (ROOT internally stores the fit function with the histogram after fitting)
-    hpx->GetFunction("fitFn")->Draw("SAME");
-    // NOTE: The "HIST" option suppresses drawing associated functions (including fits),
-    // hence why "hpx->Draw()" works here instead of drawing the fit fn (but we lose the histogram view),
-    // and why "hpx->Draw("HIST")" doesnt work alone, so calling draw on the stored fn is the way,
-    // it is also not enough to just call Modified() & Update().
-    
-    printf("Peak X: %f, Peak Y: %f", peakX, peakY);
-    
-    // TODO: Display relevant fit values in top right info box post-fit (chi^2, centroid, etc)
-    
-    return 0;
+int add_axis_title() {
+    return 1;
 }
-
-/*
- * Automatically find exponential centroid, derive hist low/high, fit convolution of 
- * exponential rise and decay to the data, and display the fit
- * 
- * TODO: This didnt quite fit to my data, but it may come in handy at a later date
- * 
- * TODO: Define a top level: fit(), method, which directs you to exponential, double_exponential, etc, etc
- * 
- * TODO: This needs updating with some of the updated error handling from ascii_fit.cc
- */
-int double_exponential_fit() {
-    // Find the tallest point in the current histogram range
-    int const maxBin = hpx->GetMaximumBin();
-    double const peakX = hpx->GetXaxis()->GetBinCenter(maxBin); // get the x-axis location of max counts bin
-    double const peakY = hpx->GetBinContent(maxBin); // get the y-axis number of counts for max bin, i.e. amplitude
-    
-    // Define the fit window (low & high)
-    // NOTE: the region of the histogram ROOT is allowed to use for the fit.
-    // (it’s a fit window, not a Gaussian width parameter)
-    // The Gaussian itself mathematically extends to infinity.    
-    double const low = hpx->GetXaxis()->GetXmin();
-    double const high = hpx->GetXaxis()->GetXmax();
-    
-    
-    // Automate rise time (tau_rise)
-    // NOTE: Estimate rise time by looking backwards to 10% of the peak
-    int riseBin = maxBin;
-    
-    // While current bin greater than min bin, and current bin value still greater than 10% of the peak
-    while ((riseBin > 1) && (hpx->GetBinContent(riseBin) > (peakY * 0.1))) {
-        riseBin--;
-    }
-    
-    // ...
-    double x_rise = hpx->GetBinCenter(riseBin); // grab center of rise bin
-    double estimated_tau_rise = (peakX - x_rise) * 0.5; // Rise is usually sharper // TODO: Comments
-    
-    if (estimated_tau_rise <= 0) estimated_tau_rise = 1.; // Fallback safety
-    
-    
-    // Automate decay constant (tau_fall)
-    // NOTE: Find the point where the signal drops to 37% (1/e) of its peak after the max
-    int fallBin = maxBin;
-    
-    // While current bin less than max bins, and current bin value still greater than 1/e of the peak
-    while ((fallBin < hpx->GetNbinsX()) && (hpx->GetBinContent(fallBin) > peakY * 0.368)) {
-        fallBin++;
-    }
-    
-    // ...
-    double x_fall = hpx->GetBinCenter(fallBin);
-    double estimated_tau_fall = x_fall - peakX; // TODO: Comments
-    
-    if (estimated_tau_fall <= 0) estimated_tau_fall = 10.0; // Fallback safety
-    
-    // Define and initialise double exponential fit (fast rise component & slow fall component)
-    auto pulseFit = new TF1("fitFn", "[0]*(exp(-(x-[1])/[3]) - exp(-(x-[1])/[2]))", low, high);
-    // A*(exp(-(x-[x_rise])/[tau_fall]) - exp(-(x-[x_rise])/[tau_rise]))
-    // Where: A = amplitude, x_rise = delay time, tau_rise = rise time constant, tau_fall = decay time constant
-    
-    // ...
-    pulseFit->SetParameters(peakY, x_rise, estimated_tau_rise, estimated_tau_fall);
-    pulseFit->SetParNames("Amplitude", "t0", "tau_rise", "tau_fall");
-
-    // Enforce limits so the fitter doesnt swap rise and fall constants
-    pulseFit->SetParLimits(2, 0.01, estimated_tau_fall);
-    pulseFit->SetParLimits(3, estimated_tau_fall * 0.1, estimated_tau_fall * 10.);
-
-    // ...
-    auto result = hpx->Fit(pulseFit, "RS");
-    // "R" = use the range of the function
-    // "S" = return a TFitResultPtr for further analysis
-    // "M" = improves the fit quality
-    
-    // Draw the fit line (ROOT internally stores the fit function with the histogram after fitting)
-    hpx->GetFunction("fitFn")->Draw("SAME");
-    // NOTE: The "HIST" option suppresses drawing associated functions (including fits),
-    // hence why "hpx->Draw()" works here instead of drawing the fit fn (but we lose the histogram view),
-    // and why "hpx->Draw("HIST")" doesnt work alone, so calling draw on the stored fn is the way,
-    // it is also not enough to just call Modified() & Update().
-    
-    printf("Peak X: %f, Peak Y: %f", peakX, peakY);
-    
-    // TODO: Display relevant fit values in top right info box post-fit (chi^2, centroid, etc)
-    
-    return 0;
-}
-
-/*
- * TODO: Needs faster rise time to fit to the photon distance travelled data
- * 
- * 1) Log normal
- * 2) Gamma Distribution
- * 3) ExGaussian
- */
-int fit() {
-    // Find the tallest point in the current histogram range
-    int const maxBin = hpx->GetMaximumBin();
-    double const peakX = hpx->GetXaxis()->GetBinCenter(maxBin); // get the x-axis location of max counts bin
-    double const peakY = hpx->GetBinContent(maxBin); // get the y-axis number of counts for max bin, i.e. amplitude
-    
-    // Define the fit window (low & high)
-    // NOTE: the region of the histogram ROOT is allowed to use for the fit.
-    // (it’s a fit window, not a Gaussian width parameter)
-    // The Gaussian itself mathematically extends to infinity.    
-    double const low = hpx->GetXaxis()->GetXmin();
-    double const high = hpx->GetXaxis()->GetXmax();
-    
-    
-    // Automate rise time (tau_rise)
-    // NOTE: Estimate rise time by looking backwards to 10% of the peak
-    int riseBin = maxBin;
-    
-    // While current bin greater than min bin, and current bin value still greater than 10% of the peak
-    while ((riseBin > 1) && (hpx->GetBinContent(riseBin) > (peakY * 0.1))) {
-        riseBin--;
-    }
-    
-    // ...
-    double x_rise = hpx->GetBinCenter(riseBin); // grab center of rise bin
-    double estimated_tau_rise = (peakX - x_rise) * 0.5; // Rise is usually sharper // TODO: Comments
-    
-    if (estimated_tau_rise <= 0) estimated_tau_rise = 1.; // Fallback safety
-    
-    
-    // Automate decay constant (tau_fall)
-    // NOTE: Find the point where the signal drops to 37% (1/e) of its peak after the max
-    int fallBin = maxBin;
-    
-    // While current bin less than max bins, and current bin value still greater than 1/e of the peak
-    while ((fallBin < hpx->GetNbinsX()) && (hpx->GetBinContent(fallBin) > peakY * 0.368)) {
-        fallBin++;
-    }
-    
-    // ...
-    double x_fall = hpx->GetBinCenter(fallBin);
-    double estimated_tau_fall = x_fall - peakX; // TODO: Comments
-    
-    if (estimated_tau_fall <= 0) estimated_tau_fall = 10.0; // Fallback safety
-    
-    
-    // Define the fit function
-    // auto fitFn = new TF1("fitFn", "expo", low, high);
-    // auto fitFn = new TF1("fitFn", "[0]*exp(-x/[1])", low, high); // exponential decay
-    // NOTE: "gaus" is built-in ROOT shorthand for [0]*exp(-x/[1])
-    
-    // ..
-    // fitFn->SetParameters(peakY, 20.0);
-    // fitFn->SetParNames("Amplitude", "Decay Constant");
-    
-    
-    // Define and initialise double exponential fit (fast rise component & slow fall component)
-    auto pulseFit = new TF1("fitFn", "[0]*(exp(-(x-[1])/[3]) - exp(-(x-[1])/[2]))", low, high);
-    
-    // ...
-    pulseFit->SetParameters(peakY, x_rise, estimated_tau_rise, estimated_tau_fall);
-    pulseFit->SetParNames("Amplitude", "t0", "tau_rise", "tau_fall");
-
-    // Enforce limits so the fitter doesnt swap rise and fall constants
-    pulseFit->SetParLimits(2, 0.01, estimated_tau_fall);
-    pulseFit->SetParLimits(3, estimated_tau_fall * 0.1, estimated_tau_fall * 10.);
-
-    // ...
-    auto result = hpx->Fit(pulseFit, "RS");
-    // "R" = use the range of the function
-    // "S" = return a TFitResultPtr for further analysis
-    // "M" = improves the fit quality
-    
-    // Draw the fit line (ROOT internally stores the fit function with the histogram after fitting)
-    hpx->GetFunction("fitFn")->Draw("SAME");
-    // NOTE: The "HIST" option suppresses drawing associated functions (including fits),
-    // hence why "hpx->Draw()" works here instead of drawing the fit fn (but we lose the histogram view),
-    // and why "hpx->Draw("HIST")" doesnt work alone, so calling draw on the stored fn is the way,
-    // it is also not enough to just call Modified() & Update().
-    
-    printf("Peak X: %f, Peak Y: %f", peakX, peakY);
-    
-    // TODO: Display relevant fit values in top right info box post-fit (chi^2, centroid, etc)
-    
-    return 0;
-}
-
 
 /*
  * Prompts user for input, reads response, returns success/fail val based on response
