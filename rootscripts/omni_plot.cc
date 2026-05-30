@@ -1,6 +1,7 @@
 // Load an ASCII (.Spe) or ROOT (.root) file into memory, fill a histogram, and display it on a canvas
 
 // ROOT lib
+#include <TDirectory.h>
 #include <TFile.h>
 #include <TKey.h>
 #include <TTree.h>
@@ -1192,18 +1193,22 @@ int create_hist() {
     std::string title;
     std::string legendTitle;
     int nbins = -1; // 2048 channels (bins) // NOTE: Decent
-    int xmin = -1; // min channel value (i.e., usually 0, but maybe non-zero, or negative)
-    int xmax = -1; // max channel value (i.e., 3500 photons, 2000 mm, etc)
+    // int xmin = -1; // min channel value (i.e., usually 0, but maybe non-zero, or negative)
+    // int xmax = -1; // max channel value (i.e., 3500 photons, 2000 mm, etc)
+    double xmin = -1.; // min channel value (i.e., usually 0, but maybe non-zero, or negative)
+    double xmax = -1.; // max channel value (i.e., 3500 photons, 2000 mm, etc)
     
     std::string leafType;
     
     // Lab spectra are already 2048 channels and appropriately binned
     if (fileType == FileType::ASCII) {
-        title = "Energy spectrum";
+        title = "EnergySpectrum";
         legendTitle = "Energy Spectrum";
         nbins = 2048;
-        xmin = 0;
-        xmax = 2048;
+        // xmin = 0;
+        // xmax = 2048;
+        xmin = 0.;
+        xmax = 2048.;
         // xTitle = "Channels";
     }
     // ...
@@ -1212,21 +1217,47 @@ int create_hist() {
         // strcpy(nTuple->GetName(), title);
         // title = (char*)(nTuple->GetName());
         // legendTitle =(char*)(branch->GetName());
+        
+        // char const* nTupleName = nTuple->GetName();
+        // char const* branchName = branch->GetName();
+        
+        std::string const nTupleName = nTuple->GetName();
         char const* branchName = branch->GetName();
         
-        title = nTuple->GetName();
+        double branchMin = nTuple->GetMinimum(branchName);
+        
+        title = nTupleName + "Hpx"; // NOTE: Using the TTree name itself causes ROOT to think the histogram already exists
         legendTitle = branchName;
         nbins = 2048; // TODO: Not sure on best approach for dynamic binning currently
-        xmin = nTuple->GetMinimum(branchName); // should be zero
+        // xmin = nTuple->GetMinimum(branchName); // should be zero
+        xmin = ((branchMin < 0.) ? branchMin : 0.); // should be zero
+        // xmin = 0;
+        // xmin = 0.;
         xmax = (nTuple->GetMaximum(branchName)) * 1.1; // +10%
         // xTitle = branchName;
+        
+        std::cout << "\nXMIN: " << xmin << " XMAX: " << xmax << "\n";
         
         // ...
         // std::cout << "BRANCH TYPE: " << branch->GetClassName() << "\n"; // NOTE: Prints ""
         
-        // Get type
+        // Get TTree data type by reading the leaves
+        
         // char const* leafType = branch->GetLeaf(branchName)->GetTypeName(); // NOTE: Gives: "Double_t"
-        leafType = branch->GetLeaf(branchName)->GetTypeName(); // NOTE: Gives: "Double_t"
+        // leafType = branch->GetLeaf(branchName)->GetTypeName(); // NOTE: Gives: "Double_t"
+        
+        // TODO: This leaf grabbig logic may be better suited to the load pipeline
+        // can make global leaf variable, and just call GetTypeName() here
+        TLeaf* leaf = branch->GetLeaf(branchName);
+        
+        // NOTE: Fallback incase branch name and name required by GetLeaf() differ
+        if (!leaf) {
+            leaf = static_cast<TLeaf*>(branch->GetListOfLeaves()->At(0)); 
+            // Static cast is safe as we know list of leaves is not empty from 
+            // load pipeline, and were calling get leaves
+        }
+        
+        leafType = leaf->GetTypeName();
         
         // ...
         // std::cout << "LEAF TYPE: " << leafType << "\n";
@@ -1236,10 +1267,26 @@ int create_hist() {
     if (title.empty() || legendTitle.empty() || nbins == -1 || xmin == -1 || xmax == -1) {
         std::cerr << "\nError: Failed to define histogram args.\n";
         
-        // TODO: Clean objects
+        // TODO: Clean objects (ASCII OR ROOT logic)
         
         return 1;
     }
+    
+    // TEST: Debug
+    // if (hpx) {
+    //     std::cerr << "\nHISTOGRAM IS NOT NULL\n";
+    // }
+    
+    // TEST: Debug
+    // TH1::AddDirectory(false);
+    // NOTE: Resolves:
+    // Warning in <TFile::Append>: Replacing existing TH1: TrackData (Potential memory leak).
+    // But why?
+    // That warning shouldnt be coming up in the first place?
+    // NOTE: Because histogram names were colliding with ntuple names
+    
+    // TEST: Debug
+    // gDirectory->ls();
     
     // ...
     if ((fileType == FileType::ASCII) || ((fileType == FileType::ROOT) && (leafType == "Int_t"))) {
@@ -1256,6 +1303,8 @@ int create_hist() {
         );
         // NOTE: TH1I works while num photons is int, but may need long64 (TH1L) for gain applied num photons,
         // or TH1F (float - 4 bytes) / TH1D (double - 8 bytes) if using floating point values
+        
+        // hpx->SetDirectory(nullptr);
     }
     // ...
     else if ((fileType == FileType::ROOT) && (leafType == "Double_t")) {
@@ -1272,6 +1321,8 @@ int create_hist() {
         );
         // NOTE: TH1I works while num photons is int, but may need long64 (TH1L) for gain applied num photons,
         // or TH1F (float - 4 bytes) / TH1D (double - 8 bytes) if using floating point values
+        
+        // hpx->SetDirectory(nullptr);
     }
     
     // Handle missing histogram (failed instantiation for any reason)
