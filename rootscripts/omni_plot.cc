@@ -4,6 +4,7 @@
 #include <TFile.h>
 #include <TKey.h>
 #include <TTree.h>
+#include <TLeaf.h> // Incomplete type without explicit import
 #include <TH1.h>
 #include <TCanvas.h>
 #include <TF1.h>
@@ -20,31 +21,35 @@
 #include <optional>
 // #include <unordered_set>
 // #include <unordered_map>
+#include <variant>
 
 // Global root object variables
 std::ifstream inASCII;
 TFile* inROOT = nullptr;
 TTree* nTuple = nullptr;
+TBranch* branch = nullptr;
 TH1 *hpx = nullptr;
-TCanvas *c = nullptr;
+TCanvas *canvas = nullptr;
 
 // Accepted file types
 enum class FileType {
     ROOT,
-    ASCII
+    ASCII,
+    NULLFILE
 };
 
 // Active file type flag
-FileType fileType;
+FileType fileType = FileType::NULLFILE;
 
 // Currently supported object types
 enum class RootObjectType {
     TTree,
-    TH1D
+    TH1D,
+    NULLOBJ
 };
 
 // Active object type flag
-RootObjectType rootObjectType;
+RootObjectType rootObjectType = RootObjectType::NULLOBJ;
 
 /*
  * Load in plotting and fitting functions
@@ -79,15 +84,14 @@ int omni_plot() {
  * 
  * TODO: Make arg[0]: std::string const path (so its immutable)
  */
-std::string check_path(std::string path) { // std::string check_path(std::string const path) {
+std::string const check_path(std::string const& path) { // std::string check_path(std::string const path) {
     // Print path to stdout
-    std::cout << "\nUser provided path:\n";
-    std::cout << path << "\n";
+    std::cout << "\nUser provided path: " << path << "\n";
     
     // Check if string is empty (returns true if string is empty)
     if (path.empty()) {
         // Error message
-        std::cout << "Error [check_path()]: Empty string.\n";
+        std::cerr << "\nError [check_path()]: Empty string.\n";
         
         // Error value
         return "";
@@ -127,7 +131,7 @@ std::string check_path(std::string path) { // std::string check_path(std::string
     // Ensure file extension delimiter is present in path (find will return -1 if not found)
     if (extDelimiterIdx == -1) {
         // Write to stdout
-        std::cout << "Error: No file extension.\n";
+        std::cerr << "\nError: No file extension.\n";
         
         // Error value
         return "";
@@ -148,26 +152,27 @@ std::string check_path(std::string path) { // std::string check_path(std::string
     // Check path ends with valid extension, reject invalid file type
     if (token != spe && token != root) {
         // Write to stdout
-        std::cout << "Error: Invalid extension.\n";
+        std::cerr << "\nError: Invalid extension.\n";
         
         // Error value
         return "";
     }
     // If its an ASCII file extension, log it and set ASCII flag
     else if (token == spe) {
-        // std::cout << "\nASCII file detected.\n\n";
         std::cout << "\nASCII file detected.\n";
         fileType = FileType::ASCII;
     }
     // If its a ROOT file extension, log it and set ROOT flag
     else if (token == root) {
-        // std::cout << "\nRoot file detected.\n\n";
-        std::cout << "\nRoot file detected.\n";
+        std::cout << "\nROOT file detected.\n";
         fileType = FileType::ROOT;
     }
 
     // Replace tilde if passed
     std::string const tilde = "~"; // char tilde[2]
+    
+    // Mutable path
+    std::string returnPath = path;
 
     // If reference to character at [0] is tilde character
     if (path[0] == tilde) {
@@ -176,19 +181,19 @@ std::string check_path(std::string path) { // std::string check_path(std::string
         // std::cout << home << std::endl; // debug
         
         // Trim "~" from the start of the string (start at idx = 1, as "~" at 0)
-        auto trimmedPath = path.substr(1, path.size());
+        std::string const trimmedPath = path.substr(1, path.size());
         // std::cout << trimmedPath << std::endl; // debug
         
         // Update the path, replacing "~" with "/home/user" (NOTE: Not sure if this is "okay" to do), but is simple
-        path = home + trimmedPath; 
+        // path = home + trimmedPath;
+        returnPath = home + trimmedPath;
         // TODO: Not sure about updating path var directly, maybe just return new string here
         
         // ...
         // std::string expandedPath = home + trimmedPath; // TODO
         
         // Tilde expansion was successful
-        std::cout << "\nPath has been expanded:\n";
-        std::cout << path << "\n";
+        std::cout << "\nPath has been expanded: " << returnPath << "\n";
         // NOTE: This is now an absolute path
         
         // return expandedPath; // TODO
@@ -198,7 +203,140 @@ std::string check_path(std::string path) { // std::string check_path(std::string
     std::cout << "\nPath is valid.\n";
     
     // No errors, all good
-    return path;
+    // return path;
+    return returnPath;
+}
+
+/*
+ * To be called on error
+ * 
+ * NOTE: Since the TBranch is owned by the TTree, and the TTree is owned by the TFile
+ * (assuming TTree->SetDirectory(nullptr) hasnt been called), it is not necessary to
+ * manually call "delete" on the TBranch or TTree, 
+ * 
+ * NOTE: Calling TTree->SetDirector(nullptr) is unwise
+ * 
+ * NOTE: Closing the TFile
+ */
+void root_cleanup() {
+    // Call the TFile destructor
+    delete inROOT; // NOTE: Calls: inROOT->Close(); via TFile class destructor incase its zombie
+    // NOTE: If inROOT = nullptr still, calling delete is safe (no-op)
+    
+    // Nullify pointers
+    inROOT = nullptr;
+    nTuple = nullptr;
+    branch = nullptr;
+    // NOTE: No harm in nullifying already nulled pointers
+    
+    // TEST: Segfault
+    // delete branch;
+    // branch = nullptr;
+    // delete nTuple;
+    // nTuple = nullptr;
+    // delete inROOT;
+    // inROOT = nullptr;
+    
+    // TEST: Segfault
+    // delete nTuple;
+    // nTuple = nullptr;
+    // delete branch;
+    // branch = nullptr;
+    // delete inROOT;
+    // inROOT = nullptr;
+    
+    // TEST: Segfault
+    // delete inROOT;
+    // inROOT = nullptr;
+    // delete nTuple;
+    // nTuple = nullptr;
+    // delete branch;
+    // branch = nullptr;
+    
+    // TEST: Segfault
+    // delete inROOT;
+    // inROOT = nullptr;
+    // delete branch;
+    // branch = nullptr;
+    // delete nTuple;
+    // nTuple = nullptr;
+    
+    // TEST: No segfault
+    // delete branch;
+    // branch = nullptr;
+    
+    // TEST: No segfault
+    // delete nTuple;
+    // nTuple = nullptr;
+    
+    // TEST: No segfault
+    // delete inROOT;
+    // inROOT = nullptr;
+    
+    // TEST: No segfault
+    // branch = nullptr;
+    // delete nTuple;
+    // nTuple = nullptr;
+    // delete inROOT;
+    // inROOT = nullptr;
+    
+    // TEST: No segfault
+    // branch = nullptr;
+    // delete branch;
+    // delete inROOT;
+    // inROOT = nullptr;
+    
+    // TEST: No segfault
+    // delete branch;
+    // branch = nullptr;
+    // delete inROOT;
+    // inROOT = nullptr;
+    
+    // TEST: No segfault
+    // delete inROOT;
+    // inROOT = nullptr;
+    // delete branch;
+    // branch = nullptr;
+    
+    // TEST: No segfault
+    // delete inROOT;
+    // inROOT = nullptr;
+    // delete nTuple;
+    // nTuple = nullptr;
+    
+    // TEST: No segfault
+    // delete nTuple;
+    // nTuple = nullptr;
+    // delete inROOT;
+    // inROOT = nullptr;
+    
+    // TEST: Segfault
+    // delete nTuple;
+    // nTuple = nullptr;
+    // delete branch;
+    // branch = nullptr;
+    
+    // TEST: Segfault
+    // delete branch;
+    // branch = nullptr;
+    // delete nTuple;
+    // nTuple = nullptr;
+}
+
+/*
+ * ...
+ */
+void ascii_cleanup() {
+    // ...
+    inASCII.close();
+    inASCII.clear(); // NOTE: Resets the flags for the next file
+    // NOTE: Dont need: if (!inASCII.is_open()) check before clear here, will always
+    // return false, std::ifstream close delegates task to lower level file buffer,
+    // and if os error occurs, stream is marked broken by setting failbit, and even
+    // if failbit is triggered, connection between ifstream object and the file is
+    // completely severed
+    // NOTE: Also, calling .clear() on clean stream does no harm
+    // ...
 }
 
 /*
@@ -210,7 +348,7 @@ std::string check_path(std::string path) { // std::string check_path(std::string
  * NOTE: std::ifstream sets internal error flags immediately on failure,
  * so only need to check (!inASCII) really
  */
-int load_ascii(std::string path) {
+int load_ascii(std::string& path) {
     // Open the ASCII file with validated .Spe extension
     inASCII.open(path);
     
@@ -218,7 +356,7 @@ int load_ascii(std::string path) {
     // NOTE: No need to reprompt, user can just call the function again
     if (!inASCII || !inASCII.is_open()) {
         // Error message
-        std::cout << "Error: File not found.\n";
+        std::cerr << "Error: File not found.\n";
         // NOTE: Triggers if file is missing, corrupted, or locked
         
         // Error
@@ -236,27 +374,24 @@ int load_ascii(std::string path) {
  * Open ROOT file containing ROOT objects, load it into local memory, check its not empty 
  * (i.e., contains at least one ROOT object)
  */
-int load_root_file(std::string path) {
+int load_root_file(std::string const& path) {
     // Convert: std::string, to: char const*
-    char const *charPath = path.c_str();
+    char const* charPath = path.c_str();
     
     // Fetch and open root file
-    inROOT = TFile::Open(charPath);
+    inROOT = TFile::Open(charPath, "READ"); // readonly mode
     
     // Handle incorrect path
     if (!inROOT || inROOT->IsZombie()) {
         std::cerr << "\nError: ROOT file not found!\n";
-        delete inROOT; // NOTE: Calls: inROOT->Close(); via TFile class destructor incase its zombie
-        // NOTE: If inROOT = nullptr still, calling delete is safe (no-op)
-        inROOT = nullptr;
+        root_cleanup();
         return 1;
     }
     
     // Handle no ROOT objects being found (i.e. TTree, TH1D, etc)
     if (inROOT->GetNkeys() == 0) {
         std::cerr << "\nError: ROOT file is empty, closing file.\n";
-        delete inROOT;
-        inROOT = nullptr;
+        root_cleanup();
         return 1;
     }
     
@@ -379,7 +514,6 @@ struct SelectionReturnType {
  * TODO: Not sure whether to define some of these maps in load_root, and pass in pointers
  * to this function, or leave as is, will revisit this design choice later
  */
-// int select_root_type() {
 std::optional<SelectionReturnType> select_root_type() {
     // Handle unloaded root file (i.e., via calling this method directly, or some bug)
     if (!inROOT) {
@@ -604,32 +738,27 @@ std::optional<SelectionReturnType> select_root_type() {
  * Prompt user to select the name of the object theyd like to access 
  * (with selection list filtered by the object type theyve chosen)
  * 
- * TODO: May need to return vector from select root type and pass it into this function from load_root()
+ * NOTE: If there is only one object, that name is selected by default, skipping user prompt
  * 
- * NOTE: Can probably reuse prompt_user_int(), just passing in low = 1 and new high value
- * 
- * TODO: If there is only one object, select that name by default, skip prompt
  * 
  * NOTE: Pass by const reference (SelectionReturnType const&), instead of the object itself, 
  * or a pointer (as long as the argument cannot be null).
  * 
- * This eliminates the needf for manual pointer dereferencing and null checks
+ * This eliminates the need for manual pointer dereferencing and null checks
  * 
  * Destructuring the params using: "auto const&" ensures the compiler creates reference
  * bindings directly to the memory address insside the struct, guaranteeing a zero-copy operation
+ * 
+ * 
+ * NOTE: For: (SelectionReturnType const* selectionParams):
+ * if (!params) ..
+ * const auto& [selectedTypeIdx, selectedObjectType, categoryMap] = *params; 
+ * dereference pointer, bind by reference to avoid copies
  */
-// int select_root_object(int selectedTypeIdx, std::string selectedObjectType, std::unordered_map<std::string, std::vector<std::string>> categoryMap) {
-// std::string select_root_object(SelectionReturnType* params) {
-// std::string select_root_object(SelectionReturnType const* params) {
 std::string select_root_object(SelectionReturnType const& selectionParams) {
     // Destructure the param object
     auto const& [selectedTypeIdx, selectedObjectType, categoryMap] = selectionParams;
     // NOTE: Zero copies, no pointer syntax
-    
-    // NOTE: For: SelectionReturnType const* params:
-    // if (!params) ..
-    // const auto& [selectedTypeIdx, selectedObjectType, categoryMap] = *params; 
-    // dereference pointer, bind by reference to avoid copies
     
     // ...
     std::cout << "\nShowing options for object type: " << selectedTypeIdx << " - " << selectedObjectType << std::endl;
@@ -645,7 +774,6 @@ std::string select_root_object(SelectionReturnType const& selectionParams) {
     }
     
     // If there is only one object matching that type, select it by default
-    // if (filteredObjects.size() == 1) return filteredObjects.at(0);
     if (filteredObjects.size() == 1) {
         std::cout << "\nOnly one object matching requested type found, selecting...\n";
         return filteredObjects[0];
@@ -666,40 +794,48 @@ std::string select_root_object(SelectionReturnType const& selectionParams) {
 }
 
 /*
- * TODO: Have treeName passed as param
- * ^ if calling plot() as:
- * plot(fileName) - do ascii/root check (and assume root histo in file)
- * plot(fileName, branchName) - do ascii/root check (but assume root) (and assume ntuple in file)
+ * Populate the TTree pointer with the specified TTree
  * 
- * TODO: May want to consider interactive prompt, i.e. check for tree names in root file,
- * then ask user for input to choose said tree
- * ^ same for branches
+ * NOTE: DO NOT: Detach Ntuple object from input file, then close input file
+ * i.e.: nTuple->SetDirectory(nullptr); delete inROOT;
+ * UNLIKE WITH HISTOGRAMS, CLOSING THE ROOT FILE BEFORE WORKING WITH NTUPLE DATA IS UNWISE
+ * Could have millions of entries which would need to be fully loaded into memory
+ * ^^ Usually the TTree just becomes unusable
  * 
- * ^ could print out tree/branch names line by line with an index, i.e.:
- * 1) Tree A
- * 2) Tree B
- * etc ...
  * 
- * Then just get user to input the integer, rather than typing full name
+ * NOTE: If you dont SetDir(nullptr) here before closing the ROOT file, when 
+ * trying to call methods such as: GetListOfBranches(); later it will cause a
+ * segfault and crash program
+ * 
+ * 
+ * TODO: I seemingly dont need to append ";1" to tree names like i had been doing
+ * NOTE: But not sure if maybe i should though?
+ * i.e.:
+ * char const treeName[16] = "TrackData;1"; // << How i was doing it
  */
-int load_tree(char const* treeName) { // (char const* treeName)
+int load_tree(char const* treeName) {
     // Handle incorrect path
     if (!inROOT) {
         std::cerr << "\nError: File not found!\n";
         return 1;
     }
     
-    // TODO: Have this passed as param
-    // char const treeName[16] = "TrackData;1";
-    
     // Get the TTree from the root file and assign it to the TTree pointer
     inROOT->GetObject<TTree>(treeName, nTuple); // NOTE: Also works: TTree* nTuple = in->Get<TTree>(treeName);
+    
+    
+    // TEST - SEEMINGLY NOT NEEDED
+    // std::string name = treeName;
+    // std::string fullTreeName = name + ";1";
+    // char const* theTreeName = fullTreeName.c_str();
+    // inROOT->GetObject<TTree>(theTreeName, nTuple);
+    // TEST
+    
     
     // Handle missing ntuple (incorrect tree name, etc)
     if (!nTuple) {
         std::cerr << "\nError: Couldnt load TTree!\n";
-        delete inROOT;
-        inROOT = nullptr;
+        root_cleanup();
         return 1;
     }
     
@@ -721,29 +857,43 @@ int load_tree(char const* treeName) { // (char const* treeName)
  * 
  * TODO: If there is only one branch, select that name by default, skip prompt
  */
-int select_tree_branch() {
+std::string select_branch() {
     // Handle missing ntuple
     if (!nTuple) {
         std::cerr << "\nError: Couldnt find TTree!\n";
-        delete inROOT;
-        inROOT = nullptr;
-        return 1;
+        root_cleanup();
+        return "";
     }
     
     // ...
-    TObjArray* branches = nTuple->GetListOfBranches();
+    std::cout << "\nFetching branch list...\n";
     
+    // ...
+    TObjArray* branches = nTuple->GetListOfBranches(); 
+    // NOTE: When closing the root infile directly after loading the TTree object, 
+    // need to do TTree->SetDirectory(nullptr), otherwide this will cause a segfault <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    // or, wait until the end of the root object handling pipeline to close inROOT
+    // ^^ if im closing it in load_tree, it kinda makes some of these checks redundant
+
     if (!branches) {
-        // TODO ...
+        std::cerr << "\nError: Couldnt get TTree branches array!\n";
+        root_cleanup();
+        return "";
     }
+    
+    // ...
+    std::cout << "\nBranch list has been loaded.\n";
     
     // ...
     int numEntries = branches->GetEntries();
     
     if (numEntries == 0) {
-        // TODO ...
+        std::cerr << "\nError: Selected TTree contains no branches!\n";
+        root_cleanup();
+        return "";
     }
     
+    // ...
     std::unordered_map<int, std::string> branchMap = {};
     
     std::cout << "\nShowing branches in TTree - " << nTuple->GetName() << ":\n";
@@ -775,9 +925,75 @@ int select_tree_branch() {
     // nbins = nTuple->GetMaximum("Distance");
     // NOTE: would have to store in global variable
     
+    // ...
     std::cout << "\nBranch: \"" << chosenBranch << "\" selected.\n";
     
-    return 1;
+    return chosenBranch;
+}
+
+/*
+ * ...
+ * 
+ * TODO: May need to append: ";1" to branch name
+ * 
+ * 1) Either get the TBranch pointer in select_tree_branch() {^ i.e., move the logic above this comment}, 
+ * and make it global (technically loading the branch is more fitting for the load_file pipeline anyways,
+ * since this is part of the histogram filling pipeline...)
+ * NOTE: Just call: globalBranch->GetName(); in here for SetBranchAddress()
+ * 
+ * OR: 2) Just make a global branchName variable
+ * 
+ * OR: 3) Move select branch logic into the fill_hist() pipeline,
+ * so i can just pass branchName here as param
+ *
+ * OR: 4) Return branchName from load_file pipeline, and pass it into fill_hist pipeline
+ * (which would require a complete rewrite...
+ * 
+ * NOTE: #1 seems like the most obvious choice (for now at least, can always explore other options in the future)
+ * 
+ * TBranch* const eventData = nTuple->GetBranch(branchName); // NOTE: Does work (but this is different to typical pointer)
+ * TBranch const* eventData = nTuple->GetBranch(branchName); // NOTE: Doesnt work
+ */
+int load_branch(std::string const& selectedBranch) {
+    // ...
+    if (!nTuple) {
+        std::cerr << "\nError: Ntuple not found, closing root file.\n";
+        root_cleanup();
+        return 1;
+    }
+    
+    // ...
+    if (selectedBranch.empty()) {
+        std::cerr << "\nError: Invalid branch name. Closing root file and deconstructing Ntuple.\n";
+        root_cleanup();
+        return 1;
+    }
+    
+    // ...
+    char const* branchName = selectedBranch.c_str();
+    
+    // Get the TBranch of interest from the TTree, and assign it to pointer
+    branch = nTuple->GetBranch(branchName);
+    
+    // Handle invalid branch name
+    if (!branch) {
+        std::cerr << "\nError: TTree branch: " << branchName << " not found. Closing root file and deconstructing Ntuple.\n";
+        root_cleanup();
+        return 1;
+    }
+    
+    // TODO: Should this check be done here or in fill_hist
+    if (branch->GetEntries() == 0) {
+        std::cerr << "\nError: Selected TTree branch contains no entries! Closing root file, and deconstructing Ntuple/branch.\n";
+        root_cleanup();
+        return 1;
+    }
+    
+    // Success message
+    std::cout << "\nTTree Branch: \"" << branchName << "\" successfully loaded.\n";
+    
+    // ...
+    return 0;
 }
 
 /*
@@ -796,8 +1012,7 @@ int load_root_hist(char const* histName) {
     // Handle missing histogram
     if (!hpx) {
         std::cerr << "\nError (create_hist()): Histogram not found!\n";
-        delete inROOT;
-        inROOT = nullptr;
+        root_cleanup();
         return 1;
     }
     
@@ -805,40 +1020,52 @@ int load_root_hist(char const* histName) {
     hpx->SetDirectory(nullptr);
     delete inROOT;
     inROOT = nullptr;
-    // if (!inROOT->IsOpen()) inROOT = nullptr; 
-    // TODO: Maybe better, unlikely to have issues closing, but something to think about later
+    // NOTE: Histogram entire payload typically already in memory, detaching is fairly
+    // safe here, and once detached, we no longer need the ROOT file
     
     // Success message
     std::cout << "\nROOT histogram loaded.\n";
     
-    return 0; 
+    // ...
+    return 0;
 }
 
 /*
- * TODO: Small function, literally just loading the object into memory
- * 
- * TODO: May need to load branch here instead of in fill hist
+ * Attempts to load the chosen ROOT object into memory, routing to dedicated helper
+ * functions for the various object types
  */
 int load_root_object(std::string const& objectName) {
-    // ...
+    // Convert std::string to c string
     char const* name = objectName.c_str();
     
     // ...
-    int loaded = -1;
+    int status = 1; 
+    // NOTE: Defaults to failure (1), can only be set to success (0) if object type is selected
+    
+    // Load object router
+    if (rootObjectType == RootObjectType::TTree) {
+        // ...
+        int loadTreeError = load_tree(name);
+        if (loadTreeError) return status; // TODO: Not sure about another layer of nesting here
+        
+        // ...
+        std::string branchName = select_branch(); // TODO: setting status twice here feels redundant
+        if (branchName.empty()) return status;
+        
+        // ...
+        status = load_branch(branchName);
+    }
+    // ...
+    else if (rootObjectType == RootObjectType::TH1D) {
+        // ...
+        status = load_root_hist(name);
+    }
     
     // ...
-    if (rootObjectType == RootObjectType::TTree) {
-        loaded = load_tree(name);
-        loaded = select_tree_branch(); // TODO: setting loaded twice here feels redundant
-        // TODO: May need to load the branch here
-    }
-    else if (rootObjectType == RootObjectType::TH1D) {
-        loaded = load_root_hist(name);
-    } else {
-        loaded = 1;
-    }
+    if (!status) std::cout << "\nROOT object loaded.\n";
     
-    return loaded;
+    // ...
+    return status;
 }
 
 /*
@@ -853,10 +1080,8 @@ int load_root_object(std::string const& objectName) {
  * TODO: Load tree will also need to do a branch check, and have user select name similar to tree name
  * NOTE: Dont implement 3D shit just yet, can save that for a later date (will need to select multiple branch names, etc)
  * ^ this should just be flexible enough to handle any Ntuples i create from the sim for now
- * 
- * TODO: Will need helper function for histos too
  */
-int load_root(std::string path) {
+int load_root(std::string const& path) {
     // ....
     int loadError = load_root_file(path);
     
@@ -892,6 +1117,8 @@ int load_root(std::string path) {
         return 1;
     }
     
+    std::cout << "\nROOT file and chosen object loaded.\n";
+    
     // No errors, all good
     return 0;
 }
@@ -907,24 +1134,20 @@ int load_root(std::string path) {
  */
 int load_file(std::string path) {
     // Success status
-    int status;
+    int status = 1;
+    // NOTE: Defaults to failure (1), and will only be set to success (0) on valid file load
     
     // Attempt to load the ASCII file into memory
     if (fileType == FileType::ASCII) {
         status = load_ascii(path);
-        // std::cout << "\nASCII file has been loaded into memory.\n\n";
-        // std::cout << "\nASCII file has been loaded into memory.\n";
     }
     // Attempt to load the ROOT file into memory
     else if (fileType == FileType::ROOT) {
         status = load_root(path);
-        // std::cout << "\nROOT file has been loaded into memory.\n\n";
-        // std::cout << "\nROOT file has been loaded into memory.\n";
     }
     // Reject invalid usage
     else {
-        std::cout << "Error (load_file()): File type not set.\n";
-        return 1;
+        std::cerr << "\nError (load_file()): File type not set.\n";
     }
     
     return status;
@@ -960,34 +1183,103 @@ int create_hist() {
     // int const nbins = 21; // 2048 channels (bins) // NOTE: Too few
     // int const nbins = 200; // 2048 channels (bins) // NOTE: Too few 
     // int const nbins = 1024; // 2048 channels (bins) // NOTE: Good
-    int const nbins = 2048; // 2048 channels (bins) // NOTE: Decent
-    // int const nbins = 4096; // 2048 channels (bins) // NOTE: Almost too many (but less compressed than 2048 on log scale)
-    int const xmin = 0; // min channel
-    int const xmax = 3000; // max channel (3500 photons)
+    // int const nbins = 2048; // 2048 channels (bins) // NOTE: Decent
+    // // int const nbins = 4096; // 2048 channels (bins) // NOTE: Almost too many (but less compressed than 2048 on log scale)
+    // int const xmin = 0; // min channel
+    // int const xmax = 3000; // max channel (3500 photons)
     
-    // Create a histogram (TH1I = integer - channel/counts both ints)
-    hpx = new TH1I(
-        "hpx", // Legend title
-        "distance travelled", // Histo title
-        nbins, // num bins
-        xmin, // x low
-        xmax // x up
-    );
-    // NOTE: TH1I works while num photons is int, but may need long64 (TH1L) for gain applied num photons,
-    // or TH1F (float - 4 bytes) / TH1D (double - 8 bytes) if using floating point values
+    // Histogram args
+    std::string title;
+    std::string legendTitle;
+    int nbins = -1; // 2048 channels (bins) // NOTE: Decent
+    int xmin = -1; // min channel value (i.e., usually 0, but maybe non-zero, or negative)
+    int xmax = -1; // max channel value (i.e., 3500 photons, 2000 mm, etc)
+    
+    std::string leafType;
+    
+    // Lab spectra are already 2048 channels and appropriately binned
+    if (fileType == FileType::ASCII) {
+        title = "Energy spectrum";
+        legendTitle = "Energy Spectrum";
+        nbins = 2048;
+        xmin = 0;
+        xmax = 2048;
+        // xTitle = "Channels";
+    }
+    // ...
+    else if ((fileType == FileType::ROOT) && (rootObjectType == RootObjectType::TTree)) {
+        // title = strcpy(nTuple->GetName());
+        // strcpy(nTuple->GetName(), title);
+        // title = (char*)(nTuple->GetName());
+        // legendTitle =(char*)(branch->GetName());
+        char const* branchName = branch->GetName();
+        
+        title = nTuple->GetName();
+        legendTitle = branchName;
+        nbins = 2048; // TODO: Not sure on best approach for dynamic binning currently
+        xmin = nTuple->GetMinimum(branchName); // should be zero
+        xmax = (nTuple->GetMaximum(branchName)) * 1.1; // +10%
+        // xTitle = branchName;
+        
+        // ...
+        // std::cout << "BRANCH TYPE: " << branch->GetClassName() << "\n"; // NOTE: Prints ""
+        
+        // Get type
+        // char const* leafType = branch->GetLeaf(branchName)->GetTypeName(); // NOTE: Gives: "Double_t"
+        leafType = branch->GetLeaf(branchName)->GetTypeName(); // NOTE: Gives: "Double_t"
+        
+        // ...
+        // std::cout << "LEAF TYPE: " << leafType << "\n";
+    }
+    
+    // ...
+    if (title.empty() || legendTitle.empty() || nbins == -1 || xmin == -1 || xmax == -1) {
+        std::cerr << "\nError: Failed to define histogram args.\n";
+        
+        // TODO: Clean objects
+        
+        return 1;
+    }
+    
+    // ...
+    if ((fileType == FileType::ASCII) || ((fileType == FileType::ROOT) && (leafType == "Int_t"))) {
+        // ...
+        std::cout << "\n>>> Creating TH1I...\n";
+        
+        // Create a histogram (TH1I = integer - channel/counts both ints)
+        hpx = new TH1I(
+            title.c_str(), // "hpx", // Legend title
+            legendTitle.c_str(), // "distance travelled", // Histo title
+            nbins, // num bins
+            xmin, // x low
+            xmax // x up
+        );
+        // NOTE: TH1I works while num photons is int, but may need long64 (TH1L) for gain applied num photons,
+        // or TH1F (float - 4 bytes) / TH1D (double - 8 bytes) if using floating point values
+    }
+    // ...
+    else if ((fileType == FileType::ROOT) && (leafType == "Double_t")) {
+        // ...
+        std::cout << "\n>>> Creating TH1D...\n";
+        
+        // Create a histogram (TH1D = double)
+        hpx = new TH1D(
+            title.c_str(), // "hpx", // Legend title
+            legendTitle.c_str(), // "distance travelled", // Histo title
+            nbins, // num bins
+            xmin, // x low
+            xmax // x up
+        );
+        // NOTE: TH1I works while num photons is int, but may need long64 (TH1L) for gain applied num photons,
+        // or TH1F (float - 4 bytes) / TH1D (double - 8 bytes) if using floating point values
+    }
     
     // Handle missing histogram (failed instantiation for any reason)
     if (!hpx) {
         std::cerr << "\nError (create_hist()): Histogram not found!\n";
         // Need to close file (could be ascii or root)
-        if (inROOT) {
-            delete inROOT;
-            inROOT = nullptr;
-        }
-        else if (inASCII) {
-            inASCII.close();
-            inASCII.clear(); // reset the flags for the next file
-        }
+        if (inROOT) root_cleanup();
+        else if (inASCII.is_open()) ascii_cleanup(); // NOTE: if (inASCII) always returns true
         return 1;
     }
     
@@ -1011,75 +1303,89 @@ int create_hist() {
  * TODO: Make it so branchname is actually passed in as param
  * 
  * TODO: Maybe query list of branchnames in tree
- * 
- * NOTE: char const& branchName ? then use: GetBranch(&branchName)
  */
-int fill_hist_ntuple(char const* branchName) {
-    if (!nTuple) {
-        std::cerr << "\nError: Ntuple not found, closing root file.\n";
-        delete inROOT;
-        inROOT = nullptr;
-        return 1;
-    }
-    
-    // Get the TBranch of interest from the TTree, and assign it to pointer
-    // TBranch* const eventData = nTuple->GetBranch(branchName); // NOTE: Does work (but this is different to typical pointer)
-    // TBranch const* eventData = nTuple->GetBranch(branchName); // NOTE: Doesnt work
-    TBranch* eventData = nTuple->GetBranch(branchName);
-    
+int fill_hist_ntuple() {
     // Handle invalid branch name
-    if (!eventData) {
-        std::cerr << "\nError: TTree branch: " << branchName << " not found, deconstructing Ntuple and closing root file.\n";
-        delete nTuple;
-        nTuple = nullptr;
-        delete inROOT;
-        inROOT = nullptr;
+    if (!branch) {
+        std::cerr << "\nError: TTree branch not found. Couldnt fill histogram. Closing root file and deconstructing Ntuple.\n";
+        root_cleanup();
         return 1;
     }
     
+    // Handle missing histogram
+    if (!hpx) {
+        std::cerr << "\nError (draw_hist_ascii()): Histogram not found!\n";
+        root_cleanup();
+        return 1;
+    }
     
-    // \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
-    // TODO: 
-    // 
-    // 1) Either get the TBranch pointer in select_tree_branch() {^ i.e., move the logic above this comment}, 
-    // and make it global (technically loading the branch is more fitting for the load_file pipeline anyways,
-    // since this is part of the histogram filling pipeline...)
-    // NOTE: Just call: globalBranch->GetName(); in here for SetBranchAddress()
+    // ...
+    char const* branchName = branch->GetName();
     
-    // OR: 2) Just make a global branchName variable
+    std::cout << "\nSetting branch address to: " << branchName << "\n";
     
-    // OR: 3) Move select branch logic into the fill_hist() pipeline,
-    // so i can just pass branchName here as param
-    //
-    // OR: 4) Return branchName from load_file pipeline, and pass it into fill_hist pipeline
-    // (which would require a complete rewrite...
+    std::string const dataType = branch->GetLeaf(branchName)->GetTypeName();
     
-    // NOTE: #1 seems like the most obvious choice (for now at least, can always explore other options in the future)
-    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    
-    
-    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    // TODO: SPLIT THIS FN HERE
-    // \/\/\/\/\/\/\/\/\/\/\/\/\/
-    
+    std::cout << "\n>>> Data type: " << dataType << "\n";
     
     // To read a tree, neeed to associate variables with the trees branches
-    double entry;
-    nTuple->SetBranchAddress(branchName, &entry);
+    // double entry;
+    // int entry; // TODO: This needs to change based on Ntuple type (int, double, etc)
+    // std::variant<int, double> entry;
+    // nTuple->SetBranchAddress(branchName, &entry);
     // NOTE: When loading a tree entry, the tree will set the variables to the branches value as read from the storage
+    
+    int intEntry;
+    double doubleEntry;
+    
+    if (dataType == "Int_t") {
+        // std::cout << "\n>>> INT TYPE\n";
+        nTuple->SetBranchAddress(branchName, &intEntry);
+    } 
+    else if (dataType == "Double_t") {
+        // std::cout << "\n>>> DOUBLE TYPE\n";
+        nTuple->SetBranchAddress(branchName, &doubleEntry);
+    }
+    
+    // ...
+    std::cout << "\nBranch address set to: " << branchName << "\n";
 
     // Get the number of entries in the branch (i.e., length for iteration limit)
-    long long const numEntries = eventData->GetEntries();
+    long long const numEntries = branch->GetEntries();
+    // long long const numEntries = 0; // TEST: For debugging (triggering the following clause)
+    
+    // ...
+    std::cout << "\nGot num entries: " << numEntries << "\n";
+    
+    // ...
+    if (numEntries == 0) {
+        std::cerr << "\nError: Selected TTree branch contains no entries! Closing root file, and deconstructing Ntuple/branch.\n";
+        
+        root_cleanup();
+        
+        return 1;
+    }
+    
+    // ...
+    std::cout << "\nFilling histogram from TTree branch...\n";
     
     // Read all entries in the branch
     for (long long i = 0; i < numEntries; i++) {
         // Load the data for the given tree entry
-        eventData->GetEntry(i); // returns bytes read, not the actual val
+        branch->GetEntry(i); // returns bytes read, not the actual val
         // NOTE: The "entry" variable will now be updated
         
+        // std::cout << entry; // debug
+        
         // Add a count to the appropriate bin for that value
-        hpx->Fill(entry);
+        // hpx->Fill(entry);
+        
+        if (dataType == "Int_t") hpx->Fill(intEntry);
+        else if (dataType == "Double_t") hpx->Fill(doubleEntry);
     }
+    
+    // ...
+    std::cout << "\nBranch iteration complete.\n";
     
     // Handle missing input file
     // if (!inROOT) {
@@ -1091,9 +1397,13 @@ int fill_hist_ntuple(char const* branchName) {
     
     // Detach histogram from input file, then close input file
     hpx->SetDirectory(nullptr);
-    delete inROOT;
-    inROOT = nullptr;
+    root_cleanup(); 
+    // NOTE: There may be some future usecase where this is undesireable, i.e.,
+    // keeping the ntuple available for another reason, although in that case the
+    // ROOT file itself would also need to stay open
+    
     std::cout << "\nROOT input file closed.\n";
+    // std::cout << "\nROOT input file closed, Ntuple and branch deconstructed..\n";
     
     // Success message
     std::cout << "\nHistogram filled from ROOT Ntuple.\n";
@@ -1119,8 +1429,12 @@ int fill_hist_ascii() {
     // Handle missing histogram
     if (!hpx) {
         std::cerr << "\nError (draw_hist_ascii()): Histogram not found!\n";
+        ascii_cleanup();
         return 1;
     }
+    
+    // ...
+    std::cout << "\nFilling histogram from ASCII file...\n";
     
     // Line counter
     int currentLine = 0;
@@ -1173,14 +1487,10 @@ int fill_hist_ascii() {
     
     // Detach histogram from input file, then close input file
     hpx->SetDirectory(nullptr);
-    inASCII.close();
-    inASCII.clear(); // NOTE: Resets the flags for the next file
-    // NOTE: Dont need: if (!inASCII.is_open()) check before clear here, will always
-    // return false, std::ifstream close delegates task to lower level file buffer,
-    // and if os error occurs, stream is marked broken by setting failbit, and even
-    // if failbit is triggered, connection between ifstream object and the file is
-    // completely severed
-    // NOTE: Also, calling .clear() on clean stream does no harm
+    ascii_cleanup();
+    
+    // ...
+    std::cout << "\nHistogram filled from ASCII file. ASCII file closed.\n";
     
     // No errors, all good
     return 0;
@@ -1192,6 +1502,9 @@ int fill_hist_ascii() {
  * TODO: draw_hist_root() <- From ROOT histogram
  */
 int fill_hist() {
+    // ...
+    std::cout << "\nRouting to: " << (fileType == FileType::ASCII ? "ASCII" : "ROOT") << " handler\n";
+    
     // If hist is not filled by one means or another defaults to error
     int status = 1;
     
@@ -1200,12 +1513,12 @@ int fill_hist() {
         status = fill_hist_ascii();
     }
     else if (fileType == FileType::ROOT) {
-        // status = fill_hist_ntuple(); // TODO: Getting branchname here is actually a bit of a shitter, may have to do global branch object, or global branch name
+        status = fill_hist_ntuple(); // TODO: Getting branchname here is actually a bit of a shitter, may have to do global branch object, or global branch name
     }
     
     // Success message
     if (status == 0) {
-        std::cout << "\nHistogram has been populated.\n\n";
+        std::cout << "\nHistogram has been populated.\n";
     }
     
     // No errors, all good
@@ -1213,12 +1526,12 @@ int fill_hist() {
 }
 
 /*
- * Instantiates a canvas object, populating the global variable, then renders a 
- * histogram on the canvas
- * 
- * TODO: Maybe separate out histogram rendering
+ * Instantiates a canvas object, populating the global variable
  */
 int create_canvas() {
+    // ...
+    std::cout << "\nCreating canvas...\n";
+    
     // Canvas args
     Int_t const winX = 0; // Top left of screen
     Int_t const winY = 0; // Top left of screen
@@ -1226,28 +1539,55 @@ int create_canvas() {
     Int_t const height = 800;
     
     // Create a canvas display
-    c = new TCanvas("c", "Spectrum", winX, winY, width, height);
+    // c = new TCanvas("c", "Spectrum", winX, winY, width, height);
+    canvas = new TCanvas("canvas", "Histogram Viewer", winX, winY, width, height);
     
     // Handle error creating canvas
-    if (!c) {
+    if (!canvas) {
         std::cerr << "\nError (create_canvas()): Couldnt create canvas!\n";
         return 1;
     }
     
-    // TODO: \/\/\/\/\/\/\/\/\/ MAYBE EXTRACT THIS OUT TBH (render_hist())
+    // ...
+    std::cout << "\nCanvas created.\n";
     
-    // Handle missing histogram
-    if (!hpx) {
-        std::cerr << "\nError (create_canvas()): Histogram not found!\n";
+    // No errors, all good
+    return 0;
+}
+
+/*
+ * Renders the populated histogram object on to the instantiated canvas
+ * 
+ * TODO: May not always want to setOptStat(0)
+ */
+int render_hist() {
+    // Handle error creating canvas
+    if (!canvas) {
+        std::cerr << "\nError (render_hist()): Couldnt find canvas!\n";
         return 1;
     }
     
-    // Draw histogram to the canvas with default option
-    // hpx->Draw("HIST");
-    hpx->Draw(); // NOTE: With ntuples, "HIST" no longer needed afaik
+    // Handle missing histogram
+    if (!hpx) {
+        std::cerr << "\nError (render_hist()): Histogram not found!\n";
+        // NOTE: All files and objects should already be closed/deconstructed at this point
+        return 1;
+    }
     
     // ...
-    c->Update(); // NOTE: Afaik, this is not needed
+    std::cout << "\nRendering histogram to canvas...\n";
+    
+    // Switch render method based on input
+    if (rootObjectType == RootObjectType::TH1D) {
+        hpx->Draw("HIST"); // NOTE: For TH1 created by Geant4, need to specify hist flag
+    }
+    else {
+        // Draw histogram to the canvas with default option
+        hpx->Draw(); // NOTE: With ntuples, "HIST" no longer needed
+    }
+    
+    // ...
+    canvas->Update(); // NOTE: Afaik, this is not needed
     
     // Clean the default histogram statistics box (498.4, 291.1)
     gStyle->SetOptStat(0); // default = 1111 (NOTE: 000001111 with zeros removed)
@@ -1255,6 +1595,21 @@ int create_canvas() {
     // 10 = only number of entries
     // 110 = entries and mean
     // NOTE: Prefix zeros must be removed, as "01" is treated as octal number
+    
+    
+    // TEST - This could also go at the end of fill_hist_ntuple()       <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    // if ((fileType == FileType::ROOT) && (rootObjectType == RootObjectType::TTree)) {
+        // NOTE: If file type == ROOT & object type == TH1, the ROOT file will already 
+        // be closed by this point
+        // root_cleanup();
+        // NOTE: Now that histogram has been populated via nTuple data, the ROOT infile
+        // can safely be closed, doing so beforehand may cause undefined behaviour
+    // }
+    // TEST
+    
+    
+    // ...
+    std::cout << "\nHistogram rendered to canvas.\n";
     
     // No errors, all good
     return 0;
@@ -1268,19 +1623,66 @@ int create_canvas() {
  * should only be called if its ROOT Ntuple, or ASCII
  * ^ if its ROOT Histogram, hpx pointer will already be populated
  */
-int plot(std::string fileName) {
+int plot(std::string const userPath) {
+    // NOTE: Must delete TBranch -> then delete TTree -> then delete TFile,
+    // trying to delete the TBranch AFTER already deleting the TTree will result in a segfault
+    // likewise for trying to delete TTree after deleting TFile (assuming TTree->SetDirectory() wasnt called)
+    if (branch) {
+        std::cout << "\nFound existing Ntuple branch, clearing...\n";
+        // delete branch; // NOTE: CALLING DELETE ON BRANCH AFTER DELETING NTUPLE CAUSES A SEGFAULT
+        // branch = nullptr; // NOTE: CALLING DELETE ON BRANCH AFTER FILE IS CLOSED ALSO CAUSES A SEGFAULT SEEMINGLY
+        return 1;
+    }
+    if (nTuple) {
+        std::cout << "\nFound existing Ntuple, clearing...\n";
+        // delete nTuple;
+        // nTuple = nullptr;
+        return 1;
+    }
+    if (inASCII.is_open()) { // NOTE: if (inASCII) always returns true (even after .close() & .clear())
+        std::cout << "\nFound existing ASCII file, clearing...\n";
+        return 1;
+    }
+    if (inROOT) {
+        std::cout << "\nFound existing ROOT file, clearing...\n";
+        return 1;
+    }
+    // NOTE: The inASCII & inROOT cases should never really flag true now (closed after loading 
+    // TH1D or Ntuple, respectively, or on error trying to load them), but ntuple and branch can 
+    // still flag true, if the error occurs in create_hist() or fill_hist()
+    // (and since ASCII/ROOT Ntuples share some code execution, not sure deleting them on error 
+    // in is very clean)
+    
     // Incase plot will be called multiple times in succession, ensure histo cleared each time
     if (hpx) {
         std::cout << "\nFound existing histogram, clearing...\n";
-        hpx->Delete();
-        hpx = nullptr; // TODO: need to set files to nullptr when done i think too
+        // hpx->Delete(); // TODO: Not sure if this is needed (no im pretty sure it causes seg fault when trying to delete on next line lol)
+        delete hpx;
+        hpx = nullptr;
     }
+   
+    // NOTE: There may be a way to keep existing canvas, but only creating canvas if (!canvas) not working as intended, see create_canvas() notes below
+    if (canvas) {
+        std::cout << "\nFound existing canvas, clearing...\n";
+        delete canvas;
+        canvas = nullptr;
+        // canvas->Clear(); // NOTE: This allows for if (!canvas) to work as intended
+    }
+    
+    // NOTE: Adding checks for all global objects for the moment, im pretty sure theyre
+    // all being cleaned up appropriately, so some of these should be redundant, but will
+    // provide feedback incase ive missed something
+    
+    // NOTE: Temporarily exiting program if an object is found to be present on recall,
+    // except for the hpx, as that will always be present on recall, but the others
+    // shouldnt be, so want to see the status message clearly if it happens
     
     // ^^^^^^^ TODO: Probably best to make a dedicated "clean()" method,
     // which checks other pointers are clear etc
     
+    
     // Check provided path is valid (will return empty string if not valid)
-    std::string path = check_path(fileName);
+    std::string const path = check_path(userPath);
     
     if (path.empty()) {
         std::cerr << "\nAborting: Invalid path error!\n";
@@ -1295,8 +1697,12 @@ int plot(std::string fileName) {
         return 1;
     }
     
+    // TODO: is it worth having both load_file and load_object?
+    // load_object would only run for non-ascii files
+    
     // TODO: This enlosure feels a bit dirty, likely a better way to do this
-    if ((fileType != FileType::ROOT) && (rootObjectType != RootObjectType::TH1D)) {
+    // if ((fileType != FileType::ROOT) && (rootObjectType != RootObjectType::TH1D)) { // TEST: Uncomment to get Ntuple still loaded error
+    if (rootObjectType != RootObjectType::TH1D) {
     
         // Attempt to instantiate histogram object
         int const histError = create_hist();
@@ -1315,6 +1721,10 @@ int plot(std::string fileName) {
         }
     }
     
+    // TODO: Could enclose create canvas, so that it doesnt get deleted when calling plot() multiple times in a row
+    // if (!c) {}
+    // Or just delete at the top of this function like the hpx
+    
     // Attempt to create canvas and paint the histogram
     int const canvasError = create_canvas();
     
@@ -1322,6 +1732,29 @@ int plot(std::string fileName) {
         std::cerr << "\nAborting: Create canvas error!\n";
         return 1;
     }
+    
+    // NOTE: This doesnt work as intended unless calling canvas.clear(), otherwise render_hist bugs out
+//     if (!canvas) {
+//         // Attempt to create canvas and paint the histogram
+//         int const canvasError = create_canvas();
+//         
+//         if (canvasError) {
+//             std::cerr << "\nAborting: Create canvas error!\n";
+//             return 1;
+//         }
+//     }
+    
+    // ...
+    int const renderError = render_hist();
+    
+    if (renderError) {
+        std::cerr << "\nAborting: Render histogram error!\n";
+        return 1;
+    }
+    
+    // Ensure flags are reset for consecutive calls (i.e., the if == TH1D logic above will run when loading a ROOT TH1D, THEN, an ASCII file (as ASCII logic doesnt touch the RootObjectType flag))
+    rootObjectType = RootObjectType::NULLOBJ;
+    fileType = FileType::NULLFILE;
     
     // No errors, all good
     return 0;
@@ -1383,22 +1816,21 @@ int prompt_user_char(std::string const &question = "Do you wish to overwrite exi
  */
 int check_file(char const* path) {
     // Attempt to open file with provided filename
-    auto temp = TFile::Open(path, "READ"); // NOTE: Read only mode
+    TFile const* temp = TFile::Open(path, "READ"); // NOTE: Read only mode
     
     // If file already exists and was opened
-    // NOTE: Not sure if IsZombie() is needed, as it just checks for corruption
+    // NOTE: Not sure if !IsZombie() is needed, as it just checks for corruption,
     if (temp && !temp->IsZombie() && temp->IsOpen()) {
         std::cerr << "\nError [check_file()]: File already exists!\n";
-        
-        // Get user response
-        int abort = prompt_user_char(); // NOTE: 0 = overwrite, 1 = abort
-        
         // Close the readonly file
         delete temp;
         temp = nullptr;
-        
+                
+        // Get user response
+        int const abort = prompt_user_char(); // NOTE: 0 = overwrite, 1 = abort
+
         // ...
-        if (!abort) std::cerr << "\nOverwriting existing file...\n";
+        if (!abort) std::cout << "\nOverwriting existing file...\n";
         
         return abort;
     }
@@ -1414,9 +1846,9 @@ int check_file(char const* path) {
  * ^ i dont think its necessarily an issue, as calling "plot()" again will flip it to appropriate type anyways
  * but check_path does a lot, maybe separate bits out soon
  */
-int save(std::string path) {
+int save(std::string const path) {
     // Check provided path is valid (will return empty string if not valid)
-    std::string validPath = check_path(path);
+    std::string const validPath = check_path(path);
     
     if (validPath.empty()) {
         std::cerr << "\nError {save()}: Invalid path error!\n";
@@ -1424,10 +1856,10 @@ int save(std::string path) {
     }
     
     // Convert from: std::string, to: const char*
-    auto convertedPath = validPath.c_str();
+    char const* convertedPath = validPath.c_str();
     
     // Check if file already exists, and if so, whether to overwrite
-    int invalidPath = check_file(convertedPath);
+    int const invalidPath = check_file(convertedPath);
     
     if (invalidPath) {
         std::cerr << "\nAborting: Please call save() with a new path.\n";
@@ -1435,10 +1867,10 @@ int save(std::string path) {
     }
     
     // Open outfile in recreate mode (creates ROOT file, replacing it if it already exists)
-    auto outfile = TFile::Open(convertedPath, "RECREATE");
+    TFile* outfile = TFile::Open(convertedPath, "RECREATE");
     
     // Handle incorrect path
-    if (!outfile->IsOpen()) {
+    if (!outfile || !outfile->IsOpen()) {
         std::cerr << "\nError [save()]: Couldnt create/open outfile!\n";
         return 1;
     }
