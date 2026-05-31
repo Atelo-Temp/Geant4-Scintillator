@@ -83,15 +83,20 @@ NOTE: Literally just adds: save() method to plot_any.cc
 Read ASCII file, OR, per-event Ntuple data, and plot a ROOT histogram, then save the histogram (will have to apply smearing to Ntuples still) (saves storing 10+GB .root files in local data, and can reference prior runs/configurations easier)
 ^ can use load_root.cc (custom_stats.cc) esque pipeline to load it back for post-processing
 
-16) onmi_plot.cc (alt: hybrid_plot.cc) (alt: plot_cli.cc)
+16) onmi_plot.cc (alt: hybrid_plot.cc, plot_cli.cc)
 
 NOTE: This should have been named plot_any.cc tbh (maybe rename plot_any to something else, as it kinda doesnt plot any as is) (also omni feels like it should be saved for final fitting macro)
 
 Was briefly named exponential fit, but going to separate out file loading and exponential fitting into two separate macros
 
-Implements multiple root object type handling, by reading root file for available objects, prompting user with object choice, then providing filtered list of names matching that object choice, before finally loading and then plotting said named object choice
+Implements:
+- multiple root object type handling
+- reading root file for available objects
+- prompting user with object choice
+- providing filtered list of names matching that object choice
+- loading and then plotting said named object choice
 
-TODO: Need to be able to swap between "int" and "double" when reading from TTree branch entries (was using int for num photons, but distance is double)
+- able to swap between "int" and "double" when reading from TTree branch entries (i.e., int for num photons, but double for distances/times)
 
 >>> TODOS
 
