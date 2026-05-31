@@ -22,13 +22,14 @@
 #include <optional>
 // #include <unordered_set>
 // #include <unordered_map>
-#include <variant>
+// #include <variant>
 
 // Global root object variables
 std::ifstream inASCII;
 TFile* inROOT = nullptr;
 TTree* nTuple = nullptr;
 TBranch* branch = nullptr;
+TLeaf* leaf = nullptr;
 TH1 *hpx = nullptr;
 TCanvas *canvas = nullptr;
 
@@ -228,6 +229,7 @@ void root_cleanup() {
     inROOT = nullptr;
     nTuple = nullptr;
     branch = nullptr;
+    leaf = nullptr;
     // NOTE: No harm in nullifying already nulled pointers
     
     // TEST: Segfault
@@ -998,6 +1000,42 @@ int load_branch(std::string const& selectedBranch) {
 }
 
 /*
+ * Cache a pointer to a leaf in the active TTree branch
+ * 
+ * NOTE: Saves making multiple leaf requests later for branch data type querying
+ */
+int cache_leaf() {
+    // Handle invalid branch name
+    if (!branch) {
+        std::cerr << "\nError: TBranch pointer not found. Closing root file...\n";
+        root_cleanup();
+        return 1;
+    }
+    
+    // ...
+    char const* branchName = branch->GetName();
+    
+    // Cache a pointer to a leaf (for data type access later)
+    leaf = branch->GetLeaf(branchName);
+    
+    // Fallback (incase branch name and name required by GetLeaf() differ)
+    if (!leaf) leaf = static_cast<TLeaf*>(branch->GetListOfLeaves()->At(0));
+    // NOTE: Static cast is safe as we know list of leaves is not empty from 
+    // load pipeline, and were calling get leaves
+    
+    // If leaf still not set, throw
+    if (!leaf) {
+        std::cerr << "\nError: Failed to cache leaf pointer\n";
+        root_cleanup();
+        return 1;
+    }
+    
+    std::cout << "\nLeaf pointer cached.\n";
+    
+    return 0;
+}
+
+/*
  * Load histogram object (TH1D, TH1I, etc) from ROOT input file and attach pointer
  */
 int load_root_hist(char const* histName) {
@@ -1036,37 +1074,55 @@ int load_root_hist(char const* histName) {
  * functions for the various object types
  */
 int load_root_object(std::string const& objectName) {
-    // Convert std::string to c string
+    // Convert std::string to c string pointer
     char const* name = objectName.c_str();
     
     // ...
-    int status = 1; 
+    // int status = 1; 
     // NOTE: Defaults to failure (1), can only be set to success (0) if object type is selected
     
     // Load object router
     if (rootObjectType == RootObjectType::TTree) {
         // ...
-        int loadTreeError = load_tree(name);
-        if (loadTreeError) return status; // TODO: Not sure about another layer of nesting here
+        int const loadTreeError = load_tree(name);
+        // if (loadTreeError) return status; // TODO: Not sure about another layer of nesting here
+        if (loadTreeError) return 1; // TODO: Not sure about another layer of nesting here
         
         // ...
-        std::string branchName = select_branch(); // TODO: setting status twice here feels redundant
-        if (branchName.empty()) return status;
+        std::string const branchName = select_branch(); // TODO: setting status twice here feels redundant
+        // if (branchName.empty()) return status;
+        if (branchName.empty()) return 1;
         
         // ...
-        status = load_branch(branchName);
+        // status = load_branch(branchName);
+        int const loadBranchError = load_branch(branchName);
+        if (loadBranchError) return 1;
+        
+        // ...
+        int const cacheLeafError = cache_leaf();
+        if (cacheLeafError) return 1;
     }
     // ...
     else if (rootObjectType == RootObjectType::TH1D) {
         // ...
-        status = load_root_hist(name);
+        // status = load_root_hist(name);
+        int const loadRootHistError = load_root_hist(name);
+        if (loadRootHistError) return 1;
+    } 
+    else {
+        std::cerr << "\nError: Unsupported ROOT object type.\n";
+        return 1;
+        // NOTE: No need to call "root_cleanup()" here, each of these functions will
+        // clean up after themselves if an error arises in their logic
     }
     
     // ...
-    if (!status) std::cout << "\nROOT object loaded.\n";
+    // if (!status) std::cout << "\nROOT object loaded.\n";
+    std::cout << "\nROOT object loaded.\n";
     
     // ...
-    return status;
+    // return status;
+    return 0;
 }
 
 /*
@@ -1198,7 +1254,8 @@ int create_hist() {
     double xmin = -1.; // min channel value (i.e., usually 0, but maybe non-zero, or negative)
     double xmax = -1.; // max channel value (i.e., 3500 photons, 2000 mm, etc)
     
-    std::string leafType;
+    // std::string leafType;
+    std::string_view leafType;
     
     // Lab spectra are already 2048 channels and appropriately binned
     if (fileType == FileType::ASCII) {
@@ -1248,15 +1305,16 @@ int create_hist() {
         
         // TODO: This leaf grabbig logic may be better suited to the load pipeline
         // can make global leaf variable, and just call GetTypeName() here
-        TLeaf* leaf = branch->GetLeaf(branchName);
+//         TLeaf* leaf = branch->GetLeaf(branchName);
+//         
+//         // NOTE: Fallback incase branch name and name required by GetLeaf() differ
+//         if (!leaf) {
+//             leaf = static_cast<TLeaf*>(branch->GetListOfLeaves()->At(0)); 
+//             // Static cast is safe as we know list of leaves is not empty from 
+//             // load pipeline, and were calling get leaves
+//         }
         
-        // NOTE: Fallback incase branch name and name required by GetLeaf() differ
-        if (!leaf) {
-            leaf = static_cast<TLeaf*>(branch->GetListOfLeaves()->At(0)); 
-            // Static cast is safe as we know list of leaves is not empty from 
-            // load pipeline, and were calling get leaves
-        }
-        
+        // ...
         leafType = leaf->GetTypeName();
         
         // ...
@@ -1365,7 +1423,7 @@ int fill_hist_ntuple() {
     
     // Handle missing histogram
     if (!hpx) {
-        std::cerr << "\nError (draw_hist_ascii()): Histogram not found!\n";
+        std::cerr << "\nError (fill_hist_ntuple()): Histogram not found!\n";
         root_cleanup();
         return 1;
     }
@@ -1373,9 +1431,35 @@ int fill_hist_ntuple() {
     // ...
     char const* branchName = branch->GetName();
     
-    std::cout << "\nSetting branch address to: " << branchName << "\n";
+    // std::cout << "\nSetting branch address for: " << branchName << "\n";
     
-    std::string const dataType = branch->GetLeaf(branchName)->GetTypeName();
+    // std::cout << "\nDisabling non-essential branches...\n";
+    
+    // ...
+    // std::string const dataType = branch->GetLeaf(branchName)->GetTypeName();
+    // std::string_view const dataType = branch->GetLeaf(branchName)->GetTypeName();
+    
+    // Disable all branches from being read by TTree->GetEntry()
+    nTuple->SetBranchStatus("*", false);
+    // NOTE: It is recommended to only read the branches actually needed
+    
+    // Enable only the branch we need
+    nTuple->SetBranchStatus(branchName, true);
+    // NOTE: For iteration over multiple branches, we would just enable those too
+    
+    // ...
+    // std::cout << "\nDisabling non-essential branches...\n";
+    std::cout << "\nNon-essential branches have been disabled.\n";
+    
+    // ...
+    if (!leaf) {
+        std::cerr << "\nError [fill_hist_ntuple()]: Pointer to leaf in current TTree branch not found!\n";
+        root_cleanup();
+        return 1;
+    }
+    
+    // ...
+    std::string_view const dataType = leaf->GetTypeName();
     
     std::cout << "\n>>> Data type: " << dataType << "\n";
     
@@ -1386,9 +1470,13 @@ int fill_hist_ntuple() {
     // nTuple->SetBranchAddress(branchName, &entry);
     // NOTE: When loading a tree entry, the tree will set the variables to the branches value as read from the storage
     
+    // ...
     int intEntry;
     double doubleEntry;
     
+    std::cout << "\nSetting branch address for: " << branchName << "\n";
+    
+    //...
     if (dataType == "Int_t") {
         // std::cout << "\n>>> INT TYPE\n";
         nTuple->SetBranchAddress(branchName, &intEntry);
@@ -1397,6 +1485,7 @@ int fill_hist_ntuple() {
         // std::cout << "\n>>> DOUBLE TYPE\n";
         nTuple->SetBranchAddress(branchName, &doubleEntry);
     }
+    // NOTE: Multiple variables can be set to different branches here, and TTree->GetEntry(i) will update all variables to the current index
     
     // ...
     std::cout << "\nBranch address set to: " << branchName << "\n";
@@ -1411,9 +1500,7 @@ int fill_hist_ntuple() {
     // ...
     if (numEntries == 0) {
         std::cerr << "\nError: Selected TTree branch contains no entries! Closing root file, and deconstructing Ntuple/branch.\n";
-        
         root_cleanup();
-        
         return 1;
     }
     
@@ -1423,8 +1510,16 @@ int fill_hist_ntuple() {
     // Read all entries in the branch
     for (long long i = 0; i < numEntries; i++) {
         // Load the data for the given tree entry
-        branch->GetEntry(i); // returns bytes read, not the actual val
+        // branch->GetEntry(i); // returns bytes read, not the actual val
         // NOTE: The "entry" variable will now be updated
+        
+        // Load the data for the given tree entry
+        nTuple->GetEntry(i); // returns bytes read, not the actual val                           // TODO: Compare speed
+        // NOTE: The "entry" variable will now be updated
+        
+        // NOTE: Calling "GetEntry" on the TTree itself is more flexible and scalable,
+        // if working with multiple branches at the same time, it ensures the indices
+        // match up during iteration, and saves calling GetEntry on each individual branch
         
         // std::cout << entry; // debug
         
@@ -1554,7 +1649,7 @@ int fill_hist_ascii() {
  */
 int fill_hist() {
     // ...
-    std::cout << "\nRouting to: " << (fileType == FileType::ASCII ? "ASCII" : "ROOT") << " handler\n";
+    std::cout << "\nRouting to: " << (fileType == FileType::ASCII ? "ASCII" : "ROOT") << " handler.\n";
     
     // If hist is not filled by one means or another defaults to error
     int status = 1;
@@ -1590,13 +1685,20 @@ int create_canvas() {
     Int_t const height = 800;
     
     // Create a canvas display
-    // c = new TCanvas("c", "Spectrum", winX, winY, width, height);
     canvas = new TCanvas("canvas", "Histogram Viewer", winX, winY, width, height);
     
     // Handle error creating canvas
     if (!canvas) {
         std::cerr << "\nError (create_canvas()): Couldnt create canvas!\n";
         return 1;
+        
+        // NOTE: Both ASCII and ROOT files (and objects) should already be cleaned
+        // by this point, the only thing that may be floating around in memory is
+        // the histogram
+        
+        // TODO: Maybe:
+        // delete hpx;
+        // hpx = nullptr;
     }
     
     // ...
@@ -1678,6 +1780,11 @@ int plot(std::string const userPath) {
     // NOTE: Must delete TBranch -> then delete TTree -> then delete TFile,
     // trying to delete the TBranch AFTER already deleting the TTree will result in a segfault
     // likewise for trying to delete TTree after deleting TFile (assuming TTree->SetDirectory() wasnt called)
+    // NOTE: This is incorrect ^^^ Just delete TFile
+    if (leaf) {
+        std::cout << "\nFound existing Ntuple branch leaf, clearing...\n";
+        return 1;
+    }
     if (branch) {
         std::cout << "\nFound existing Ntuple branch, clearing...\n";
         // delete branch; // NOTE: CALLING DELETE ON BRANCH AFTER DELETING NTUPLE CAUSES A SEGFAULT
@@ -1730,7 +1837,6 @@ int plot(std::string const userPath) {
     
     // ^^^^^^^ TODO: Probably best to make a dedicated "clean()" method,
     // which checks other pointers are clear etc
-    
     
     // Check provided path is valid (will return empty string if not valid)
     std::string const path = check_path(userPath);
