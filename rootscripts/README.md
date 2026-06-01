@@ -83,7 +83,7 @@ NOTE: Literally just adds: save() method to plot_any.cc
 Read ASCII file, OR, per-event Ntuple data, and plot a ROOT histogram, then save the histogram (will have to apply smearing to Ntuples still) (saves storing 10+GB .root files in local data, and can reference prior runs/configurations easier)
 ^ can use load_root.cc (custom_stats.cc) esque pipeline to load it back for post-processing
 
-16) onmi_plot.cc (alt: hybrid_plot.cc, plot_cli.cc)
+16) onmi_plot.cc (alt: hybrid_plot.cc,  plot_cli.cc)
 
 NOTE: This should have been named plot_any.cc tbh (maybe rename plot_any to something else, as it kinda doesnt plot any as is) (also omni feels like it should be saved for final fitting macro)
 
@@ -98,7 +98,22 @@ Implements:
 
 - able to swap between "int" and "double" when reading from TTree branch entries (i.e., int for num photons, but double for distances/times)
 
+17) multi_fit.cc
+
+NOTE: Extension of ascii_fit.cc
+
+Able to fit multiple peaks (i.e. 60Co, or even 133Ba) for lab spectra
+
 >>> TODOS
+
+18) background_fit.cc (alt: lab_fit.cc)
+
+Fit an ASCII lab spectrum using a gaussian + poly fit function
+
+hpx->GetXaxis()->GetBinLowEdge(...GetXaxis()->GetFirst())
+...GetXaxis()->GetBinUpEdge(...GetXaxis()->GetLast())
+
+NOTE: Lab spectra often have lower level discriminator, so GetFirst() will likely return 0 when trying to automate intercept
 
 17) exponential_fit.cc
 
@@ -120,13 +135,6 @@ so integrating that is a good stepping stone to a comprehensive fitting macro
 - Takes .root / .Spe filename as argument rather than hardcoded
 - Parses the filename to identify whether its .root or .Spe, runs histogramming pipeline for respective file type
 
-18) lab_fit.cc
-
-Fit an ASCII lab spectrum using a gaussian + poly fit function
-
-hpx->GetXaxis()->GetBinLowEdge(...GetXaxis()->GetFirst())
-...GetXaxis()->GetBinUpEdge(...GetXaxis()->GetLast())
-
 19) any_fit.cc (alt: smart_fit.cc)
 
 Hybrid fitting, able to handle both ascii files (lab) and root files (simulation)
@@ -137,10 +145,6 @@ Hybrid fitting, able to handle both ascii files (lab) and root files (simulation
 NOTE: I think this main functionality should be determining whether to use gaus or gaus + pol
 ^ maybe even whether to use exponential etc
 ^ sinice 17) kinda ticks most of these other boxes, but trying to fit smart fitting would overcrowd 17)
-
-20) multi_fit.cc
-
-Able to fit multiple peaks (i.e. 60Co, or even 133Ba)
 
 21) omni_fit.cc
 
@@ -282,3 +286,43 @@ Save plotted histogram
 save("~/geant4/geant4-v11.3.2/project/data/21_hist.root") // absolute pathing
 save("../data/21_hist.root") // from ./rootscripts
 ```
+
+### multi_fit.cc
+
+To open ASCII file (Spe format):
+
+```c++
+plot("/path/to/ASCII.Spe")
+```
+
+- Example 1 (NaI 2' 60Co 2 Merged Peaks, 133Ba 4 Merged Peaks):
+
+```c++
+plot("~/Maestro/NaI/NaI_2inch_300s_sources/60Co_NaI_800v_20coarse_3cm.Spe")
+plot("~/Maestro/NaI/NaI_2inch_300s_sources/133Ba_NaI_800v_20coarse_3cm.Spe") // 3000 counts amplitude, but the two small shoulder peaks barely noticeable due to poor resolution
+```
+
+- Example 2 (NaI 1' 60Co 2 Merged Peaks, 133Ba 4 Merged Peaks):
+
+```c++
+plot("~/Maestro/NaI/NaI_1inch_300s_sources/60Co_NaI1_800v_20coarse_3cm.Spe")
+plot("~/Maestro/NaI/NaI_1inch_300s_sources/133Ba_NaI1_800v_20coarse_3cm.Spe")
+```
+
+- Example 3 (LaBr 1.5' 60Co 2 Merged Peaks, 133Ba 4 Merged Peaks):
+
+```c++
+plot("~/Maestro/LaBr/LaBr_300s_sources/60Co_LaBr_750v_10coarse_3cm.Spe") // best resolution
+plot("~/Maestro/LaBr/LaBr_300s_sources/133Ba_LaBr_750v_10coarse_3cm.Spe")
+```
+
+> NOTE: LaBr arguably best resolution 
+
+- Example 4 (CeBr 1' 60Co 2 Merged Peaks, 133Ba 4 Merged Peaks):
+
+```c++
+plot("~/Maestro/CeBr/CeBr_300s_sources/60Co_CeBr_-1000v_3cm.Spe")
+plot("~/Maestro/CeBr/CeBr_300s_sources/133Ba_CeBr_-1000v_3cm.Spe")
+```
+
+### ...
