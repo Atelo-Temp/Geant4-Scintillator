@@ -31,7 +31,7 @@ TCanvas* canvas = nullptr;
  * NOTE: Executes automatically on script start (shares name with the macro file)
  * NOTE: Choose another function name if you wish to manually call it instead
  */
-int multi_fit() {
+int multi_fit_a() {
     // Usage
     std::cout << "\n-----------------------------------------------------------------------\n";
     std::cout << "\nConvert ASCII to Root Histogram.\n";

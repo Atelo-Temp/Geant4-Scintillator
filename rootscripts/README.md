@@ -366,7 +366,7 @@ plot("~/Maestro/CeBr/CeBr_300s_sources/133Ba_CeBr_-1000v_3cm.Spe")
 
 ```c++
 plot("/home/user/Maestro/LaBr/LaBr_300s_sources/108mAg_LaBr_750v_10coarse_3cm.Spe")
-// range(600,950)
+// range(600,950) // NOTE: fit() will zoom anyways
 fit({710,840}, 50) // intentionally off by a bit
 ```
 
