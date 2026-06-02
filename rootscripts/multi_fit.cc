@@ -18,6 +18,7 @@
 #include <sstream>
 #include <optional>
 #include <string>
+// #include <algorithm>
 
 // Global root object variables
 std::ifstream in;
@@ -199,7 +200,7 @@ int create_hist() {
     // Create a histogram (TH1I = integer - channel/counts both ints)
     hpx = new TH1I(
         "hpx", // Legend title
-        "optical photons", // Histo title
+        "Energy Spectrum", // Histo title
         nbins, // num bins
         xmin, // x low
         xmax // x up
@@ -627,8 +628,8 @@ std::string const fit_string(int const& numPeaks) {
     // ...
     for (int i = 0; i < numPeaks; i++) {
         result += "gaus(";
-        int paramStartIdx = i * 3;
-        std::string stringified = std::to_string(paramStartIdx);
+        int const paramStartIdx = i * 3;
+        std::string const stringified = std::to_string(paramStartIdx);
         result += stringified;
         result += ")";
         // if (i != numPeaks - 1) result += "+";
@@ -639,26 +640,26 @@ std::string const fit_string(int const& numPeaks) {
 }
 
 /*
- * ...
+ * Get mean, amplitude, and sigma, for gaussian fitting params
  */
-int get_params(int const& roughCentroid, int const& roughFWHM) {
+std::vector<double> const get_params(int const& roughCentroid, int const& roughFWHM) {
     // Get the centre of the centroid channel, and number of counts in centroid bin
-    double const peakX = hpx->GetXaxis()->GetBinCenter(roughCentroid); // get the x-axis location of max counts bin
-    double const peakY = hpx->GetBinContent(roughCentroid); // get the y-axis number of counts for max bin, i.e. amplitude
+    double const roughMean = hpx->GetXaxis()->GetBinCenter(roughCentroid); // get the x-axis location of max counts bin
+    double const roughAmplitude = hpx->GetBinContent(roughCentroid); // get the y-axis number of counts for max bin, i.e. amplitude
     // NOTE: Since bin center takes actual bin, need the conversion from photons to bins
     // but centroid & FWHM values will reflect the photons
     
-    std::cout << "Peak X: " << peakX << "Peak Y: " << peakY << "\n";
+    std::cout << "Rough Centroid: " << roughMean << " Rough Amplitude: " << roughAmplitude << "\n";
     
     // Define the fit window (low & high)
     // NOTE: the region of the histogram ROOT is allowed to use for the fit.
     // (it’s a fit window, not a Gaussian width parameter)
     // The Gaussian itself mathematically extends to infinity.
-    double const roughLow = peakX - (2.5 * roughFWHM); // NOTE: Generous 2.5 for centroid finding
-    double const roughHigh = peakX + (2.5 * roughFWHM); // TODO: ^ May want to be more conservative if fitting overlapping peaks though
-    // TODO: FWHM (peakX / 2 => gives half maximum => iterate outwards from centre until bin val below half maximum) ?
+    double const roughLow = roughMean - (2.5 * roughFWHM); // NOTE: Generous 2.5 for centroid finding
+    double const roughHigh = roughMean + (2.5 * roughFWHM); // TODO: ^ May want to be more conservative if fitting overlapping peaks though
+    // TODO: FWHM (roughMean / 2 => gives half maximum => iterate outwards from centre until bin val below half maximum) ?
     // ^ but this wont work for merged peaks, etc
-    std::cout << "Lower Fit Bounds: " << roughLow << "Upper Fit Bounds:" << roughLow << "\n";
+    std::cout << "Lower Fit Bounds: " << roughLow << " Upper Fit Bounds: " << roughLow << "\n";
     
     // NOTE: You usually want the fit window to extend well into the tails/background
     // because the fitter needs tail information to constrain sigma properly.
@@ -676,6 +677,51 @@ int get_params(int const& roughCentroid, int const& roughFWHM) {
     // require the user to state a rough FWHM value deduced by eye, and derive sigma from it
     double const roughSigma = roughFWHM / 2.355;
     std::cout << "Pre-fit Sigma: " << roughSigma << "\n";
+    
+    // ..
+    // return { roughMean, roughAmplitude, roughLow, roughHigh, roughSigma };
+    return { roughLow, roughHigh, roughAmplitude, roughMean, roughSigma };
+}
+
+int assign_params(TF1* fitFn, std::vector<std::vector<double>> const& paramsVec) {
+    // ...
+    int const amplitudeIdx = 2;
+    int const meanIdx = 3;
+    int const sigmaIdx = 4;
+    
+    // ...
+    for (int i = 0; i < paramsVec.size(); i++) {
+        std::cout << "Setting params for peak: " << i << "\n";
+        // ...
+        int const gausArg0Start = i * 3;
+        int const gausArg1Start = gausArg0Start + 1;
+        int const gausArg2Start = gausArg0Start + 2;
+        
+        std::string const arg0Name = std::to_string((i % 3) + 1) + "-Amplitude";
+        std::string const arg1Name = std::to_string((i % 3) + 1) + "-Centroid";
+        std::string const arg2Name = std::to_string((i % 3) + 1) + "-Sigma";
+        
+        // ...
+        fitFn->SetParameter(gausArg0Start, paramsVec[i][amplitudeIdx]);
+        // fitFn->SetParName(gausArg0Start, "Amplitude");
+        fitFn->SetParName(gausArg0Start, arg0Name.c_str());
+        
+        std::cout << "Set par " << gausArg0Start << " to " << paramsVec[i][amplitudeIdx] << "\n";
+        
+        fitFn->SetParameter(gausArg1Start, paramsVec[i][meanIdx]);
+        // fitFn->SetParName(gausArg1Start, "Centroid");
+        fitFn->SetParName(gausArg1Start, arg1Name.c_str());
+        
+        std::cout << "Set par " << gausArg1Start << " to " << paramsVec[i][meanIdx] << "\n";
+        
+        fitFn->SetParameter(gausArg2Start, paramsVec[i][sigmaIdx]);
+        // fitFn->SetParName(gausArg2Start, "Sigma");
+        fitFn->SetParName(gausArg2Start, arg2Name.c_str());
+        
+        std::cout << "Set par " << gausArg2Start << " to " << paramsVec[i][sigmaIdx] << "\n";
+    }
+    
+    // fitFn->Dump();
     
     return 0;
 }
@@ -714,14 +760,27 @@ int fit(std::initializer_list<int> centroids, int const roughFWHM) {
     const int* centroid = centroids.begin();
     const int numPeaks = centroids.size();
     
+    bool isAscending = true;
+    
+    std::cout << "Num peaks: " << numPeaks << "\n";
+    
     // ...
     for (int i = 0; i < numPeaks; i++) {
         // std::cout << "Centroid" << i << ": " << centroids[i] << "\n";
         std::cout << "Centroid" << i << ": " << centroid[i] << "\n";
         centroidVec.push_back(centroid[i]);
+        
+        // If vector is found to be in non-ascending order (unsorted, descending, etc), flag it
+        if (i >= 1 && (centroid[i] < centroid [i - 1])) isAscending = false;
     }
     
-    std::cout << "SIZE: " << centroidVec.size() << "\n";
+    std::cout << "Num peaks: " << centroidVec.size() << "\n";
+    
+    if (!isAscending) {
+        std::cout << "Sorting centroid vector...\n";
+        // Ensure centroids are in ascending order (i.e. 1100, 1300)
+        std::sort(centroidVec.begin(), centroidVec.end());
+    }
     
     // auto x = static_cast<std::vector<int>>(centroids);
     // x.size();
@@ -731,52 +790,81 @@ int fit(std::initializer_list<int> centroids, int const roughFWHM) {
     // }
     
     std::string const fitString = fit_string(numPeaks);
-    std::cout << fitString << "\n";
+    std::cout << "Fit function string: " << fitString << "\n";
+    
+    // .....
+    
+    std::vector<std::vector<double>> paramsVec = {}; // matrix
     
     for (int i = 0; i < numPeaks; i++) {
-        get_params(centroidVec[i], roughFWHM);
+        std::vector<double> const params = get_params(centroidVec[i], roughFWHM);
+        paramsVec.push_back(params);
     }
     
+    std::cout << "Params Vec Size: " << paramsVec.size() << "\n";
     
-    // NOTE: Use smallest rough low and biggest rough high
+    double const rangeLow = paramsVec[0][0];
+    double const rangeHigh = paramsVec[numPeaks - 1][1];
+    // NOTE: Using smallest rough low and biggest rough high
+    // NOTE: These can be fed to first order polynomial when its introduced
+    
+    std::cout << "Fitting for range: " << rangeLow << " - " << rangeHigh << "\n";
+    
+    
+    range(rangeLow, rangeHigh); // TEST
     
     
     // Define the fit function
     // auto prefitFn = new TF1("prefitFn", "gaus", roughLow, roughHigh);
-//     auto prefitFn = new TF1("prefitFn", "gaus(0) + gaus(3)", roughLow, roughHigh);
-//     // NOTE: "gaus" is built-in ROOT shorthand for [0]*exp(-0.5*((x-[1])/[2])^2)
-//     
-//     // NOTE: "gaus(0)" is functionally the same, and can be abbreviated to "gaus" 
-//     // when using a single fitting function, however, if you were to use two functions
-//     // "gaus(0) + gaus(3)" ensures that the subsequent call to set parameters assigns
-//     // passed parameters to the correct function (see below)
-// 
-//     
-//     // Pass the parameters required for the gaussian fit function
-//     prefitFn->SetParameters(peakY, peakX, roughSigma);
-//     prefitFn->SetParNames("Amplitude", "Centroid", "Sigma");
-//     // NOTE: [0] = Amplitude, [1] = Mean, [2] = Sigma
-//     
-//     // NOTE: If we defined "gaus(0) + gaus(3)", we would need to pass separate params, i.e.:
-//     // fitFn->SetParameters(peakY1, peakX1, sigma1, peakY2, peakX2, sigma2);
-//     // hence, params: [0], [1], [2], are used for the first gaussian function,
-//     // and params: [3], [4], [5], are used for the second gaussian function
-//     // the same applies for "gaus(0) + pol1(3)",
-//     // where params: [4] & [5] are then the intercept and slope for the poly fit
-//     
-//     // Call the histograms fit method, passing the fit function and histogram fitting options string
-//     TFitResultPtr initialResult = hpx->Fit(prefitFn, "RS");
-//     // "R" = use the range of the function
-//     // "S" = return a TFitResultPtr for further analysis
-//     // "M" = attempts to improve the fit quality
-//     // "L" = use log likelihood method (default chi-square), for use with counts histograms
-//     // "+" = adds this new fitted func to list of fitted funcs (default is delete previous keep last)
-//     
-//     // Handle fit error (NOTE: success = 0)
-//     if (initialResult->Status() != 0) {
-//         std::cerr << "Failed to perform initial fit!" << std::endl;
-//         return 1;
-//     }
+    // auto prefitFn = new TF1("prefitFn", "gaus(0) + gaus(3)", roughLow, roughHigh);
+    auto prefitFn = new TF1("prefitFn", fitString.c_str(), rangeLow, rangeHigh);
+    // NOTE: "gaus" is built-in ROOT shorthand for [0]*exp(-0.5*((x-[1])/[2])^2)
+    
+    // NOTE: "gaus(0)" is functionally the same, and can be abbreviated to "gaus" 
+    // when using a single fitting function, however, if you were to use two functions
+    // "gaus(0) + gaus(3)" ensures that the subsequent call to set parameters assigns
+    // passed parameters to the correct function (see below)
+
+    
+    // Pass the parameters required for the gaussian fit function
+    // prefitFn->SetParameters(peakY, peakX, roughSigma);
+    // prefitFn->SetParNames("Amplitude", "Centroid", "Sigma");
+    // NOTE: [0] = Amplitude, [1] = Mean, [2] = Sigma
+    
+    
+    assign_params(prefitFn, paramsVec);
+    // return 1;
+    
+    for (int i = 0; i < numPeaks * 3; i++) {
+        std::cout << "par: " << i << " " << prefitFn->GetParName(i) << " : " << prefitFn->GetParameter(i) << "\n";
+    }
+    
+    // return 1;
+    
+    
+    // NOTE: If we defined "gaus(0) + gaus(3)", we would need to pass separate params, i.e.:
+    // fitFn->SetParameters(peakY1, peakX1, sigma1, peakY2, peakX2, sigma2);
+    // hence, params: [0], [1], [2], are used for the first gaussian function,
+    // and params: [3], [4], [5], are used for the second gaussian function
+    // the same applies for "gaus(0) + pol1(3)",
+    // where params: [4] & [5] are then the intercept and slope for the poly fit
+    
+    // Call the histograms fit method, passing the fit function and histogram fitting options string
+    TFitResultPtr initialResult = hpx->Fit(prefitFn, "RS");
+    // "R" = use the range of the function
+    // "S" = return a TFitResultPtr for further analysis
+    // "M" = attempts to improve the fit quality
+    // "L" = use log likelihood method (default chi-square), for use with counts histograms
+    // "+" = adds this new fitted func to list of fitted funcs (default is delete previous keep last)
+    
+    // Handle fit error (NOTE: success = 0)
+    if (initialResult->Status() != 0) {
+        std::cerr << "Failed to perform initial fit!" << std::endl;
+        return 1;
+    }
+    
+    hpx->GetFunction("prefitFn")->Draw("same");
+    
 //     
 //     // Extract the initial fit results
 //     double const prefitAmplitude = initialResult->Parameter(0);

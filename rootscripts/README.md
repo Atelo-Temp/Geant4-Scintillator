@@ -309,10 +309,19 @@ plot("~/Maestro/NaI/NaI_1inch_300s_sources/60Co_NaI1_800v_20coarse_3cm.Spe")
 plot("~/Maestro/NaI/NaI_1inch_300s_sources/133Ba_NaI1_800v_20coarse_3cm.Spe")
 ```
 
-- Example 3 (LaBr 1.5' 60Co 2 Merged Peaks, 133Ba 4 Merged Peaks):
+- Example 3 (LaBr 1.5' 60Co 2 Merged Peaks, 108mAg 2 Merged Peaks, 133Ba 4 Merged Peaks):
 
 ```c++
 plot("~/Maestro/LaBr/LaBr_300s_sources/60Co_LaBr_750v_10coarse_3cm.Spe") // best resolution
+```
+
+```c++
+plot("/home/user/Maestro/LaBr/LaBr_300s_sources/108mAg_LaBr_750v_10coarse_3cm.Spe")
+range(600,950)
+fit({700, 850}, 50) // intentionally off by a bit
+```
+
+```c++
 plot("~/Maestro/LaBr/LaBr_300s_sources/133Ba_LaBr_750v_10coarse_3cm.Spe")
 ```
 
