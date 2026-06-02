@@ -98,11 +98,21 @@ Implements:
 
 - able to swap between "int" and "double" when reading from TTree branch entries (i.e., int for num photons, but double for distances/times)
 
-17) multi_fit.cc
+17a) multi_fit.cc
 
 NOTE: Extension of ascii_fit.cc
 
 Able to fit multiple peaks (i.e. 60Co, or even 133Ba) for lab spectra
+
+> Performs full fit first, extracts params, then performs fits on indidual peaks 
+
+17b) multi_fit_b.cc
+
+NOTE: Extension of ascii_fit.cc
+
+Able to fit multiple peaks (i.e. 60Co, or even 133Ba) for lab spectra
+
+> Performs fits on indidual peaks first, extracts params, then performs full fit
 
 >>> TODOS
 
@@ -222,6 +232,18 @@ range(500,1100) // xlow, xhigh
 fit(800,100) // rough centroid, rough fwhm
 ```
 
+### ascii_fit.cc
+
+```c++
+plot("~/Maestro/LaBr/LaBr_300s_sources/137Cs_LaBr_750v_10coarse_3cm.Spe")
+fit(800, 50)
+```
+
+```c++
+plot("~/Maestro/NaI/NaI_2inch_300s_sources/137Cs_NaI_800v_20coarse_3cm.Spe")
+fit(800, 50)
+```
+
 ### plot_any.cc
 
 ```c++
@@ -295,6 +317,8 @@ To open ASCII file (Spe format):
 plot("/path/to/ASCII.Spe")
 ```
 
+#### a
+
 - Example 1 (NaI 2' 60Co 2 Merged Peaks, 133Ba 4 Merged Peaks):
 
 ```c++
@@ -313,16 +337,18 @@ plot("~/Maestro/NaI/NaI_1inch_300s_sources/133Ba_NaI1_800v_20coarse_3cm.Spe")
 
 ```c++
 plot("~/Maestro/LaBr/LaBr_300s_sources/60Co_LaBr_750v_10coarse_3cm.Spe") // best resolution
+// fit(...)
 ```
 
 ```c++
 plot("/home/user/Maestro/LaBr/LaBr_300s_sources/108mAg_LaBr_750v_10coarse_3cm.Spe")
 range(600,950)
-fit({700, 850}, 50) // intentionally off by a bit
+fit({700,850}, 50) // intentionally off by a bit
 ```
 
 ```c++
 plot("~/Maestro/LaBr/LaBr_300s_sources/133Ba_LaBr_750v_10coarse_3cm.Spe")
+// fit(...)
 ```
 
 > NOTE: LaBr arguably best resolution 
@@ -332,6 +358,16 @@ plot("~/Maestro/LaBr/LaBr_300s_sources/133Ba_LaBr_750v_10coarse_3cm.Spe")
 ```c++
 plot("~/Maestro/CeBr/CeBr_300s_sources/60Co_CeBr_-1000v_3cm.Spe")
 plot("~/Maestro/CeBr/CeBr_300s_sources/133Ba_CeBr_-1000v_3cm.Spe")
+```
+
+#### b
+
+- Example 3 (LaBr 1.5' 60Co 2 Merged Peaks, 108mAg 2 Merged Peaks, 133Ba 4 Merged Peaks):
+
+```c++
+plot("/home/user/Maestro/LaBr/LaBr_300s_sources/108mAg_LaBr_750v_10coarse_3cm.Spe")
+// range(600,950)
+fit({710,840}, 50) // intentionally off by a bit
 ```
 
 ### ...
