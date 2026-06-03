@@ -374,11 +374,17 @@ fit({710,840}, 50) // intentionally off by a bit
 ### background_fit.cc
 
 ```c++
-plot("~/Maestro/LaBr/LaBr_300s_sources/137Cs_LaBr_750v_10coarse_3cm.Spe")
-fit(800, 50)
+plot("~/Maestro/LaBr/LaBr_300s_sources/137Cs_LaBr_750v_10coarse_3cm.Spe") // 137Cs - LaBr
+fit(800, 50) // ~662 keV photopeak
 ```
 
 ```c++
-plot("~/Maestro/NaI/NaI_2inch_300s_sources/137Cs_NaI_800v_20coarse_3cm.Spe")
-fit(800, 50)
+plot("~/Maestro/NaI/NaI_2inch_300s_sources/137Cs_NaI_800v_20coarse_3cm.Spe") // 137Cs - NaI2'
+fit(800, 50) // ~662 keV photopeak
+```
+
+```c++
+plot("/home/user/Maestro/NaI/NaI_2inch_300s_sources/22Na_NaI_800v_20coarse_3cm.Spe") // 22Na - NaI2'
+fit(1450, 50) // ~1275 keV photopeak
+fit(600, 50) // ~511 keV photopeak
 ```

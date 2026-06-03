@@ -579,6 +579,7 @@ std::optional<TFitResultPtr> fit_peak(int const& roughCentroid, int const& rough
     // "M" = attempts to improve the fit quality
     // "L" = use log likelihood method (default chi-square), for use with counts histograms
     // "+" = adds this new fitted func to list of fitted funcs (default is delete previous keep last)
+    // "0" = does not draw fitted function after fitting
     
     // Handle fit error (NOTE: success = 0)
     if (initialResult->Status() != 0) {
@@ -777,7 +778,16 @@ int fit (int const roughCentroid, int const roughFWHM) {
     fullFitFn->SetParNames("Amplitude", "Centroid", "Sigma", "Intercept", "Slope");
     
     // TFitResultPtr const fullFitResult = hpx->Fit(fullFitFn, "RS+0"); // Dont overwrite peak fit, dont draw by default
-    TFitResultPtr const fullFitResult = hpx->Fit(fullFitFn, "RS0"); // Overwrite peak fit, dont draw by default
+    // TFitResultPtr const fullFitResult = hpx->Fit(fullFitFn, "RS0"); // Overwrite peak fit, dont draw by default
+    TFitResultPtr const fullFitResult = hpx->Fit(fullFitFn, "RS0L"); // Overwrite peak fit, dont draw by default, use log likelihood method
+    // NOTE: "L", i.e., log likelihood, produces very marginally better results for 
+    // "high" counts peaks, i.e., 22Na 511 keV annihilation photopeak:
+    // (chi2/ndf = 370.3 / 229) => (chi2/ndf = 369.177 / 229)
+    // but for "low" counts peaks, i.e., 22Na 1275 keV photopeak:
+    // (chi2/ndf = 467 / 363) => (chi2/ndf = 415.912 / 363)
+    // ^ quite a substantial improvement
+    // TODO: Need to test this across a range of spectra and energies
+    // TODO: Test "M" flag too (attempt to improve local minimum)
     
     // fullFitFn->SetLineColor(kBlue);
     fullFitFn->SetLineColor(kGreen);
@@ -785,6 +795,10 @@ int fit (int const roughCentroid, int const roughFWHM) {
     
     // ...
     drawFitStats();
+    
+    // 8) Extract fitted parameters from full fit, draw first order poly and photopeak fits individually
+    
+    // ...
     
     // No errors, all good
     return 0;
