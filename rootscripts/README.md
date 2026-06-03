@@ -129,7 +129,8 @@ NOTE: Lab spectra often have lower level discriminator, so GetFirst() will likel
 
 NOTE: The prior work done on this has been extracted out to omni_plot.cc, as handling multiple root object inputs, and tree/branch names, is quite an involved process, and dont want to implement too many new features into a single
 
-TODO: Make a copy of omni_fit.cc when its done, then just reintroduce fitting
+TODO: Make a copy of omni_plot.cc when its done, then just reintroduce fitting
+^ or potentially keep it simpler and just focus on exponential fitting first, then combine the two later
 
 TODO: Currently just whipping up a rough draft of fit(), need to update it to match refined fit() methodology in ascii_fit()
 
@@ -317,7 +318,7 @@ To open ASCII file (Spe format):
 plot("/path/to/ASCII.Spe")
 ```
 
-#### a
+#### multi_fit_a.cc
 
 - Example 1 (NaI 2' 60Co 2 Merged Peaks, 133Ba 4 Merged Peaks):
 
@@ -360,7 +361,7 @@ plot("~/Maestro/CeBr/CeBr_300s_sources/60Co_CeBr_-1000v_3cm.Spe")
 plot("~/Maestro/CeBr/CeBr_300s_sources/133Ba_CeBr_-1000v_3cm.Spe")
 ```
 
-#### b
+#### multi_fit_b.cc
 
 - Example 3 (LaBr 1.5' 60Co 2 Merged Peaks, 108mAg 2 Merged Peaks, 133Ba 4 Merged Peaks):
 
@@ -370,4 +371,14 @@ plot("/home/user/Maestro/LaBr/LaBr_300s_sources/108mAg_LaBr_750v_10coarse_3cm.Sp
 fit({710,840}, 50) // intentionally off by a bit
 ```
 
-### ...
+### background_fit.cc
+
+```c++
+plot("~/Maestro/LaBr/LaBr_300s_sources/137Cs_LaBr_750v_10coarse_3cm.Spe")
+fit(800, 50)
+```
+
+```c++
+plot("~/Maestro/NaI/NaI_2inch_300s_sources/137Cs_NaI_800v_20coarse_3cm.Spe")
+fit(800, 50)
+```
