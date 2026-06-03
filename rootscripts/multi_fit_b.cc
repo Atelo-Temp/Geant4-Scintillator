@@ -342,10 +342,12 @@ int render_hist() {
     std::cout << "\nRendering histogram to canvas...\n";
     
     // Draw histogram to the canvas with default option
-    hpx->Draw(); // NOTE: "HIST" not needed when creating it ourselves
+    hpx->Draw(); // NOTE: "HIST" not needed when instantiating TH1 ourselves
 
     // ...
     canvas->Update(); // NOTE: Afaik, this is not needed
+    // gPad->Update(); // Make sure the statistics box is created
+    // NOTE: Without gPad update, FindObject("stats") may sometimes return null pointer (leading to undefined behaviour)
     
     // Clean the default histogram statistics box (498.4, 291.1)
     gStyle->SetOptStat(0); // default = 1111 (NOTE: 000001111 with zeros removed)
@@ -478,6 +480,9 @@ int reset () {
  * 
  * TODO: Explore log likelihood fit method ("L" flag passed to hpx->fit()), is 
  * potentially better for energy spectra
+ * 
+ * TODO: Likely could one or a couple big loops instead of a bunch of sequential ones,
+ * but the performance difference is negligible for current purposes
  */
 std::optional<TFitResultPtr> fit_individual(int const& roughCentroid, int const& roughFWHM, int const& peakNum) {
     // Log input params to stdout
@@ -578,7 +583,7 @@ std::optional<TFitResultPtr> fit_individual(int const& roughCentroid, int const&
     
     // Handle fit error (NOTE: success = 0)
     if (initialResult->Status() != 0) {
-        std::cerr << "\nError: Failed to perform initial fit!" << std::endl;
+        std::cerr << "\nError: Failed to perform initial fit!\n";
         return std::nullopt;
     }
     
@@ -615,7 +620,7 @@ std::optional<TFitResultPtr> fit_individual(int const& roughCentroid, int const&
     
     // Handle refit error
     if (refitResult->Status() != 0) {
-        std::cerr << "\nError: Failed to perform refit!" << std::endl;
+        std::cerr << "\nError: Failed to perform refit!\n";
         return std::nullopt;
     }
     
@@ -716,7 +721,7 @@ struct CountsResult {
  * 
  * TODO: Total area - background area (for lab spectra with background)
  */
-std::optional<std::vector<double>> getCounts(TF1* fitFn, TFitResultPtr const result) {
+std::optional<std::vector<double>> get_counts(TF1* fitFn, TFitResultPtr const result) {
     // Handle missing histogram
     if (!hpx) {
         std::cerr << "\nError (getCounts()): Histogram not found!\n";
@@ -768,19 +773,19 @@ std::optional<std::vector<double>> getCounts(TF1* fitFn, TFitResultPtr const res
 }
 
 /*
- * Display relevant fit values in top right info box post-fit (chi^2, centroid, etc)
+ * Extract fit statistics for individual peaks, create and populate a new line for
+ * each chosen statistic, then add them to the full list of lines
+ * 
+ * NOTE: TFitResultPtr is already lightweight, reference maybe not needed
+ * 
+ * TODO: Add prefix boolean flag (multipeak = true/false), or just pass number of peaks:
+ * if only one peak fitted, no integer prefix
+ * if >1 peak fitted, add peak number prefix, i.e.:
+ * 1-Centroid, 1-FWHM, 1-Counts
+ * 2-Centroid, 2-FWHM, 2-Counts
+ * NOTE: Would likely have to take peak number as param to
  */
-int drawFitStats(TFitResultPtr const &result, std::vector<double> const &counts) {
-    // Format the output SetOptFit(pcev)
-    gStyle->SetOptFit(111); // NOTE: param is a bit-mask (4-digit integer)
-    // p = chi2 probability
-    // c = chi2 & number of degrees of freedom (NDF)
-    // e = Errors (standard deviations of the fitted parameters)
-    // v = Values (name/values of params)
-    // NOTE: Putting a leading 0 makes the compiler interpret the number as octal (base 8),
-    // note decimal, which can cause unexpected bit settings, using 111 treats its as a decimal,
-    // so avoid SetOptFit(0111), and use SetOptFit(111) instead.
-    
+int get_stats_lines(TFitResultPtr const &result, std::vector<double> const &counts, TList* listOfLines) {    
     // Retrieve the fit chi squared & n.d.f
     double const chi2 = result->Chi2();
     double const ndf = result->Ndf();
@@ -789,6 +794,10 @@ int drawFitStats(TFitResultPtr const &result, std::vector<double> const &counts)
     double const goodFit = chi2 / ndf;
     
     std::cout << "Goodness of Fit: " << goodFit << "\n";
+    
+    // Extract the fitted photopeak centroid and error on the result
+    double const fittedCentroid = result->Parameter(1);
+    double const fittedCentroidError = result->Error(1);
     
     // Calculate the updated FWHM, based on fitted sigma
     double const fittedSigma = result->Parameter(2);
@@ -802,12 +811,57 @@ int drawFitStats(TFitResultPtr const &result, std::vector<double> const &counts)
     double const fittedFWHMError = fittedSigmaError * 2.355;
     
     // Get integrated photopeak counts and error on counts from input vector
-    auto countsVal = counts[0];
-    auto countsErr = counts[1];
+    double const countsVal = counts[0];
+    double const countsErr = counts[1];
+    
+    // Add centroid (+/- error) to the stats box
+    char const* text1 = Form("Centroid = %.2f #pm %.2f", fittedCentroid, fittedCentroidError); // Format the entry (#pm generates +/-)
+    auto newLine1 = new TLatex(0, 0, text1); // <- may have to do Form() for string
+    newLine1->SetTextFont(gStyle->GetStatFont()); // match font to existing stat box font
+    newLine1->SetTextSize(gStyle->GetStatFontSize()); // match font size to existing stat box font size
+    listOfLines->Add(newLine1); // append the fwhm value & error to the fit stats
+
+    // Add FWHM (+/- error) to the stats box
+    char const* text2 = Form("FWHM = %.2f #pm %.2f", fittedFWHM, fittedFWHMError); // Format the entry (#pm generates +/-)
+    auto newLine2 = new TLatex(0, 0, text2); // <- may have to do Form() for string
+    newLine2->SetTextFont(gStyle->GetStatFont()); // match font to existing stat box font
+    newLine2->SetTextSize(gStyle->GetStatFontSize()); // match font size to existing stat box font size
+    listOfLines->Add(newLine2); // append the fwhm value & error to the fit stats
+    
+    // Add counts (+/- error) to the stats box
+    char const* text3 = Form("Counts = %.2f #pm %.2f", countsVal, countsErr);
+    auto newLine3 = new TLatex(0, 0, text3);
+    newLine3->SetTextFont(gStyle->GetStatFont());
+    newLine3->SetTextSize(gStyle->GetStatFontSize());
+    listOfLines->Add(newLine3);
+    
+    // No errors, all good
+    return 0;
+}
+
+/*
+ * Display relevant fit values in statistics box post-fit (chi^2, centroid, etc)
+ * 
+ * NOTE: Uses default stats object located in top right of the screen post-fit
+ * 
+ * TODO: Not a fan of using the existing stats box object just to clear it and
+ * refill it, likely better to create my own stats box from scratch
+ */
+int draw_fit_stats(TList* listOfLines) {
+    // Format the output SetOptFit(pcev)
+    gStyle->SetOptFit(111); // NOTE: param is a bit-mask (4-digit integer)
+    // p = chi2 probability
+    // c = chi2 & number of degrees of freedom (NDF)
+    // e = Errors (standard deviations of the fitted parameters)
+    // v = Values (name/values of params)
+    // NOTE: Putting a leading 0 makes the compiler interpret the number as octal (base 8),
+    // note decimal, which can cause unexpected bit settings, using 111 treats its as a decimal,
+    // so avoid SetOptFit(0111), and use SetOptFit(111) instead.
     
     // TEST
     // c->Update(); // NOTE: This can be omitted with the working combo
     // gPad->Update(); // ^ same
+    // hpx->SetStats(1); // NOTE: Tried using this instead of SetOptFit, doesnt work, causes stats box not found
     // hpx->SetStats(0); // this is called later, might be wiggle room in location, but if it aint broke...
     
     // Handle missing histogram
@@ -837,31 +891,41 @@ int drawFitStats(TFitResultPtr const &result, std::vector<double> const &counts)
     // Detach from root auto management (need to use when doing set stats 0 and ps draw)
     ps->SetName("mystats"); // NOTE: Without this, get segmentation violation (segfault)
     
+    // ...
+    ps->Clear();
+    
     // Get existing statistics box content
-    TList* listOfLines = ps->GetListOfLines();
+    TList* existingLines = ps->GetListOfLines();
     
-    // Remove amplitude and sigma from the stat box? (kinda like amplitude being shown tho)
-    auto line1 = ps->GetLineWith("Sigma");
-    listOfLines->Remove(line1);
-
-    // Add FWHM (+/- error) to the stats box
-    char* text1 = Form("FWHM = %.2f #pm %.2f", fittedFWHM, fittedFWHMError); // Format the entry (#pm generates +/-)
-    auto newLine1 = new TLatex(0, 0, text1); // <- may have to do Form() for string
-    newLine1->SetTextFont(gStyle->GetStatFont()); // match font to existing stat box font
-    newLine1->SetTextSize(gStyle->GetStatFontSize()); // match font size to existing stat box font size
-    listOfLines->Add(newLine1); // append the fwhm value & error to the fit stats
+    // ...
+    // existingLines->Clear();
     
-    // Add counts (+/- error) to the stats box
-    char* text2 = Form("Counts = %.2f #pm %.2f", countsVal, countsErr);
-    auto newLine2 = new TLatex(0, 0, text2);
-    newLine2->SetTextFont(gStyle->GetStatFont());
-    newLine2->SetTextSize(gStyle->GetStatFontSize());
-    listOfLines->Add(newLine2);
+    // ...
+    for (int i = 0; i < listOfLines->GetSize(); i++) {
+        existingLines->Add(listOfLines->At(i));
+    }
     
     // Display the custom statistics box
     hpx->SetStats(0); // Disable auto future stats regeneration
     ps->Draw(); // Redraw custom box
     // c->Update(); // this can actually be omitted too
+    
+    ////////////////////////////////////////////////////////////////////////////
+    
+    // auto statsBox = new TPaveStats();
+    
+//     for (int i = 0; i < listOfLines->GetSize(); i++) {
+//         // statsBox->AddLine(, , , )
+//         // statsBox->InsertLine();
+//         // statsBox->
+//         
+//         // TObject* newLine = listOfLines->At(i);
+//         auto newLine = static_cast<TLatex*>(listOfLines->At(i));
+//         // We know its a list of TLatex*, not TObject*, as it was populated in pipeline
+//         
+//         // statsBox->AddText(newLine);
+//         // statsBox->InsertText();
+//     }
     
     // No errors, all good
     return 0;
@@ -931,11 +995,11 @@ int fit(std::initializer_list<int> centroids, int const roughFWHM) {
     assign_params(fullFitFn, fitResults);
     
     // 8) Attempt the full fit, and abort on unsuccessful fit
-    TFitResultPtr const fullResult = hpx->Fit(fullFitFn, "RS+"); 
+    TFitResultPtr const fullFitResult = hpx->Fit(fullFitFn, "RS+"); 
     // NOTE: Adding to function list instead of replacing previous ("+")
 
     // Handle fit error (NOTE: success = 0)
-    if (fullResult->Status() != 0) {
+    if (fullFitResult->Status() != 0) {
         std::cerr << "\nError: Failed to perform initial fit!\n";
         return 1;
     }
@@ -985,37 +1049,72 @@ int fit(std::initializer_list<int> centroids, int const roughFWHM) {
         
         func->SetParameters(amplitude, mean, sigma);
         
-        peakFunctions.push_back(func);
+        peakFunctions.push_back(func); // cache pointers for "draw-only" peak functions
         
-        func->Draw("same");
+        func->Draw("same"); // draw each individual peak
     }
     
     // 12) Get integrated counts for individual fitted peaks (and errors)
     
+    std::vector<std::vector<double>> countsResults = {}; // TODO: object return type
+    
     for (int i = 0; i < numPeaks; i++) {
         // Calculate counts in the fitted photopeak via integration
-        std::optional<std::vector<double>> counts = getCounts(peakFunctions[i], fitResults[i]);
+        std::optional<std::vector<double>> countsResult = get_counts(peakFunctions[i], fitResults[i]);
         // NOTE: Counts is not a std::vector<double> yet, it is still optional type
         
         // Handle nullopt return
-        if (!counts.has_value()) {
-            std::cerr << "\nError: Failed to get counts!" << std::endl;
+        if (!countsResult.has_value()) {
+            std::cerr << "\nError: Failed to get counts!\n";
             return 1;
         }
         // NOTE: Again this does not tell the compiler it is not optional
         
-//         // Handle statistics box and write custom value to it
-//         int statsError = drawFitStats(fitResults[i], *counts); // or use counts.value()
-//         // NOTE: Here *counts, or counts.value(), converts the optional type to a vector
-//         
-//         // Handle statistics drawing error
-//         if (statsError) {
-//             std::cerr << "Failed draw fit statistics!" << std::endl;
-//             return 1;
-//         }
+        // ...
+        countsResults.push_back(countsResult.value());
+        // NOTE: Here *countsResults, or .value(), converts the optional type to a vector
     }
     
     // 13) Update and draw fit statistics box
+    
+    auto listOfLines = new TList(); // TList*
+    // auto listOfLines = new TPaveStats();
+    // listOfLines->InsertText();
+    // listOfLines->AddText();
+    // listOfLines->
+    
+    // Get chi-square / n.d.f for full fit
+    double const chi2 = fullFitResult->Chi2();
+    double const ndf = fullFitResult->Ndf();
+    
+    // Create a line
+    char const* text1 = Form("#chi^{2} / ndf = %.2f / %.2f", chi2, ndf); // Format the entry (#pm generates +/-)
+    auto newLine1 = new TLatex(0, 0, text1); // <- may have to do Form() for string
+    newLine1->SetTextFont(gStyle->GetStatFont()); // match font to existing stat box font
+    newLine1->SetTextSize(gStyle->GetStatFontSize()); // match font size to existing stat box font size
+    listOfLines->Add(newLine1); // append the fwhm value & error to the fit stats
+    
+    for (int i = 0; i < numPeaks; i++) {
+        // Write custom statistics to list for each fitted peak
+        int statsLinesError = get_stats_lines(fitResults[i], countsResults[i], listOfLines);
+        
+        // Handle statistics writing
+        if (statsLinesError) {
+            std::cerr << "\nError: Failed get fit statistics!\n";
+            return 1;
+        }
+    }
+    
+    
+    
+    // Handle statistics box and write custom value to it
+    int statsDrawError = draw_fit_stats(listOfLines);
+    
+    // Handle statistics drawing error
+    if (statsDrawError) {
+        std::cerr << "\nFailed draw fit statistics!\n";
+        return 1;
+    }
     
     // ...
     
