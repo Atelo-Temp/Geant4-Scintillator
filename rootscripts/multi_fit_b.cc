@@ -178,7 +178,7 @@ int load_ascii(std::string path) {
     // NOTE: No need to reprompt, user can just call the function again
     if (!in.is_open()) {
         // Error message
-        std::cout << "Error: File not found.\n";
+        std::cerr << "\nError: File not found.\n";
         
         // Error
         return 1;
@@ -574,12 +574,13 @@ std::optional<TFitResultPtr> fit_individual(int const& roughCentroid, int const&
     
     // Call the histograms fit method, passing the fit function and histogram fitting options string
     // TFitResultPtr const initialResult = hpx->Fit(prefitFn, "RS");
-    TFitResultPtr const initialResult = hpx->Fit(prefitFn, "RS+");
+    TFitResultPtr const initialResult = hpx->Fit(prefitFn, "RS+0");
     // "R" = use the range of the function
     // "S" = return a TFitResultPtr for further analysis
     // "M" = attempts to improve the fit quality
     // "L" = use log likelihood method (default chi-square), for use with counts histograms
     // "+" = adds this new fitted func to list of fitted funcs (default is delete previous keep last)
+    // "0" = does not draw fitted function after fitting
     
     // Handle fit error (NOTE: success = 0)
     if (initialResult->Status() != 0) {
@@ -591,7 +592,7 @@ std::optional<TFitResultPtr> fit_individual(int const& roughCentroid, int const&
     double const prefitAmplitude = initialResult->Parameter(0);
     double const prefitCentroid = initialResult->Parameter(1);
     double const prefitSigma = initialResult->Parameter(2);
-    double const prefitFWHM = prefitSigma * 2.335;
+    double const prefitFWHM = prefitSigma * 2.355;
     
     // Base the fit window around the true centroid to avoid lopsidedness in the fit
     double const low = prefitCentroid - (2 * prefitFWHM);
@@ -616,7 +617,7 @@ std::optional<TFitResultPtr> fit_individual(int const& roughCentroid, int const&
     
     // Calculate the results of the refit
     // TFitResultPtr const refitResult = hpx->Fit(refitFn, "RS"); // overwrite function list
-    TFitResultPtr const refitResult = hpx->Fit(refitFn, "RS+"); // append to function list
+    TFitResultPtr const refitResult = hpx->Fit(refitFn, "RS+0"); // append to function list
     
     // Handle refit error
     if (refitResult->Status() != 0) {
@@ -915,10 +916,6 @@ int draw_fit_stats(TList* listOfLines) {
     // auto statsBox = new TPaveStats();
     
 //     for (int i = 0; i < listOfLines->GetSize(); i++) {
-//         // statsBox->AddLine(, , , )
-//         // statsBox->InsertLine();
-//         // statsBox->
-//         
 //         // TObject* newLine = listOfLines->At(i);
 //         auto newLine = static_cast<TLatex*>(listOfLines->At(i));
 //         // We know its a list of TLatex*, not TObject*, as it was populated in pipeline
