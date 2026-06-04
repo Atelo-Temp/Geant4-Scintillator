@@ -908,55 +908,140 @@ std::optional<std::vector<double>> get_counts(TF1* fitFn, TFitResultPtr const re
  * 2-Centroid, 2-FWHM, 2-Counts
  * NOTE: Would likely have to take peak number as param to
  */
-int get_stats_lines(TFitResultPtr const &result, std::vector<double> const &counts, TList* listOfLines) {    
-    // Retrieve the fit chi squared & n.d.f
-    double const chi2 = result->Chi2();
-    double const ndf = result->Ndf();
-    
-    // Calculate the goodness of fit
-    double const goodFit = chi2 / ndf;
-    
-    std::cout << "Goodness of Fit: " << goodFit << "\n";
-    
-    // Extract the fitted photopeak centroid and error on the result
-    double const fittedCentroid = result->Parameter(1);
-    double const fittedCentroidError = result->Error(1);
-    
-    // Calculate the updated FWHM, based on fitted sigma
-    double const fittedSigma = result->Parameter(2);
-    double const fittedFWHM = fittedSigma * 2.355;
-    
-    std::cout << "POST-FIT SIGMA: " << fittedSigma << "\n";
-    std::cout << "POST-FIT FWHM: " << fittedFWHM << "\n";
-    
-    // Calculate the error on the fitted FWHM, based on fitted sigma error
-    double const fittedSigmaError = result->Error(2);
-    double const fittedFWHMError = fittedSigmaError * 2.355;
-    
-    // Get integrated photopeak counts and error on counts from input vector
-    double const countsVal = counts[0];
-    double const countsErr = counts[1];
-    
-    // Add centroid (+/- error) to the stats box
-    char const* text1 = Form("Centroid = %.2f #pm %.2f", fittedCentroid, fittedCentroidError); // Format the entry (#pm generates +/-)
-    auto newLine1 = new TLatex(0, 0, text1); // <- may have to do Form() for string
-    newLine1->SetTextFont(gStyle->GetStatFont()); // match font to existing stat box font
-    newLine1->SetTextSize(gStyle->GetStatFontSize()); // match font size to existing stat box font size
-    listOfLines->Add(newLine1); // append the fwhm value & error to the fit stats
+// int get_stats_lines(TFitResultPtr const &result, std::vector<double> const &counts, TList* listOfLines) {    
+//     // Retrieve the fit chi squared & n.d.f
+//     double const chi2 = result->Chi2();
+//     double const ndf = result->Ndf();
+//     
+//     // Calculate the goodness of fit
+//     double const goodFit = chi2 / ndf;
+//     
+//     std::cout << "Goodness of Fit: " << goodFit << "\n";
+//     
+//     // Extract the fitted photopeak centroid and error on the result
+//     double const fittedCentroid = result->Parameter(1);
+//     double const fittedCentroidError = result->Error(1);
+//     
+//     // Calculate the updated FWHM, based on fitted sigma
+//     double const fittedSigma = result->Parameter(2);
+//     double const fittedFWHM = fittedSigma * 2.355;
+//     
+//     std::cout << "POST-FIT SIGMA: " << fittedSigma << "\n";
+//     std::cout << "POST-FIT FWHM: " << fittedFWHM << "\n";
+//     
+//     // Calculate the error on the fitted FWHM, based on fitted sigma error
+//     double const fittedSigmaError = result->Error(2);
+//     double const fittedFWHMError = fittedSigmaError * 2.355;
+//     
+//     // Get integrated photopeak counts and error on counts from input vector
+//     double const countsVal = counts[0];
+//     double const countsErr = counts[1];
+//     
+//     // Add centroid (+/- error) to the stats box
+//     char const* text1 = Form("Centroid = %.2f #pm %.2f", fittedCentroid, fittedCentroidError); // Format the entry (#pm generates +/-)
+//     auto newLine1 = new TLatex(0, 0, text1); // <- may have to do Form() for string
+//     newLine1->SetTextFont(gStyle->GetStatFont()); // match font to existing stat box font
+//     newLine1->SetTextSize(gStyle->GetStatFontSize()); // match font size to existing stat box font size
+//     listOfLines->Add(newLine1); // append the fwhm value & error to the fit stats
+// 
+//     // Add FWHM (+/- error) to the stats box
+//     char const* text2 = Form("FWHM = %.2f #pm %.2f", fittedFWHM, fittedFWHMError); // Format the entry (#pm generates +/-)
+//     auto newLine2 = new TLatex(0, 0, text2); // <- may have to do Form() for string
+//     newLine2->SetTextFont(gStyle->GetStatFont()); // match font to existing stat box font
+//     newLine2->SetTextSize(gStyle->GetStatFontSize()); // match font size to existing stat box font size
+//     listOfLines->Add(newLine2); // append the fwhm value & error to the fit stats
+//     
+//     // Add counts (+/- error) to the stats box
+//     char const* text3 = Form("Counts = %.2f #pm %.2f", countsVal, countsErr);
+//     auto newLine3 = new TLatex(0, 0, text3);
+//     newLine3->SetTextFont(gStyle->GetStatFont());
+//     newLine3->SetTextSize(gStyle->GetStatFontSize());
+//     listOfLines->Add(newLine3);
+//     
+//     // No errors, all good
+//     return 0;
+// }
 
-    // Add FWHM (+/- error) to the stats box
-    char const* text2 = Form("FWHM = %.2f #pm %.2f", fittedFWHM, fittedFWHMError); // Format the entry (#pm generates +/-)
-    auto newLine2 = new TLatex(0, 0, text2); // <- may have to do Form() for string
-    newLine2->SetTextFont(gStyle->GetStatFont()); // match font to existing stat box font
-    newLine2->SetTextSize(gStyle->GetStatFontSize()); // match font size to existing stat box font size
-    listOfLines->Add(newLine2); // append the fwhm value & error to the fit stats
+/*
+ * Extract fit statistics for individual peaks, create and populate a new line for
+ * each chosen statistic, then add them to the full list of lines
+ * 
+ * NOTE: Adds peak number prefix:
+ * 1-Centroid, 1-FWHM, 1-Counts
+ * 2-Centroid, 2-FWHM, 2-Counts
+ * 
+ * TODO: If num peaks = 1, dont prefix fitted params, i.e.:
+ * Centroid, FWHM, Counts
+ * W/ no integer prefix
+ * if only one peak fitted, no integer prefix
+ * if >1 peak fitted, add peak number prefix
+ * 
+ * TODO: TFitResultPtr is already lightweight, reference maybe not needed
+ * 
+ * TODO: Take peak number as param or no
+ */
+int get_stats_lines(TFitResultPtr const &result, std::vector<std::vector<double>> const &counts, TList* listOfLines) {
+    // ...
+    int const numPeaks = counts.size();
+    // NOTE: This kinda feels dirty, even though its a valid approach,
+    // may pass as param instead, not sure
     
-    // Add counts (+/- error) to the stats box
-    char const* text3 = Form("Counts = %.2f #pm %.2f", countsVal, countsErr);
-    auto newLine3 = new TLatex(0, 0, text3);
-    newLine3->SetTextFont(gStyle->GetStatFont());
-    newLine3->SetTextSize(gStyle->GetStatFontSize());
-    listOfLines->Add(newLine3);
+    // ...
+    for (int i = 0; i < numPeaks; i++) {
+        // Retrieve the fit chi squared & n.d.f
+        double const chi2 = result->Chi2();
+        double const ndf = result->Ndf();
+        
+        // Calculate the goodness of fit
+        double const goodFit = chi2 / ndf;
+        
+        std::cout << "Goodness of Fit: " << goodFit << "\n";
+        
+        // Define indices
+        int const arg0IDX = i * 3; // amplitude = [0], [3], [6]
+        int const arg1IDX = arg0IDX + 1; // mean = [1], [4], [7]
+        int const arg2IDX = arg1IDX + 1; // sigma = [2], [5], [8]
+        
+        // Extract the fitted photopeak centroid and error on the result
+        double const fittedCentroid = result->Parameter(arg1IDX);
+        double const fittedCentroidError = result->Error(arg1IDX);
+        
+        // Calculate the updated FWHM, based on fitted sigma
+        double const fittedSigma = result->Parameter(arg2IDX);
+        double const fittedFWHM = fittedSigma * 2.355;
+        
+        std::cout << "POST-FIT SIGMA: " << fittedSigma << "\n";
+        std::cout << "POST-FIT FWHM: " << fittedFWHM << "\n";
+        
+        // Calculate the error on the fitted FWHM, based on fitted sigma error
+        double const fittedSigmaError = result->Error(arg2IDX);
+        double const fittedFWHMError = fittedSigmaError * 2.355;
+        
+        // Get integrated photopeak counts and error on counts from input vector
+        double const countsVal = counts[i][0];
+        double const countsErr = counts[i][1];
+        
+        // Add centroid (+/- error) to the stats box
+        char const* text1 = Form("%i-Centroid = %.2f #pm %.2f", i, fittedCentroid, fittedCentroidError); // Format the entry (#pm generates +/-)
+        auto newLine1 = new TLatex(0, 0, text1); // <- may have to do Form() for string
+        newLine1->SetTextFont(gStyle->GetStatFont()); // match font to existing stat box font
+        newLine1->SetTextSize(gStyle->GetStatFontSize()); // match font size to existing stat box font size
+        listOfLines->Add(newLine1); // append the fwhm value & error to the fit stats
+
+        // Add FWHM (+/- error) to the stats box
+        char const* text2 = Form("%i-FWHM = %.2f #pm %.2f", i, fittedFWHM, fittedFWHMError); // Format the entry (#pm generates +/-)
+        auto newLine2 = new TLatex(0, 0, text2); // <- may have to do Form() for string
+        newLine2->SetTextFont(gStyle->GetStatFont()); // match font to existing stat box font
+        newLine2->SetTextSize(gStyle->GetStatFontSize()); // match font size to existing stat box font size
+        listOfLines->Add(newLine2); // append the fwhm value & error to the fit stats
+        
+        // Add counts (+/- error) to the stats box
+        char const* text3 = Form("%i-Counts = %.2f #pm %.2f", i, countsVal, countsErr);
+        auto newLine3 = new TLatex(0, 0, text3);
+        newLine3->SetTextFont(gStyle->GetStatFont());
+        newLine3->SetTextSize(gStyle->GetStatFontSize());
+        listOfLines->Add(newLine3);
+    }
     
     // No errors, all good
     return 0;
@@ -1358,21 +1443,29 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
     newLine1->SetTextSize(gStyle->GetStatFontSize()); // match font size to existing stat box font size
     listOfLines->Add(newLine1); // append the fwhm value & error to the fit stats
     
-    for (int i = 0; i < numPeaks; i++) {
-        // Write custom statistics to list for each fitted peak
-        int statsLinesError = get_stats_lines(fitResults[i], countsResults[i], listOfLines);
-        // TODO: Individual peak fits are giving FWHM much larger than the full fit,
-        // yet im displaying initial fit values, maybe change this:
-        // int statsLinesError = get_stats_lines(fullFitResult, countsResults[i], listOfLines);
+//     for (int i = 0; i < numPeaks; i++) {
+//         // Write custom statistics to list for each fitted peak
+//         int statsLinesError = get_stats_lines(fitResults[i], countsResults[i], listOfLines);
+//         // TODO: Individual peak fits are giving FWHM much larger than the full fit,
+//         // yet im displaying initial fit values, maybe change this:
+//         // int statsLinesError = get_stats_lines(fullFitResult, countsResults[i], listOfLines);
+//         
+//         // Handle statistics writing
+//         if (statsLinesError) {
+//             std::cerr << "\nError: Failed get fit statistics!\n";
+//             return 1;
+//         }
+//     }
+    
+    // Write custom statistics to list for each fitted peak    
+    int statsLinesError = get_stats_lines(fullFitResult, countsResults, listOfLines);
         
-        // Handle statistics writing
-        if (statsLinesError) {
-            std::cerr << "\nError: Failed get fit statistics!\n";
-            return 1;
-        }
+    // Handle statistics writing
+    if (statsLinesError) {
+        std::cerr << "\nError: Failed get fit statistics!\n";
+        return 1;
     }
-    
-    
+
     
     ////////////////////////////////////////////////////////////////////////////////////////////
     // 13.1) Append fitted linear component stats to the list
