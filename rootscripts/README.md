@@ -59,7 +59,7 @@ Apply a gaussian smearing to per-event photon ntuples, in order to fix aliasing 
 
 > NOTE: This smearing represents PMT statistics / shot noise
 
-12) ntuple_fit.cc (alt: fit_ntuple.cc)
+12) ntuple_fit.cc (alt: fit_ntuple.cc, fit_root.cc)
 
 Integrate ntuple handling into custom_stats.cc (i.e. the previous histogram pipeline)
 
@@ -102,14 +102,13 @@ Implements:
 - prompting user with object choice
 - providing filtered list of names matching that object choice
 - loading and then plotting said named object choice
+- able to swap between "int" and "double" when reading from TTree branch entries (i.e., int for num photons, but double for distances/times) (NOTE: May be better to just do double for both tbh)
 
-- able to swap between "int" and "double" when reading from TTree branch entries (i.e., int for num photons, but double for distances/times)
-
-17a) multi_fit.cc
+17a) multi_fit_a.cc
 
 NOTE: Extension of ascii_fit.cc
 
-Able to fit multiple peaks (i.e. 60Co, or even 133Ba) for lab spectra
+Able to fit multiple peaks (i.e. 60Co, or even 133Ba) for lab spectra (ASCII - .SPE)
 
 > Performs full fit first, extracts params, then performs fits on indidual peaks 
 
@@ -117,11 +116,11 @@ Able to fit multiple peaks (i.e. 60Co, or even 133Ba) for lab spectra
 
 NOTE: Extension of ascii_fit.cc
 
-Able to fit multiple peaks (i.e. 60Co, or even 133Ba) for lab spectra
+Able to fit multiple peaks (i.e. 60Co, or even 133Ba) for lab spectra (ASCII - .SPE)
 
 > Performs fits on indidual peaks first, extracts params, then performs full fit
 
-18) background_fit.cc (alt: lab_fit.cc)
+18) background_fit.cc
 
 NOTE: Extension of ascii_fit.cc (multi-peak fitting is intentionally omitted for this one to focus on the linear component)
 
@@ -136,9 +135,9 @@ which ends up being a good first order approximation when considering the immedi
 
 19) spectra_fit.cc (alt: spectrum_fit.cc, lab_fit.cc)
 
+Combines multi-peak fitting (from multi_fit_b.cc) and background component addition (from background_fit.cc)
 
-
-17) exponential_fit.cc
+20) exponential_fit.cc
 
 NOTE: The prior work done on this has been extracted out to omni_plot.cc, as handling multiple root object inputs, and tree/branch names, is quite an involved process, and dont want to implement too many new features into a single
 
@@ -147,19 +146,21 @@ TODO: Make a copy of omni_plot.cc when its done, then just reintroduce fitting
 
 TODO: Currently just whipping up a rough draft of fit(), need to update it to match refined fit() methodology in ascii_fit()
 
-17) any_fit.cc (alt: fit_any.cc)
+21) any_fit.cc (alt: fit_any.cc, fitter.cc)
 
 Hybrid fitting, able to handle both ascii files (lab) and root files (simulation)
 
-NOTE: Just reintroduces fitting to save_hist.cc
+<!-- NOTE: Just reintroduces fitting to save_hist.cc -->
+NOTE: ^^^ reintroducing peak fitting (from spectra_fit.cc) to omni_plot.cc is probably better
 
-NOTE: Rather than trying to expanding on fitting capabilities etc, previous fitting macros havent had the user specified path functionality, or save functionality,
-so integrating that is a good stepping stone to a comprehensive fitting macro
+NOTE: Rather than trying to expanding on fitting capabilities etc, previous fitting macros 
+havent had the user specified path functionality, or save functionality, so integrating 
+that is a good stepping stone to a comprehensive fitting macro
 
 - Takes .root / .Spe filename as argument rather than hardcoded
 - Parses the filename to identify whether its .root or .Spe, runs histogramming pipeline for respective file type
 
-19) any_fit.cc (alt: smart_fit.cc)
+22) hybrid_fit.cc (alt: smart_fit.cc)
 
 Hybrid fitting, able to handle both ascii files (lab) and root files (simulation)
 ^ maybe also able to determine whether it needs a gaussian or gaus + pol fit
@@ -170,25 +171,25 @@ NOTE: I think this main functionality should be determining whether to use gaus 
 ^ maybe even whether to use exponential etc
 ^ sinice 17) kinda ticks most of these other boxes, but trying to fit smart fitting would overcrowd 17)
 
-21) omni_fit.cc
+23) omni_fit.cc
 
 Full functionality of all previous fitting capabilities, plus final touches
 
 TODO: Maybe think of a way to determine if input data has aliasing issue, and needs gaussian smearing
 
-22) dimension_plotter.cc
+24) dimension_plotter.cc
 
-Introduce 2D and 3D histogramming and fitting
+Introduce 2D and 3D histogramming
+
+24) dimension_plotter.cc
+
+Introduce 2D and 3D fitting
 
 XX) downsampling.cc
 
 Convert a 2048 bin lab spectrum to 1024 bins
 
 NOTE: Im not sure this is a good idea honestly, merged peaks will become even more merged, etc, likely better to find workaround to G4 1024 bin limit
-
-...
-fitter.cc
-fit_root.cc
 
 ## Examples
 
@@ -400,4 +401,28 @@ fit(800, 50) // ~662 keV photopeak
 plot("/home/user/Maestro/NaI/NaI_2inch_300s_sources/22Na_NaI_800v_20coarse_3cm.Spe") // 22Na - NaI2'
 fit(1450, 50) // ~1275 keV photopeak
 fit(600, 50) // ~511 keV photopeak
+```
+
+### spectra_fit.cc
+
+```c++
+plot("~/Maestro/NaI/NaI_2inch_300s_sources/137Cs_NaI_800v_20coarse_3cm.Spe") // 137Cs - NaI2'
+fit({800}, 50) // ~662 keV photopeak
+```
+
+```c++
+plot("/home/user/Maestro/NaI/NaI_2inch_300s_sources/22Na_NaI_800v_20coarse_3cm.Spe") // 22Na - NaI2'
+fit({1450}, 50) // ~1275 keV photopeak
+fit({600}, 50) // ~511 keV photopeak
+```
+
+```c++
+plot("/home/user/Maestro/LaBr/LaBr_300s_sources/108mAg_LaBr_750v_10coarse_3cm.Spe") // 108mAg - LaBr
+// range(600,950) // NOTE: fit() will zoom anyways
+fit({710,840}, 50) // intentionally off by a bit
+```
+
+```c++
+plot("~/Maestro/LaBr/LaBr_300s_sources/60Co_LaBr_750v_10coarse_3cm.Spe") // 60Co - LaBr
+fit({1350,1550},50)
 ```
