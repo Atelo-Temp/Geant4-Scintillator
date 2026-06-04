@@ -87,7 +87,7 @@ int omni_plot() {
  * 
  * NOTE: arg[0]: std::string const path (so its immutable)
  */
-std::string const check_path(std::string const& path) { // std::string check_path(std::string const path) {
+std::string check_path(std::string const& path) { // std::string check_path(std::string const path) {
     // Print path to stdout
     std::cout << "\nUser provided path: " << path << "\n";
     
@@ -344,7 +344,7 @@ void ascii_cleanup() {
  * NOTE: std::ifstream sets internal error flags immediately on failure,
  * so only need to check (!inASCII) really
  */
-int load_ascii(std::string& path) {
+int load_ascii(std::string const& path) {
     // Open the ASCII file with validated .Spe extension
     inASCII.open(path);
     
@@ -1134,7 +1134,7 @@ int load_root(std::string const& path) {
 /*
  * Executes ASCII or ROOT file procedures based on file type flag
  */
-int load_file(std::string path) {
+int load_file(std::string const& path) {
     // Success status
     int status = 1;
     // NOTE: Defaults to failure (1), and will only be set to success (0) on valid file load
@@ -1356,8 +1356,8 @@ int create_hist() {
  * 
  * TODO: When calling plot(), may need to 
  */
-double const post_processing(int entry) {
-// int const post_processing(int entry) {
+double post_processing(int entry) {
+// int post_processing(int entry) {
 // TODO: int const post_processing(int entry, int nbins = 2048, int xmax = 3500) {
     // In counting statistics: sigma = sqrt(N)
     double const sigma = std::sqrt(entry);
@@ -1572,6 +1572,12 @@ int fill_hist_ntuple() {
  * TODO: Dont start from arbitrary line 13 and go until line 2060 
  * (parse the infile header for start, $DATA, then skip next line, then the following line is bin 0)
  * (when you read $ROI, break)
+ * 
+ * TODO: Parsing the entire file, yet only reading lines 13 -> 2060
+ * 
+ * TODO: if (!in.good()) check inside of while loop
+ * 
+ * TODO: !inASCII will always return true, do !inASCII.is_open()
  */
 int fill_hist_ascii() {
     // Handle missing input file

@@ -2,6 +2,7 @@
 // then zoom in on a peak, and fit it with a user defined function
 
 // ROOT lib
+#include <TAttMarker.h>
 #include <TFile.h> // TODO: This is unused w/ current format, but will be used for omni_fit.cc
 #include <TH1.h>
 #include <TCanvas.h>
@@ -57,7 +58,7 @@ int background_fit() {
  * 
  * NOTE: arg[0]: std::string const path (so its immutable)
  */
-std::string const check_path(std::string const& path) { // std::string check_path(std::string const path) {
+std::string check_path(std::string const& path) { // std::string check_path(std::string const path) {
     // Print path to stdout
     std::cout << "\nUser provided path: " << path << "\n";
     
@@ -168,7 +169,7 @@ std::string const check_path(std::string const& path) { // std::string check_pat
  * TODO: Probably wanna validate is expected ASCII format too:
  * line 1: $SPEC_ID:
  */
-int load_ascii(std::string path) {
+int load_ascii(std::string const& path) {
     // Open the ASCII file with validated .Spe extension
     in.open(path);
     
@@ -225,6 +226,12 @@ int create_hist() {
  * TODO: Dont start from arbitrary line 13 and go until line 2060 
  * (parse the infile header for start, $DATA, then skip next line, then the following line is bin 0)
  * (when you read $ROI, break)
+ * 
+ * TODO: Parsing the entire file, yet only reading lines 13 -> 2060
+ * 
+ * TODO: if (!in.good()) check inside of while loop
+ * 
+ * TODO: !inASCII will always return true, do !inASCII.is_open()
  */
 int fill_hist() {
     // Handle missing input file
@@ -364,7 +371,7 @@ int render_hist() {
 /*
  * Executes automatically on script start (NOTE: Choose another function name if you wish to manually call it instead) 
  */
-int plot (std::string fileName) {
+int plot (std::string const fileName) {
     // Check provided path is valid (will return empty string if not valid)
     std::string path = check_path(fileName);
     
@@ -640,7 +647,7 @@ std::optional<TFitResultPtr> fit_peak(int const& roughCentroid, int const& rough
  * Where:
  * - N = number of bins + 1
  */
-std::vector<double> sideband_avg(TAxis const* xAxis, const double& xStart, const double& xEnd) {
+std::vector<double> sideband_avg(TAxis const* xAxis, double const& xStart, double const& xEnd) {
     // ...
     std::cout << "Band Start: " << xStart << " - Band End: " << xEnd << "\n";
     
@@ -686,10 +693,12 @@ std::vector<double> sideband_avg(TAxis const* xAxis, const double& xStart, const
 
 /*
  * ...
+ * 
+ * TODO: Extract linear component parameter estimation out
  */
 int fit_background() {
     // ...
-    return 0;
+    return 1;
 }
 
 /*
@@ -699,8 +708,8 @@ int fit_background() {
  * as it still ensures the low/high window is centred on the centroid
  * (not the rough centroid passed as a param to the fn)
  */
-int fit (int const roughCentroid, int const roughFWHM) {
-    // 1) Fit to the photopeak
+int fit(int const roughCentroid, int const roughFWHM) {
+    // 1) Perform initial prefit and refit to the photopeak
     std::optional<TFitResultPtr> result = fit_peak(roughCentroid, roughFWHM);
     
     if (!result.has_value()) {
@@ -713,7 +722,7 @@ int fit (int const roughCentroid, int const roughFWHM) {
     // 2) ...
     
     // ...
-    // drawFitStats();
+    // drawFitStats(); // debug
     
     // 3) Use the fitted photopeak params to define an exclusion zone
     
@@ -721,12 +730,12 @@ int fit (int const roughCentroid, int const roughFWHM) {
     double const fittedCentroid = resultValue->Parameter(1); // centroid = [1]
     double const fittedFwhm = resultValue->Parameter(2) * 2.355; // sigma = [2]
     
-    // Band to the the left of the photopeak (from point where gaussian ~return to 0, to 2*FWHM)
+    // Band to the the left of the photopeak ()
     double const leftLow = fittedCentroid - (2 * fittedFwhm);
     double const leftHigh = fittedCentroid - (1.5 * fittedFwhm);
-    // NOTE: 
+    // NOTE: from -1.5*FWHM where gaussian returns to ~0 (0.2%), to -2*FWHM (0.0...%)
     
-    // Band to the the right of the photopeak (from point where gaussian ~return to 0, to 2*FWHM)
+    // Band to the the right of the photopeak
     double const rightLow = fittedCentroid + (1.5 * fittedFwhm);
     double const rightHigh = fittedCentroid + (2 * fittedFwhm);
     
@@ -746,22 +755,20 @@ int fit (int const roughCentroid, int const roughFWHM) {
     // slope = Δy / Δx
     double const deltaY = right[1] - left[1]; // [0] = xMean, [1] = yMean
     double const deltaX = right[0] - left[0];
-    
-    // ...
     double const slope = deltaY / deltaX; // gradient of the line
-
-    // ...
+    
+    // intercept = y - (slope * x)
     double const intercept = right[1] - slope * right[0]; // y-intercept (value of y when x = 0)
     // NOTE: y = mx+b => b = y - mx
     
     std::cout << "\nRough Slope: " << slope << " Rough Intercept: " << intercept << "\n";
     
     // 6) Draw the first order poly across the entire histogram range
-    // NOTE: useful for debugging
+    // NOTE: useful for debugging (but in practice, we will extract poly params from final fit if its needed)
     
     // auto poly = new TF1("poly", "pol1", leftLow, rightHigh);
     auto poly = new TF1("poly", "pol1", xAxis->GetXmin(), xAxis->GetXmax());
-    // NOTE: ROOT defined as ([p0]+[p1]*x)
+    // NOTE: ROOT defined as ([p0]+[p1]*x), where [p0] = intercept, and [p1] = slope
     
     // poly->Print("V");
     poly->SetParameters(intercept, slope);
@@ -771,9 +778,10 @@ int fit (int const roughCentroid, int const roughFWHM) {
     
     // 7) Perform the full fit
     
-    // ...
+    // Using centroid +/- 2*FWHM range
     auto fullFitFn = new TF1("fullFit", "gaus(0) + pol1(3)", leftLow, rightHigh);
     
+    // Passing fitted peak params, and estimated poly params
     fullFitFn->SetParameters(resultValue->Parameter(0), resultValue->Parameter(1), resultValue->Parameter(2), intercept, slope);
     fullFitFn->SetParNames("Amplitude", "Centroid", "Sigma", "Intercept", "Slope");
     
@@ -790,15 +798,44 @@ int fit (int const roughCentroid, int const roughFWHM) {
     // TODO: Test "M" flag too (attempt to improve local minimum)
     
     // fullFitFn->SetLineColor(kBlue);
-    fullFitFn->SetLineColor(kGreen);
+    // fullFitFn->SetLineColor(kGreen);
     fullFitFn->Draw("same");
     
-    // ...
+    // Show default stats box for full fit
     drawFitStats();
     
-    // 8) Extract fitted parameters from full fit, draw first order poly and photopeak fits individually
+    // 8) Extract fitted parameters from full fit, draw first order poly and photopeak
+    // fits individually, zoom in on region of interest
     
-    // ...
+    // Returns a vector of params
+    std::vector<double> const fullFitParams = fullFitResult->Parameters();
+    // NOTE: [0] = "Amplitude", [1] = "Centroid", [2] = "Sigma", [3] = "Intercept", [4] = "Slope"
+    
+    // Auto zoom in on fitted range (NOTE: may or may not want this in practice)
+    double const viewLow = fullFitParams[1] - (6 * fullFitParams[2]);
+    double const viewHigh = fullFitParams[1] + (6 * fullFitParams[2]);
+    range(viewLow, viewHigh);
+    
+    // Draw the first order poly across the entire histogram range (NOTE: useful for debugging)
+    auto polyFitted = new TF1("polyFitted", "pol1", xAxis->GetXmin(), xAxis->GetXmax());
+    polyFitted->SetParameters(fullFitParams[3], fullFitParams[4]); // fitted intercept & slope
+    // polyFitted->SetParNames("Intercept", "Slope"); // not displaying in fit stats, so not really needed
+    polyFitted->SetLineColor(kBlue);
+    polyFitted->SetLineStyle(kDot);
+    polyFitted->Draw("same");
+    
+    // Draw the gaussian photopeak
+    // auto gausFitted = new TF1("gausFitted", "gaus", xAxis->GetXmin(), xAxis->GetXmax());
+    auto gausFitted = new TF1("gausFitted", "gaus", viewLow, viewHigh); // (at centroid +/- 6 * sigma)
+    gausFitted->SetParameters(fullFitParams[0], fullFitParams[1], fullFitParams[2]);
+    // gausFitted->SetParNames("Amplitude", "Centroid", "Sigma");
+    // gausFitted->SetLineColor(kMagenta);
+    gausFitted->SetLineColor(kGreen - 3);
+    // gausFitted->SetLineColor(k);
+    gausFitted->Draw("same");
+    // NOTE: For instantiating the fucntion, low = 0 (xmin), high = 2048 (xmax) distorts the gaussian
+    // this isnt due to using the full fit params, have tested it using refit params too
+    // NOTE: Low key might be better to just draw the individual gaussians during initial peak refit
     
     // No errors, all good
     return 0;

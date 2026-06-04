@@ -1,6 +1,8 @@
 # About
 
-...
+NOTE: Code in many of the earlier macros (and even some of the later macros) is being left 
+intentionally rough, poorly designed, non-refactored, etc, for reference. The final versions
+will be where i clean up the code significantly.
 
 ## Project Ordering
 
@@ -54,7 +56,8 @@ convert per-event photons detected ntuples to 2048 bin histogram
 11) ntuple_smearing.cc
 
 Apply a gaussian smearing to per-event photon ntuples, in order to fix aliasing issue seen when plotting 2048 bin histogram directly
-NOTE: This smearing represents PMT statistics / shot noise
+
+> NOTE: This smearing represents PMT statistics / shot noise
 
 12) ntuple_fit.cc (alt: fit_ntuple.cc)
 
@@ -62,7 +65,9 @@ Integrate ntuple handling into custom_stats.cc (i.e. the previous histogram pipe
 
 13) ascii_fit.cc
 
-Fit a lab ASCII spectrum using a gaussian fit function
+Fit a single photopeak in a lab ASCII spectrum using a gaussian fit function
+
+> NOTE: Doesnt consider multi-peak scenarios or the background component
 
 14) plot_any.cc (alt: load_any.cc)
 
@@ -70,15 +75,17 @@ Introduces user filename input, similar to ascii_canvas.cc, but more comprehensi
 
 Also disambiguates between ROOT and ASCII input files, handling each via dedicated helper functions
 
-NOTE: Currently only works with ROOT Ntuples (not ROOT hists, etc), also has hardcoded tree/branch names (will visit solutions for this in a new macro soon)
+> NOTE: Currently only works with ROOT Ntuples (not ROOT hists, etc), also has hardcoded tree/branch 
+names (will visit solutions for this in a new macro soon)
 
-To avoid adding unneccessary code to the core principle im trying to address with this macro, am omitting writing loaded hist to outfile, and fitting hist (albeit they are simple additions)
+To avoid adding unneccessary code to the core principle im trying to address with this macro, 
+am omitting writing loaded hist to outfile, and fitting hist (albeit they are simple additions)
 
 15) save_hist.cc (alt: write_histo.cc, write_hist.cc, save_histo.cc)
 
 Gives ability to save histograms to root files (handy for saving ROOT Ntuples as smaller files)
 
-NOTE: Literally just adds: save() method to plot_any.cc
+> NOTE: Literally just adds: save() method to plot_any.cc
 
 Read ASCII file, OR, per-event Ntuple data, and plot a ROOT histogram, then save the histogram (will have to apply smearing to Ntuples still) (saves storing 10+GB .root files in local data, and can reference prior runs/configurations easier)
 ^ can use load_root.cc (custom_stats.cc) esque pipeline to load it back for post-processing
@@ -114,16 +121,22 @@ Able to fit multiple peaks (i.e. 60Co, or even 133Ba) for lab spectra
 
 > Performs fits on indidual peaks first, extracts params, then performs full fit
 
->>> TODOS
-
 18) background_fit.cc (alt: lab_fit.cc)
 
-Fit an ASCII lab spectrum using a gaussian + poly fit function
+NOTE: Extension of ascii_fit.cc (multi-peak fitting is intentionally omitted for this one to focus on the linear component)
 
-hpx->GetXaxis()->GetBinLowEdge(...GetXaxis()->GetFirst())
-...GetXaxis()->GetBinUpEdge(...GetXaxis()->GetLast())
+Fit a single peak in an ASCII lab spectrum using a gaussian + 1st order polynomial background fit function
 
-NOTE: Lab spectra often have lower level discriminator, so GetFirst() will likely return 0 when trying to automate intercept
+NOTE: The idea here isnt to fit to the entire spectra besides the peak (i.e., x-rays, compton region, backscatter, compton edge, etc...),
+instead the chi2/ndf of the photopeak fit can be improved tenfold by introducing a small linear background component 
+(the lower energy tail is typically visually higher then the higher energy tail, creating a sort of slanted gaussian), 
+which ends up being a good first order approximation when considering the immediate vicinity to the left and right of the photopeak.
+
+>>> TODOS
+
+19) spectra_fit.cc (alt: spectrum_fit.cc, lab_fit.cc)
+
+
 
 17) exponential_fit.cc
 

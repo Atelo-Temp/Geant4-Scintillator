@@ -59,7 +59,7 @@ int multi_fit_b() {
  * 
  * NOTE: arg[0]: std::string const path (so its immutable)
  */
-std::string const check_path(std::string const& path) { // std::string check_path(std::string const path) {
+std::string check_path(std::string const& path) { // std::string check_path(std::string const path) {
     // Print path to stdout
     std::cout << "\nUser provided path: " << path << "\n";
     
@@ -170,7 +170,7 @@ std::string const check_path(std::string const& path) { // std::string check_pat
  * TODO: Probably wanna validate is expected ASCII format too:
  * line 1: $SPEC_ID:
  */
-int load_ascii(std::string path) {
+int load_ascii(std::string const& path) {
     // Open the ASCII file with validated .Spe extension
     in.open(path);
     
@@ -366,7 +366,7 @@ int render_hist() {
 /*
  * Executes automatically on script start (NOTE: Choose another function name if you wish to manually call it instead) 
  */
-int plot (std::string fileName) {
+int plot (std::string const fileName) {
     // Check provided path is valid (will return empty string if not valid)
     std::string path = check_path(fileName);
     
@@ -645,7 +645,7 @@ std::optional<TFitResultPtr> fit_individual(int const& roughCentroid, int const&
  * TODO: Will need slight adjustment to accomodate background function
  * i.e.: "gaus(0) + gaus(3) + pol1(6)"
  */
-std::string const fit_string(int const& numPeaks) {
+std::string fit_string(int const& numPeaks) {
     // ....
     std::string result;
     
@@ -931,7 +931,7 @@ int draw_fit_stats(TList* listOfLines) {
 /*
  * Main entry point for peak fitting
  */
-int fit(std::initializer_list<int> centroids, int const roughFWHM) {
+int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
     // 1) Copy initialiser list contents to vector, check if theyre in ascending order
     const int* centroid = centroids.begin(); // pointer to first address in initializer_list
     const int numPeaks = centroids.size();
@@ -1102,8 +1102,6 @@ int fit(std::initializer_list<int> centroids, int const roughFWHM) {
         }
     }
     
-    
-    
     // Handle statistics box and write custom value to it
     int statsDrawError = draw_fit_stats(listOfLines);
     
@@ -1112,12 +1110,6 @@ int fit(std::initializer_list<int> centroids, int const roughFWHM) {
         std::cerr << "\nFailed draw fit statistics!\n";
         return 1;
     }
-    
-    // ...
-    
-    // TODO: Using the "+" flag for calls to hpx->fit() is causing drawn fit lines to accumulate
-    // either remove the "+" flag (likely better to keep it), or manually clear those being drawn
-    // without explicit call to "Draw()"
     
     return 0;
 }
