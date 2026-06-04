@@ -491,9 +491,27 @@ std::optional<TFitResultPtr> fit_individual(int const& roughCentroid, int const&
         return std::nullopt;
     }
     
+    // TEST
+    double const searchLow = roughCentroid - (1.5 * roughFWHM);
+    double const searchHigh = roughCentroid + (1.5 * roughFWHM);
+    int const searchLowBin = hpx->FindFixBin(searchLow);
+    int const searchHighBin = hpx->FindFixBin(searchHigh);
+    
+    // int maxBin = -1;
+    int maxBin = roughCentroid;
+    
+    for (int i = searchLowBin; i < searchHighBin; i++) {
+        int const currBin = hpx->GetBinContent(i);
+        if (currBin > hpx->GetBinContent(maxBin)) maxBin = i;
+    }
+    std::cout << "MAX BIN: " << maxBin << "\n";
+    // TEST
+    
     // Get the centre of the centroid channel, and number of counts in centroid bin
-    double const roughMean = hpx->GetXaxis()->GetBinCenter(roughCentroid); // get the x-axis location of max counts bin
-    double const roughAmplitude = hpx->GetBinContent(roughCentroid); // get the y-axis number of counts for max bin, i.e. amplitude
+    // double const roughMean = hpx->GetXaxis()->GetBinCenter(roughCentroid); // get the x-axis location of max counts bin
+    // double const roughAmplitude = hpx->GetBinContent(roughCentroid); // get the y-axis number of counts for max bin, i.e. amplitude
+    double const roughMean = hpx->GetXaxis()->GetBinCenter(maxBin); // get the x-axis location of max counts bin
+    double const roughAmplitude = hpx->GetBinContent(maxBin); // get the y-axis number of counts for max bin, i.e. amplitude
     // NOTE: Since bin center takes actual bin, need the conversion from photons to bins
     // but centroid & FWHM values will reflect the photons
     
@@ -566,26 +584,38 @@ std::optional<TFitResultPtr> fit_individual(int const& roughCentroid, int const&
     // where params: [4] & [5] are then the intercept and slope for the poly fit
     
     // TEST - Set parameter limits for finding centroid
-    // double const prefitCentroidLimitLow = roughMean - (1.5 * roughFWHM);
-    // double const prefitCentroidLimitHigh = roughMean + (1.5 * roughFWHM);
-    // prefitFn->SetParLimits(1, prefitCentroidLimitLow, prefitCentroidLimitHigh); // mean is arg[1]
-    // double const prefitSigmaLimitLow = roughSigma * 0.5;
-    // double const prefitSigmaLimitHigh = roughSigma * 1.5;
-    // prefitFn->SetParLimits(2, prefitSigmaLimitLow, prefitSigmaLimitHigh); // sigma is arg[2]
+    // double const prefitAmplitudeLimitLow = roughAmplitude * 0.9;
+    double const prefitAmplitudeLimitLow = roughAmplitude * 0.85;
+    double const prefitAmplitudeLimitHigh = roughAmplitude * 1.1;
+    prefitFn->SetParLimits(0, prefitAmplitudeLimitLow, prefitAmplitudeLimitHigh); // amplitude is arg[0]
+    double const prefitCentroidLimitLow = roughMean - (1.5 * roughFWHM);
+    double const prefitCentroidLimitHigh = roughMean + (1.5 * roughFWHM);
+    prefitFn->SetParLimits(1, prefitCentroidLimitLow, prefitCentroidLimitHigh); // mean is arg[1]
+    double const prefitSigmaLimitLow = roughSigma * 0.25;
+    double const prefitSigmaLimitHigh = roughSigma * 2;
+    prefitFn->SetParLimits(2, prefitSigmaLimitLow, prefitSigmaLimitHigh); // sigma is arg[2]
     // NOTE: May want to consder limits for amplitude and sigma, but not sure its as
     // relevant for those (maybe wrong on that though)
+    std::cout << ">>> Amplitude Low: " << prefitAmplitudeLimitLow << " Rough Amplitude: " << roughAmplitude << " Amplitude High: " << prefitAmplitudeLimitHigh << "\n";
+    std::cout << ">>> Mean Lower Window: " << roughLow << " Mean Low: " << prefitCentroidLimitLow << " Rough Mean: " << roughMean << " Mean High: " << prefitCentroidLimitHigh << " Mean Upper Window: " << roughHigh << "\n";
+    std::cout << ">>> Sigma Low: " << prefitSigmaLimitLow << " Rough Sigma: " << roughSigma << " Sigma High: " << prefitSigmaLimitHigh << "\n";
     // TEST
     
     // Call the histograms fit method, passing the fit function and histogram fitting options string
     // TFitResultPtr const initialResult = hpx->Fit(prefitFn, "RS");
-    TFitResultPtr const initialResult = hpx->Fit(prefitFn, "RS+0");
+    // TFitResultPtr const initialResult = hpx->Fit(prefitFn, "RS+0");
     // TFitResultPtr const initialResult = hpx->Fit(prefitFn, "RS+0L");
+    // TFitResultPtr const initialResult = hpx->Fit(prefitFn, "RS+0B");
+    TFitResultPtr const initialResult = hpx->Fit(prefitFn, "RS+0BL");
     // "R" = use the range of the function
     // "S" = return a TFitResultPtr for further analysis
     // "M" = attempts to improve the fit quality
     // "L" = use log likelihood method (default chi-square), for use with counts histograms
     // "+" = adds this new fitted func to list of fitted funcs (default is delete previous keep last)
     // "0" = does not draw fitted function after fitting
+    // "B" = use this to fix or set parameter limits with predefined funcs (i.e., "gaus"),
+    // else default initial values and limits may be used
+    // NOTE: Using log likelihood here seems to do ok
     
     // Handle fit error (NOTE: success = 0)
     if (initialResult->Status() != 0) {
@@ -600,10 +630,10 @@ std::optional<TFitResultPtr> fit_individual(int const& roughCentroid, int const&
     double const prefitFWHM = prefitSigma * 2.355;
     
     // Base the fit window around the true centroid to avoid lopsidedness in the fit
-    double const low = prefitCentroid - (2 * prefitFWHM);
-    double const high = prefitCentroid + (2 * prefitFWHM);
+    double const refitLow = prefitCentroid - (2 * prefitFWHM);
+    double const refitHigh = prefitCentroid + (2 * prefitFWHM);
     
-    std::cout << "Refined Lower Bound: " << low << " Refined Upper Bound: " << high << "\n";
+    std::cout << "Refined Lower Bound: " << refitLow << " Refined Upper Bound: " << refitHigh << "\n";
     
     // TEST
     std::string const refitFuncName = "refitFn" + std::to_string(peakNum);
@@ -611,8 +641,8 @@ std::optional<TFitResultPtr> fit_individual(int const& roughCentroid, int const&
     // TEST
     
     // Define the fit function which will take refined parameters
-    // auto refitFn = new TF1("refitFn", "gaus", low, high);
-    auto refitFn = new TF1(refitFuncName.c_str(), "gaus", low, high);
+    // auto refitFn = new TF1("refitFn", "gaus", refitLow, refitHigh);
+    auto refitFn = new TF1(refitFuncName.c_str(), "gaus", refitLow, refitHigh);
     
     // Perform a refit using the fitted params
     refitFn->SetParameters(prefitAmplitude, prefitCentroid, prefitSigma);
@@ -622,21 +652,27 @@ std::optional<TFitResultPtr> fit_individual(int const& roughCentroid, int const&
     // Define names for each parameter
     
     // TEST - Set parameter limits for finding centroid
-    // double const refitCentroidLimitLow = prefitCentroid - (1 * prefitFWHM);
-    // double const refitCentroidLimitHigh = prefitCentroid + (1 * prefitFWHM);
-    // prefitFn->SetParLimits(1, refitCentroidLimitLow, refitCentroidLimitHigh); // mean is arg[1]
-    // double const refitSigmaLimitLow = prefitSigma * 0.5;
-    // double const refitSigmaLimitHigh = prefitSigma * 1.5;
-    // prefitFn->SetParLimits(2, refitSigmaLimitLow, refitSigmaLimitHigh); // sigma is arg[2]
+    double const refitAmplitudeLimitLow = prefitAmplitude * 0.9;
+    double const refitAmplitudeLimitHigh = prefitAmplitude * 1.1;
+    refitFn->SetParLimits(0, refitAmplitudeLimitLow, refitAmplitudeLimitHigh); // sigma is arg[2]
+    double const refitCentroidLimitLow = prefitCentroid - (1 * prefitFWHM); // TODO: Maybe tighter here
+    double const refitCentroidLimitHigh = prefitCentroid + (1 * prefitFWHM); // TODO: Maybe tighter here
+    refitFn->SetParLimits(1, refitCentroidLimitLow, refitCentroidLimitHigh); // mean is arg[1]
+    double const refitSigmaLimitLow = prefitSigma * 0.75; // TODO: Maybe tighter here
+    double const refitSigmaLimitHigh = prefitSigma * 1.25; // TODO: Maybe tighter here
+    refitFn->SetParLimits(2, refitSigmaLimitLow, refitSigmaLimitHigh); // sigma is arg[2]
     // NOTE: May want to consder limits for amplitude and sigma, but not sure its as
     // relevant for those (maybe wrong on that though)
     // TEST
     
     // Calculate the results of the refit
     // TFitResultPtr const refitResult = hpx->Fit(refitFn, "RS"); // overwrite function list
-    TFitResultPtr const refitResult = hpx->Fit(refitFn, "RS+0");
+    // TFitResultPtr const refitResult = hpx->Fit(refitFn, "RS+0");
     // TFitResultPtr const refitResult = hpx->Fit(refitFn, "RS+0L");
-    // NOTE: Append to function list ("+"), disable auto draw ("0")
+    TFitResultPtr const refitResult = hpx->Fit(refitFn, "RS+0B");
+    // TFitResultPtr const refitResult = hpx->Fit(refitFn, "RS+0BL");
+    // NOTE: Append to function list ("+"), disable auto draw ("0"), respect limits/initial param val ("B")
+    // NOTE: Implementing log likelihood method on the refit causes weird behaviour
     
     // Handle refit error
     if (refitResult->Status() != 0) {
@@ -1061,7 +1097,8 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
         fitResults.push_back(fitResult.value());
     }
     
- 
+    
+    // return 1; // debug
     
     
     
@@ -1324,6 +1361,9 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
     for (int i = 0; i < numPeaks; i++) {
         // Write custom statistics to list for each fitted peak
         int statsLinesError = get_stats_lines(fitResults[i], countsResults[i], listOfLines);
+        // TODO: Individual peak fits are giving FWHM much larger than the full fit,
+        // yet im displaying initial fit values, maybe change this:
+        // int statsLinesError = get_stats_lines(fullFitResult, countsResults[i], listOfLines);
         
         // Handle statistics writing
         if (statsLinesError) {
