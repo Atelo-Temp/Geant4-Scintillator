@@ -480,6 +480,17 @@ int reset () {
  * 
  * TODO: Explore log likelihood fit method ("L" flag passed to hpx->fit()), is 
  * potentially better for energy spectra
+ * 
+ * TODO: Need to introduce a means of checking whether the initial maxBin search
+ * wanders off towards another peak, i.e., across the range provided, considering
+ * a source with closely merged shoulders like 133Ba:
+ * - when a positive gradient is encountered, and it tops out, then begins to fall,
+ * mark the rough mean (dy/dx = 0) as a potential centroid, then continue the search,
+ * marking any other centroids encountered. 
+ * - After the search is complete, find the centroid which is closest to the rough
+ * centroid provided
+ * - Or, use peakNum, i.e., if search encounters 2 peaks, but peakNum = 1, go for
+ * the first peak, else if peakNum = 2, go for the second peak
  */
 std::optional<TFitResultPtr> fit_individual(int const& roughCentroid, int const& roughFWHM, int const& peakNum) {
     // Log input params to stdout
@@ -1142,6 +1153,11 @@ int draw_fit_stats(TList* listOfLines) {
  * but the performance difference is negligible for current purposes
  * 
  * TODO: Extract processes out to handlers
+ * 
+ * TODO: Consider parameter limits on full fit (but maybe omit)
+ * ^ have to be careful, fwhm on 60Co individual peak fits is much larger
+ * than the fwhm result from the full fit, using that larger fwhm with too
+ * tight of param limits will mess up the full fit
  */
 int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
     // 1) Copy initialiser list contents to vector, check if theyre in ascending order

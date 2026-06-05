@@ -4,6 +4,130 @@ NOTE: Code in many of the earlier macros (and even some of the later macros) is 
 intentionally rough, poorly designed, non-refactored, etc, for reference. The final versions
 will be where i clean up the code significantly.
 
+## ASCII (.Spe) Format
+
+SPE files are Block Structured ASCII (BSA) files that can be viewed or modified with any available text editor.
+
+A BSA-file is divided into blocks. Each block is identified by a string that starts with a dollar sign ($) and ends with a colon (:).
+
+Thus, $BLOCK_NAME:.
+
+The structure of the data in each block is uniquely defined; the order in which blocks may appear in the file is, however, not always defined.
+
+These ROOT macros are designed to handle BSA-files exported from Maestro spectroscopy software, and follow the format:
+
+- Spectrum ID
+
+```text
+$SPEC_ID:
+<description>
+```
+
+- Spectrum Remarks
+
+```text
+$SPEC_REM:
+<remark1>
+<remark2>
+...
+<remarkN>
+```
+
+- Measurement Date
+
+```text
+$DATE_MEA: (start date of measurement)
+<month/day/year> <hour:min:sec>
+```
+
+- Measurement time
+
+```text
+$MEAS_TIM: (spectrum measurement time in seconds)
+<livetime> <truetime>
+```
+
+- Data
+
+```text
+$DATA: (spectral data)
+<lower channel number> <upper channel number>
+<data line 1>
+...
+<data line n>
+```
+
+- ROI
+
+```text
+$ROI: (regions of interest)
+num_roi
+lower_chan_no(1) upper_chan_no(1)
+lower_chan_no(n) upper_chan_no(n)
+```
+
+- Presets
+
+```text
+$PRESETS:
+...
+```
+
+- ...
+
+```text
+$ENER_FIT:
+offset slope quadratic
+```
+
+- ...
+
+```text
+$MCA_CAL:
+num_coefficients
+```
+
+- ...
+
+```text
+$SHAPE_CAL:
+```
+
+- Example format
+
+NOTE: Channel data condensed to ellipsis for brevity.
+
+```text
+$SPEC_ID:
+DeT_2
+$SPEC_REM:
+DET# 1
+DETDESC# PHY-R11-02 Easy-MCA-2k SN 12319717
+AP# Maestro Version 7.01
+$DATE_MEA:
+11/01/2024 16:27:06
+$MEAS_TIM:
+600 600
+$DATA:
+0 2047
+...
+$ROI:
+1
+1550 1773
+$PRESETS:
+Live Time
+600
+0
+$ENER_FIT:
+0.000000 0.000000
+$MCA_CAL:
+3
+0.000000E+000 0.000000E+000 0.000000E+000 
+$SHAPE_CAL:
+3
+0.000000E+000 0.000000E+000 0.000000E+000
+```
+
 ## Project Ordering
 
 NOTE: ascii_to_root.cc is pulled from root.cern tutorials, hence not listed here
@@ -106,36 +230,55 @@ Implements:
 
 17a) multi_fit_a.cc
 
-NOTE: Extension of ascii_fit.cc
+> NOTE: Extension of ascii_fit.cc
 
-Able to fit multiple peaks (i.e. 60Co, or even 133Ba) for lab spectra (ASCII - .SPE)
+Able to fit multiple peaks (i.e. 60Co, or even 133Ba) for lab spectra (ASCII - .Spe)
 
-> Performs full fit first, extracts params, then performs fits on indidual peaks 
+Performs full fit first, extracts params, then performs fits on indidual peaks 
 
 17b) multi_fit_b.cc
 
-NOTE: Extension of ascii_fit.cc
+> NOTE: Extension of ascii_fit.cc
 
-Able to fit multiple peaks (i.e. 60Co, or even 133Ba) for lab spectra (ASCII - .SPE)
+Able to fit multiple peaks (i.e. 60Co, or even 133Ba) for lab spectra (ASCII - .Spe)
 
-> Performs fits on indidual peaks first, extracts params, then performs full fit
+Performs fits on indidual peaks first, extracts params, then performs full fit
 
 18) background_fit.cc
 
-NOTE: Extension of ascii_fit.cc (multi-peak fitting is intentionally omitted for this one to focus on the linear component)
+> NOTE: Extension of ascii_fit.cc (multi-peak fitting is intentionally omitted for this one to focus on the linear component)
 
 Fit a single peak in an ASCII lab spectrum using a gaussian + 1st order polynomial background fit function
 
-NOTE: The idea here isnt to fit to the entire spectra besides the peak (i.e., x-rays, compton region, backscatter, compton edge, etc...),
+> NOTE: The idea here isnt to fit to the entire spectra besides the peak (i.e., x-rays, compton region, backscatter, compton edge, etc...),
 instead the chi2/ndf of the photopeak fit can be improved tenfold by introducing a small linear background component 
 (the lower energy tail is typically visually higher then the higher energy tail, creating a sort of slanted gaussian), 
 which ends up being a good first order approximation when considering the immediate vicinity to the left and right of the photopeak.
 
->>> TODOS
-
 19) spectra_fit.cc (alt: spectrum_fit.cc, lab_fit.cc)
 
 Combines multi-peak fitting (from multi_fit_b.cc) and background component addition (from background_fit.cc)
+
+20) read_spe.cc
+
+The ASCII (.Spe) file reading in previous macros has been rudimentary. This simply improves upon the "fill_hist()" or "fill_hist_ascii()" methods seen prior.
+
+> NOTE: This parses this header blocks ($...:), instead of relying on arbitrary line numbers, which in turn also allows for extracting live time (relevant for background subtraction) from the file.
+
+## TODOS
+
+21) background_subtract.cc
+
+Fill a ROOT TH1 with an ASCII (.Spe) lab spectrum (recorded with a source), then subtracts ASCII (.Spe) background spectrum (recorded with no source)
+
+NOTE: Likely best to populate two histograms hpx1 = source spectrum, hpx2 = background spectrum, use: TH1::Add(hpx1, hpx2, 1, -1);
+
+Potentially then saving the resultant spectra as a .root file.
+
+> NOTE: To account for differences in live times between the spectra recorded with a source (typically has greater
+dead time, leading to live time being shorter than real time, due to high decays/s of sources and electronics signal 
+processing time), and background only (very little, if any dead time), the background spectra is scaled using the
+live time value listed in the ASCII file.
 
 20) exponential_fit.cc
 
@@ -420,9 +563,15 @@ fit({600}, 50) // ~511 keV photopeak
 plot("/home/user/Maestro/LaBr/LaBr_300s_sources/108mAg_LaBr_750v_10coarse_3cm.Spe") // 108mAg - LaBr
 // range(600,950) // NOTE: fit() will zoom anyways
 fit({710,840}, 50) // intentionally off by a bit
+// NOTE: ~624 keV & ~722 keV photopeaks
 ```
 
 ```c++
 plot("~/Maestro/LaBr/LaBr_300s_sources/60Co_LaBr_750v_10coarse_3cm.Spe") // 60Co - LaBr
-fit({1350,1550},50)
+fit({1350,1550},50) // ~1170 keV & ~1330 keV
+```
+
+```c++
+plot("~/Maestro/LaBr/LaBr_300s_sources/133Ba_LaBr_750v_10coarse_3cm.Spe") // 133Ba - LaBr
+fit({320,350,420,450},50) // ~(276 keV, 303 keV, 356 keV & 384 keV)
 ```
