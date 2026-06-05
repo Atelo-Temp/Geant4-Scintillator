@@ -243,6 +243,308 @@ int create_hist() {
  * 3) Read next 2048 lines, i.e.:
  * if (start > end) break;
  */
+// int fill_hist_ascii() {
+//     // Handle missing input file
+//     if (!in.is_open()) {
+//         std::cerr << "\nError: No infile to read!\n";
+//         return 1;
+//     }
+//     
+//     // Handle missing histogram
+//     if (!hpx) {
+//         std::cerr << "\nError (fill_hist()): Histogram not found!\n";
+//         return 1;
+//     }
+// 
+//     // Buffer to store lines from the infile
+//     std::string buffer;
+//     
+//     // Will be assigned the live and real time of the detector
+//     unsigned int liveTime = 0;
+//     unsigned int realTime = 0;
+//     
+//     // Will be assigned start and end channel numbers (i.e., 0 and 2047)
+//     unsigned int start = 0;
+//     unsigned int end = 0;
+//     // NOTE: Start will be incremented up to max channel number, i.e. 2047
+//     
+//     // State flags
+//     bool readingData = false;
+//     
+//     // Get line reads a line from input stream into a string, until end of stream encountered
+//     // NOTE: Stores characters from current line of infile in the buffer, until "\n" is encountered
+//     // NOTE: Contents of buffer are erased at the start of next line before reading commences again
+//     // NOTE: The "\n" at the end of the line is not stored in the buffer
+//     while (std::getline(in, buffer)) {
+//         // Print line number (NOTE: debug)
+//         // std::cout << nlines << "\n";
+//         
+//         // Print line contents (NOTE: debug)
+//         // std::cout << buffer << "\n";
+//         
+//         // Remove trailing carriage return (lines contain hidden carriage return: "$MEAS_TIM:\r")
+//         if (!buffer.empty() && (buffer.back() == '\r')) buffer.pop_back();
+//         // NOTE: Single quote for single character delimiter, double quotes for string of chars
+//         
+//         // if (lineContent == "$MEAS_TIM:") {
+//         if (buffer == "$MEAS_TIM:") {
+//             // Go to next line, read it into the buffer
+//             if (!std::getline(in, buffer)) return 1;
+//             // std::cout << buffer << "\n"; // NOTE: debug
+//             
+//             // Create a stream for the current line
+//             std::istringstream stringStream(buffer);
+//             // NOTE: Using string stream saves doing: lineContent.substr(whitespaceIdx); etc
+//             // also, will convert from string to integer automatically
+//             
+//             // Try to pipe the line into the two line contents variables
+//             if (!(stringStream >> liveTime >> realTime)) return 1;
+//             // NOTE: Expecting: <livetime> <truetime>
+//             
+//             // NOTE: The ">>" operator attempts to read data from the stream and parse it into
+//             // the variable. The expression "stream >> variable" returns a reference to the stream
+//             // itself. When placed inside an if statement, the stream is automatically evaluated as 
+//             // a boolean, returning true if read was successful or false if it failed.       
+//             
+//             // Debug
+//             std::cout << "\nLive Time: " << liveTime << " Real Time: " << realTime << "\n";
+//         }
+//         
+//         // This header marks the start of the data entries
+//         // NOTE: The next line will contain lower/upper channel numbers,
+//         // and then the line after that will be the channel 0 value
+//         else if (buffer == "$DATA:") {
+//             // Go to next line, read it into the buffer
+//             if (!std::getline(in, buffer)) return 1;
+//             // std::cout << buffer << "\n"; // NOTE: debug
+//             
+//             // Create a stream for the current line
+//             std::istringstream stringStream(buffer);
+//             
+//             // Expecting: <lower channel number> <upper channel number>
+//             if (!(stringStream >> start >> end)) return 1;
+//             
+//             // Debug
+//             std::cout << "\nStart: " << start << " End: " << end << "\n";
+//             
+//             // Enable reading data flag
+//             readingData = true;
+//         }
+//         
+//         // Only parse data values (i.e. next 2048 lines for 2048 channels)
+//         while (readingData && std::getline(in, buffer) && (start <= end)) {
+//             // std::cout << buffer << "\n"; // NOTE: debug
+//             
+//             // Convert string to integer (NOTE: Strips leading whitespace)
+//             unsigned int const lineValue = stoi(buffer);
+//             
+//             // Set current bin to the integer value on current line
+//             hpx->SetBinContent(start, lineValue);
+//             // NOTE: Dont use h->Fill(converted), Instead of filling bin 0 with line 0,
+//             // its filling bin 0 every time 0 is encountered
+//             
+//             // Increment bin counter
+//             start++;
+//         }
+// 
+//         // Stop reading file once data has been parsed
+//         if ((end != 0) && (start > end)) {
+//             // std::cout << buffer << "\n"; // NOTE: Debug, should == "$ROI:"
+//             break;
+//         }
+//     }
+//     
+//     // Detach histogram from input file, then close input file
+//     hpx->SetDirectory(nullptr);
+//     in.close();
+//     in.clear();
+//     
+//     // No errors, all good
+//     return 0;
+// }
+
+/*
+ * Iterate through ASCII file, populating histogram with per-bin values
+ * 
+ * NOTE: If "$MEAS_TIM:" is encountered:
+ * 1) Read the next line for detector times
+ * 300 307
+ * 2) Set
+ * liveTime = 300;
+ * realTime = 307;
+ * 
+ * Parses the infile header for start, $DATA, then skip next line, then the following line is bin 0
+ * 
+ * NOTE: If "$DATA:" is encountered:
+ * 1) Read the next line for min/max channel numbers, i.e.:
+ * 0 2047
+ * 2) Parse the channel numbers and assign them to variables, i.e.:
+ * start = 0;
+ * end = 2047;
+ * 3) Read next 2048 lines, i.e.:
+ * if (start > end) break;
+ */
+// int fill_hist_ascii() {
+//     // Handle missing input file
+//     if (!in.is_open()) {
+//         std::cerr << "\nError: No infile to read!\n";
+//         return 1;
+//     }
+//     
+//     // Handle missing histogram
+//     if (!hpx) {
+//         std::cerr << "\nError (fill_hist()): Histogram not found!\n";
+//         return 1;
+//     }
+// 
+//     // Buffer to store lines from the infile
+//     std::string buffer;
+//     
+//     // Will be assigned the live and real time of the detector
+//     unsigned int liveTime = 0;
+//     unsigned int realTime = 0;
+//     
+//     // Will be assigned start and end channel numbers (i.e., 0 and 2047)
+//     unsigned int start = 0;
+//     unsigned int end = 0;
+//     // NOTE: Start will be incremented up to max channel number, i.e. 2047
+//     
+//     // State flags
+//     bool readingData = false;
+//     
+//     // Get line reads a line from input stream into a string, until end of stream encountered
+//     // NOTE: Stores characters from current line of infile in the buffer, until "\n" is encountered
+//     // NOTE: Contents of buffer are erased at the start of next line before reading commences again
+//     // NOTE: The "\n" at the end of the line is not stored in the buffer
+//     while (std::getline(in, buffer)) {
+//         // Print line number (NOTE: debug)
+//         // std::cout << nlines << "\n";
+//         
+//         // Print line contents (NOTE: debug)
+//         // std::cout << buffer << "\n";
+//         
+//         // Remove trailing carriage return (lines contain hidden carriage return: "$MEAS_TIM:\r")
+//         if (!buffer.empty() && (buffer.back() == '\r')) buffer.pop_back();
+//         // NOTE: Single quote for single character delimiter, double quotes for string of chars
+//         
+//         // if (lineContent == "$MEAS_TIM:") {
+//         if (buffer == "$MEAS_TIM:") {
+//             // Go to next line, read it into the buffer
+//             if (!std::getline(in, buffer)) return 1;
+//             // std::cout << buffer << "\n"; // NOTE: debug
+//             
+//             // Create a stream for the current line
+//             std::istringstream stringStream(buffer);
+//             // NOTE: Using string stream saves doing: lineContent.substr(whitespaceIdx); etc
+//             // also, will convert from string to integer automatically
+//             
+//             // Try to pipe the line into the two line contents variables
+//             if (!(stringStream >> liveTime >> realTime)) return 1;
+//             // NOTE: Expecting: <livetime> <truetime>
+//             
+//             // NOTE: The ">>" operator attempts to read data from the stream and parse it into
+//             // the variable. The expression "stream >> variable" returns a reference to the stream
+//             // itself. When placed inside an if statement, the stream is automatically evaluated as 
+//             // a boolean, returning true if read was successful or false if it failed.       
+//             
+//             // Debug
+//             std::cout << "\nLive Time: " << liveTime << " Real Time: " << realTime << "\n";
+//         }
+//         
+//         // This header marks the start of the data entries
+//         // NOTE: The next line will contain lower/upper channel numbers,
+//         // and then the line after that will be the channel 0 value
+//         else if (buffer == "$DATA:") {
+//             // Go to next line, read it into the buffer
+//             if (!std::getline(in, buffer)) return 1;
+//             // std::cout << buffer << "\n"; // NOTE: debug
+//             
+//             // Create a stream for the current line
+//             std::istringstream stringStream(buffer);
+//             
+//             // Expecting: <lower channel number> <upper channel number>
+//             if (!(stringStream >> start >> end)) return 1;
+//             
+//             // Debug
+//             std::cout << "\nStart: " << start << " End: " << end << "\n";
+//             
+//             // Enable reading data flag
+//             readingData = true;
+//         }
+//         
+//         // Only try to parse once $DATA header encountered
+//         if (!readingData) continue;
+//         
+//         // ...
+//         unsigned int dataValue;
+// 
+//         // Only parse data values (i.e. next 2048 lines for 2048 channels)
+//         for (int i = start; i <= end; i++) {
+//             // std::cout << buffer << "\n"; // NOTE: debug
+//             
+//             // ...
+//             if (!std::getline(in, buffer)) {
+//                 std::cerr << "\nError: Failed to read line\n";
+//                 return 1;
+//             }
+//             
+//             // Create a stream for the current line
+//             std::istringstream dataStream(buffer);
+//             
+//             // Convert string to integer (NOTE: Strips leading whitespace)
+//             if (!(dataStream >> dataValue)) {
+//                 std::cerr << "\nError: Failed to pipe data\n";
+//                 return 1;
+//             }
+//             
+//             // Set current bin to the integer value on current line
+//             hpx->SetBinContent(i, dataValue);
+//             // NOTE: Dont use h->Fill(converted), Instead of filling bin 0 with line 0,
+//             // its filling bin 0 every time 0 is encountered
+//             
+//             // Mark parsing as complete
+//             if (i == end) readingData = false;
+//         }
+//         
+//         // Stop reading file once data has been parsed (NOTE: Dont technically need bool check here)
+//         if (!readingData) {
+//             // if (!std::getline(in, buffer)) return 1; // NOTE: Line still = channel 2048 after loop
+//             // std::cout << buffer << "\n"; // NOTE: Debug, should == "$ROI:"
+//             break;
+//         }
+//     }
+//     
+//     // Detach histogram from input file, then close input file
+//     hpx->SetDirectory(nullptr);
+//     in.close();
+//     in.clear();
+//     
+//     // No errors, all good
+//     return 0;
+// }
+
+
+/*
+ * Iterate through ASCII file, populating histogram with per-bin values
+ * 
+ * NOTE: If "$MEAS_TIM:" is encountered:
+ * 1) Read the next line for detector times
+ * 300 307
+ * 2) Set
+ * liveTime = 300;
+ * realTime = 307;
+ * 
+ * Parses the infile header for start, $DATA, then skip next line, then the following line is bin 0
+ * 
+ * NOTE: If "$DATA:" is encountered:
+ * 1) Read the next line for min/max channel numbers, i.e.:
+ * 0 2047
+ * 2) Parse the channel numbers and assign them to variables, i.e.:
+ * start = 0;
+ * end = 2047;
+ * 3) Read next 2048 lines, i.e.:
+ * if (start > end) break;
+ */
 int fill_hist_ascii() {
     // Handle missing input file
     if (!in.is_open()) {
@@ -314,7 +616,7 @@ int fill_hist_ascii() {
         // NOTE: The next line will contain lower/upper channel numbers,
         // and then the line after that will be the channel 0 value
         else if (buffer == "$DATA:") {
-            // Go to next line, read it into the buffer
+            // Go to next line, try to read it into the buffer
             if (!std::getline(in, buffer)) return 1;
             // std::cout << buffer << "\n"; // NOTE: debug
             
@@ -327,72 +629,44 @@ int fill_hist_ascii() {
             // Debug
             std::cout << "\nStart: " << start << " End: " << end << "\n";
             
-            // Enable reading data flag
-            readingData = true;
-        }
-        
-        // Only parse data values (i.e. next 2048 lines for 2048 channels)
-//         while (readingData && std::getline(in, buffer) && (start <= end)) {
-//             // std::cout << buffer << "\n"; // NOTE: debug
-//             
-//             // Convert string to integer (NOTE: Strips leading whitespace)
-//             unsigned int const lineValue = stoi(buffer);
-//             
-//             // Set current bin to the integer value on current line
-//             hpx->SetBinContent(start, lineValue);
-//             // NOTE: Dont use h->Fill(converted), Instead of filling bin 0 with line 0,
-//             // its filling bin 0 every time 0 is encountered
-//             
-//             // Increment bin counter
-//             start++;
-//         }
+            // Only try to parse once $DATA header encountered
+            unsigned int dataValue;
 
-        // Stop reading file once data has been parsed
-        // if ((end != 0) && (start > end)) {
-        //     // std::cout << buffer << "\n"; // NOTE: Debug, should == "$ROI:"
-        //     break;
-        // }
-        
-        // Only try to parse once $DATA header encountered
-        if (!readingData) continue;
-        
-        // ...
-        unsigned int dataValue;
-
-        // Only parse data values (i.e. next 2048 lines for 2048 channels)
-        for (int i = start; i <= end; i++) {
-            // std::cout << buffer << "\n"; // NOTE: debug
-            
-            // ...
-            if (!std::getline(in, buffer)) {
-                std::cerr << "\nError: Failed to read line\n";
-                return 1;
+            // Only parse data values (i.e. next 2048 lines for 2048 channels)
+            for (int i = start; i <= end; i++) {
+                // std::cout << buffer << "\n"; // NOTE: debug
+                
+                // Go to next line, try to read it into the buffer
+                if (!std::getline(in, buffer)) {
+                    std::cerr << "\nError: Failed to read line\n";
+                    return 1;
+                }
+                
+                // Create a stream for the current line
+                std::istringstream dataStream(buffer);
+                
+                // Convert string to integer
+                if (!(dataStream >> dataValue)) {
+                    std::cerr << "\nError: Failed to pipe data\n";
+                    return 1;
+                }
+                // NOTE: Strips leading whitespace, which is desirable as data entries have format:
+                // "       0", "    8010", etc
+                // NOTE: std::to_chars doesnt strip leading whitespace, otherwise it would be preferred
+                
+                // Set current bin to the integer value on current line
+                hpx->SetBinContent(i + 1, dataValue);
+                // NOTE: Dont use h->Fill(converted), Instead of filling bin 0 with line 0,
+                // its filling bin 0 every time 0 is encountered
+                
+                // NOTE: When instantiating a ROOT histogram with nbins = 2048, there are actually
+                // 2050 bins created, with bin 0 being underflow, and bin 2050 being overflow, so we
+                // want to increment i by 1 when writing to bins
             }
-            
-            // Create a stream for the current line
-            std::istringstream dataStream(buffer);
-            
-            // Convert string to integer (NOTE: Strips leading whitespace)
-            if (!(dataStream >> dataValue)) {
-                std::cerr << "\nError: Failed to pipe data\n";
-                return 1;
-            }
-            
-            // Set current bin to the integer value on current line
-            hpx->SetBinContent(i, dataValue);
-            // NOTE: Dont use h->Fill(converted), Instead of filling bin 0 with line 0,
-            // its filling bin 0 every time 0 is encountered
-            
-            // Mark parsing as complete
-            if (i == end) readingData = false;
         }
         
-        // Stop reading file once data has been parsed (NOTE: Dont technically need bool check here)
-        if (!readingData) {
-            // if (!std::getline(in, buffer)) return 1; // NOTE: Line still = channel 2048 after loop
-            // std::cout << buffer << "\n"; // NOTE: Debug, should == "$ROI:"
-            break;
-        }
+        // NOTE: Instead of checking for data reading being complete and exiting,
+        // could add $ROI, $PRESETS, etc checks down here
     }
     
     // Detach histogram from input file, then close input file
