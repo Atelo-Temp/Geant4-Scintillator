@@ -16,9 +16,10 @@
 // C lib
 #include <fstream>
 #include <sstream>
-#include <optional>
+// #include <optional>
 #include <string>
 // #include <algorithm>
+#include <charconv> // std::from_chars
 
 // Global root object variables
 std::ifstream in;
@@ -267,6 +268,9 @@ int fill_hist_ascii() {
     unsigned int end = 0;
     // NOTE: Start will be incremented up to max channel number, i.e. 2047
     
+    // State flags
+    bool readingData = false;
+    
     // Get line reads a line from input stream into a string, until end of stream encountered
     // NOTE: Stores characters from current line of infile in the buffer, until "\n" is encountered
     // NOTE: Contents of buffer are erased at the start of next line before reading commences again
@@ -279,13 +283,13 @@ int fill_hist_ascii() {
         // std::cout << buffer << "\n";
         
         // Remove trailing carriage return (lines contain hidden carriage return: "$MEAS_TIM:\r")
-        if (buffer.back() == '\r') buffer.pop_back();
+        if (!buffer.empty() && (buffer.back() == '\r')) buffer.pop_back();
         // NOTE: Single quote for single character delimiter, double quotes for string of chars
         
         // if (lineContent == "$MEAS_TIM:") {
         if (buffer == "$MEAS_TIM:") {
             // Go to next line, read it into the buffer
-            std::getline(in, buffer);
+            if (!std::getline(in, buffer)) return 1;
             // std::cout << buffer << "\n"; // NOTE: debug
             
             // Create a stream for the current line
@@ -311,7 +315,7 @@ int fill_hist_ascii() {
         // and then the line after that will be the channel 0 value
         else if (buffer == "$DATA:") {
             // Go to next line, read it into the buffer
-            std::getline(in, buffer);
+            if (!std::getline(in, buffer)) return 1;
             // std::cout << buffer << "\n"; // NOTE: debug
             
             // Create a stream for the current line
@@ -322,27 +326,70 @@ int fill_hist_ascii() {
             
             // Debug
             std::cout << "\nStart: " << start << " End: " << end << "\n";
+            
+            // Enable reading data flag
+            readingData = true;
         }
         
         // Only parse data values (i.e. next 2048 lines for 2048 channels)
-        while ((end != 0) && std::getline(in, buffer) && (start <= end)) {
-            // Debug
-            // std::cout << buffer << "\n";
+//         while (readingData && std::getline(in, buffer) && (start <= end)) {
+//             // std::cout << buffer << "\n"; // NOTE: debug
+//             
+//             // Convert string to integer (NOTE: Strips leading whitespace)
+//             unsigned int const lineValue = stoi(buffer);
+//             
+//             // Set current bin to the integer value on current line
+//             hpx->SetBinContent(start, lineValue);
+//             // NOTE: Dont use h->Fill(converted), Instead of filling bin 0 with line 0,
+//             // its filling bin 0 every time 0 is encountered
+//             
+//             // Increment bin counter
+//             start++;
+//         }
+
+        // Stop reading file once data has been parsed
+        // if ((end != 0) && (start > end)) {
+        //     // std::cout << buffer << "\n"; // NOTE: Debug, should == "$ROI:"
+        //     break;
+        // }
+        
+        // Only try to parse once $DATA header encountered
+        if (!readingData) continue;
+        
+        // ...
+        unsigned int dataValue;
+
+        // Only parse data values (i.e. next 2048 lines for 2048 channels)
+        for (int i = start; i <= end; i++) {
+            // std::cout << buffer << "\n"; // NOTE: debug
+            
+            // ...
+            if (!std::getline(in, buffer)) {
+                std::cerr << "\nError: Failed to read line\n";
+                return 1;
+            }
+            
+            // Create a stream for the current line
+            std::istringstream dataStream(buffer);
             
             // Convert string to integer (NOTE: Strips leading whitespace)
-            unsigned int const lineValue = stoi(buffer);
+            if (!(dataStream >> dataValue)) {
+                std::cerr << "\nError: Failed to pipe data\n";
+                return 1;
+            }
             
             // Set current bin to the integer value on current line
-            hpx->SetBinContent(start, lineValue);
+            hpx->SetBinContent(i, dataValue);
             // NOTE: Dont use h->Fill(converted), Instead of filling bin 0 with line 0,
             // its filling bin 0 every time 0 is encountered
             
-            // Increment bin counter
-            start++;
+            // Mark parsing as complete
+            if (i == end) readingData = false;
         }
         
-        // Stop reading file once data has been parsed
-        if ((end != 0) && (start > end)) {
+        // Stop reading file once data has been parsed (NOTE: Dont technically need bool check here)
+        if (!readingData) {
+            // if (!std::getline(in, buffer)) return 1; // NOTE: Line still = channel 2048 after loop
             // std::cout << buffer << "\n"; // NOTE: Debug, should == "$ROI:"
             break;
         }
