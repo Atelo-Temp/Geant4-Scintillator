@@ -41,6 +41,10 @@ enum class RootObjectType {
 // Active object type flag
 RootObjectType rootObjectType = RootObjectType::NULLOBJ;
 
+// Data type identifiers (returned by TLeaf->GetTypeName())
+std::string const intType = "Int_t";
+std::string const doubleType = "Double_t";
+
 // ...
 struct SelectionReturnType {
     int selectedTypeIdx;
@@ -1080,7 +1084,7 @@ int load_root(std::string const& path) {
  * hpx->SetDirectory(nullptr);
  * Is it not better to just call it at the end of this function?
  */
-int create_hist(int nbins = 0, double xmin = -1, double xmax = 0) {
+int create_hist(int nbins = -1, double xmin = -1, double xmax = -1) {
     if (rootObjectType != RootObjectType::TTree) {
         std::cerr << "\nError: Invalid object type.\n";
     }
@@ -1123,24 +1127,21 @@ int create_hist(int nbins = 0, double xmin = -1, double xmax = 0) {
     std::string const nTupleName = nTuple->GetName();
     char const* branchName = branch->GetName();
     
-    double branchMin = nTuple->GetMinimum(branchName);
-    
-    std::string title = nTupleName + "Hpx"; // NOTE: Using the TTree name itself causes ROOT to think the histogram already exists
-    std::string legendTitle = branchName;
+    std::string const title = nTupleName + "Hpx"; // NOTE: Using the TTree name itself causes ROOT to think the histogram already exists
+    std::string const legendTitle = branchName;
     
     // Lab spectra are already 2048 channels and appropriately binned
-    if (nbins == 0 && xmin == -1 && xmax == 0) {
-        nbins = 2048; // TODO: Not sure on best approach for dynamic binning currently
-        // xmin = nTuple->GetMinimum(branchName); // should be zero
-        xmin = ((branchMin < 0.) ? branchMin : 0.); // should be zero
-        // xmin = 0;
-        // xmin = 0.;
-        xmax = (nTuple->GetMaximum(branchName)) * 1.1; // +10%
-        // xTitle = branchName;
-        
-        std::cout << "\nXMIN: " << xmin << " XMAX: " << xmax << "\n";
-    }
     
+    nbins = 2048; // TODO: Not sure on best approach for dynamic binning currently
+    // xmin = nTuple->GetMinimum(branchName); // should be zero
+    double const branchMin = nTuple->GetMinimum(branchName);
+    xmin = ((branchMin < 0.) ? branchMin : 0.); // should be zero
+    // xmin = 0;
+    // xmin = 0.;
+    xmax = (nTuple->GetMaximum(branchName)) * 1.1; // +10%
+    // xTitle = branchName;
+    
+    std::cout << "\nXMIN: " << xmin << " XMAX: " << xmax << "\n";
     
     // ...
     // std::cout << "BRANCH TYPE: " << branch->GetClassName() << "\n"; // NOTE: Prints ""
@@ -1193,7 +1194,7 @@ int create_hist(int nbins = 0, double xmin = -1, double xmax = 0) {
     // gDirectory->ls();
     
     // ...
-    if (leafType == "Int_t") {
+    if (leafType == intType) {
         // ...
         std::cout << "\n>>> Creating TH1I...\n";
         
@@ -1211,7 +1212,7 @@ int create_hist(int nbins = 0, double xmin = -1, double xmax = 0) {
         // hpx->SetDirectory(nullptr);
     }
     // ...
-    else if (leafType == "Double_t") {
+    else if (leafType == doubleType) {
         // ...
         std::cout << "\n>>> Creating TH1D...\n";
         
@@ -1244,67 +1245,6 @@ int create_hist(int nbins = 0, double xmin = -1, double xmax = 0) {
     
     // No errors, all good
     return 0;
-}
-
-/*
- * NOTE: With the higher resolution (2048 bins vs 1024 bins previously),
- * aliasing is seen when plotting the Ntuples data in a histogram,
- * to account for the higher resolution, we can apply a gaussian smearing
- * to reduce the jagged edges
- * 
- * TODO: Make smearing optional, potentially via boolean param
- * 
- * TODO: When calling plot(), may need to 
- */
-double post_processing(int const entry) {
-// TODO: int const post_processing(int entry, int nbins = 2048, int xmax = 3500) {
-    // In counting statistics: sigma = sqrt(N)
-    double const sigma = std::sqrt(entry);
-    // TODO: This assumes pure Poisson statistics, in a real detector system,
-    // resolution is a combination of:
-    // sigma_scintillator + sigma_transfer + sigma_PMT
-    // in geant4 RESOLUTIONSCALE covers sigma_scintillator,
-    // geometry and photocathode efficiency covers sigma_transfer,
-    // and this sigma covers sigma_PMT (but doesnt neccesarily model is accurately)
-    
-    // double const sigma = 0.5 * std::sqrt(entry);
-    // double const sigma = entry * (0.08 / 2.355);
-    // NOTE: ^ 1.8 res scale, n * (res lab / 2.355) = 114.02 FWHM
-    
-    // Apply gaussian smearing to the photons detected in this event
-    double const smeared = gRandom->Gaus(entry, sigma);
-    // TODO: potentially reduce gaussian smearing, reducing from:
-    // sigma = sqrt(n)
-    // to:
-    // sigma = 0.5 * sqrt(n)
-    // reduces FWHM from ~105.35 FWHM (at 1.8 res scale), to 91.16 (still at 1.8 res scale)
-    // NOTE: Impacts FWHM more than i initially thought
-    
-    // Conversion factor from num optical photons "detected" to 0-2048 channel number
-    double const conversion = 2048. / 3500.;
-    // double const conversion = 1024. / 3500.;
-    // NOTE: 3500 photons is arbitrary currently, in practice, this value should
-    // reflect the upper window limit for the energy region of interest, i.e.:
-    // 0 - 2 MeV
-    
-    // TODO: ^^ potentially make nbins & xmax global variables, set prior to fit,
-    // or pass them in as params to this fn
-    
-    // Convert entry to channel number
-    // int const channel = conversion * smeared; // int channel = std::floor(conversion * entry);
-    double const channel = conversion * smeared;
-    // NOTE: Let H1 handle binning doubles rather than flooring
-    
-    // NOTE: Can also apply a gain factor (but would likely want to establish 
-    // this value accurately from the physical detector rather than using estimate):
-    // int const gain = 1e6;
-    // int const nTotal = entry * gain;
-    // double const sigma = gain * std::sqrt(entry);
-    // double const smeared = gRandom->Gaus(nTotal, sigma);
-    // double const conversion = 2048. / (3500. * gain);
-    // double const channel = conversion * smeared;
-    
-    return channel;
 }
 
 /*
@@ -1382,10 +1322,6 @@ int fill_hist_ntuple() {
     
     std::cout << "\nSetting branch address for: " << branchName << "\n";
     
-    // Data type identifiers (returned by TLeaf->GetTypeName())
-    std::string const intType = "Int_t";
-    std::string const doubleType = "Double_t";
-    
     //...
     if (dataType == intType) {
         // std::cout << "\n>>> INT TYPE\n";
@@ -1416,15 +1352,6 @@ int fill_hist_ntuple() {
     
     // ...
     std::cout << "\nFilling histogram from TTree branch...\n";
-    
-    
-    // TEST
-    // double mean;
-    // double min;
-    // double max;
-    // ...
-    // TEST
-    
     
     // Read all entries in the branch
     for (long long i = 0; i < numEntries; i++) {
@@ -1571,11 +1498,10 @@ int render_hist() {
 /*
  * Validate file path, load file into memory, instantiate histogram, fill histogram,
  * instantiate canvas, render histogram
+ * 
+ * @userPath - path to ".root" file (absolute, or relative)
  */
-int plot(std::string const userPath, int const nbins = 0, double const xmin = 0, double const xmax = 0, std::string const objectName = "") {
-    // ...
-    std::cout << "\nHIST PARAMS:\nX Min: " << xmin << " X Max: " << xmax << " Num Bins: " << nbins << "\n";
-    
+int plot(std::string const userPath) {
     // NOTE: Must delete TBranch -> then delete TTree -> then delete TFile,
     // trying to delete the TBranch AFTER already deleting the TTree will result in a segfault
     // likewise for trying to delete TTree after deleting TFile (assuming TTree->SetDirectory() wasnt called)
@@ -1658,7 +1584,7 @@ int plot(std::string const userPath, int const nbins = 0, double const xmin = 0,
     if (rootObjectType == RootObjectType::TTree) {
     
         // Attempt to instantiate histogram object
-        int const histError = create_hist(nbins, xmin, xmax);
+        int const histError = create_hist();
         
         if (histError) {
             std::cerr << "\nAborting: Create hist error!\n";
@@ -1707,139 +1633,4 @@ int plot(std::string const userPath, int const nbins = 0, double const xmin = 0,
     
     // No errors, all good
     return 0;
-}
-
-/*
- * TODO ...
- */
-int add_axis_title(std::string const& title) {
-    return 1;
-}
-
-/*
- * Prompts user for input, reads response, returns success/fail val based on response
- */
-int prompt_user_char(std::string const &question = "Do you wish to overwrite existing file?") {
-    // Prompt user for input
-    std::cout << "\n" << question << "\n";
-    std::cout << "[y/n]: ";
-    
-    // Store user input
-    std::string userInput;
-    
-    // Enter user input loop
-    while (true) {
-        // Capture the line
-        std::getline(std::cin, userInput); // NOTE: std::cin >> userInput;
-        
-        // Handle yes/no reponse, or invalid input
-        if (userInput == "y") {
-            return 0;
-        } 
-        else if (userInput == "n") {
-            return 1;
-        }
-        // If userInput.empty(), or invalid char, etc
-        else {
-            // Return to previous line, move to start of prev line, clear stdout
-            std::cout << "\033[A" << "\r" << "\033[2K" << "[y/n]: " << std::flush;
-            
-            // NOTE: "\033[A" = move the cursor up one line
-            // "\r" = move the cursor to the beginning of that line
-            // "033[2K" = clear everything from the cursor down to the bottom the screen
-            
-            // NOTE: Flush ensures the reset sequence prints to the screen immediately
-            // without waiting for a standard neline "\n" to force a bufffer flush
-        }
-        // NOTE: Else doesnt really need enclosure here
-    }
-}
-
-/*
- * Check if file already exists, if it does, check if user wants to overwrite
- * 
- * TODO: Edge case? if (temp && !temp->IsOpen())
- * 
- * NOTE: Try/catch not needed here, open doesnt appear to throw, just prints error
- * to stdout and sets temp = nullptr
- */
-int check_file(char const* path) {
-    // Attempt to open file with provided filename
-    TFile const* temp = TFile::Open(path, "READ"); // NOTE: Read only mode
-    
-    // If file already exists and was opened
-    // NOTE: Not sure if !IsZombie() is needed, as it just checks for corruption,
-    if (temp && !temp->IsZombie() && temp->IsOpen()) {
-        std::cerr << "\nError [check_file()]: File already exists!\n";
-        // Close the readonly file
-        delete temp;
-        temp = nullptr;
-                
-        // Get user response
-        int const abort = prompt_user_char(); // NOTE: 0 = overwrite, 1 = abort
-
-        // ...
-        if (!abort) std::cout << "\nOverwriting existing file...\n";
-        
-        return abort;
-    }
-    
-    // If the file does not already exist (!temp & !temp->IsOpen()) 
-    return 0;
-}
-
-/*
- * TODO: This would currently accept a .Spe outfile extension, wanna limit it to .root really
- * 
- * TODO: Calling check_path here could change the fileType flag
- * ^ i dont think its necessarily an issue, as calling "plot()" again will flip it to appropriate type anyways
- * but check_path does a lot, maybe separate bits out soon
- */
-int save(std::string const path) {
-    // Check provided path is valid (will return empty string if not valid)
-    std::string const validPath = check_path(path);
-    
-    if (validPath.empty()) {
-        std::cerr << "\nError {save()}: Invalid path error!\n";
-        return 1;
-    }
-    
-    // Convert from: std::string, to: const char*
-    char const* convertedPath = validPath.c_str();
-    
-    // Check if file already exists, and if so, whether to overwrite
-    int const invalidPath = check_file(convertedPath);
-    
-    if (invalidPath) {
-        std::cerr << "\nAborting: Please call save() with a new path.\n";
-        return 1;
-    }
-    
-    // Open outfile in recreate mode (creates ROOT file, replacing it if it already exists)
-    TFile* outfile = TFile::Open(convertedPath, "RECREATE");
-    
-    // Handle incorrect path
-    if (!outfile || !outfile->IsOpen()) {
-        std::cerr << "\nError [save()]: Couldnt create/open outfile!\n";
-        return 1;
-    }
-    
-    // Handle missing histogram
-    if (!hpx) {
-        std::cerr << "\nError (save()): Histogram not found!\n";
-        return 1;
-    }
-    
-    // Write the histogram object to the root file
-    outfile->WriteObject(hpx, "Spectrum");
-    
-    // All done
-    delete outfile;
-    outfile = nullptr;
-    
-    // Confirmation status
-    std::cerr << "\nFile has been saved.\n";
-    
-    // No errors, all good
-    return 0; 
 }
