@@ -193,7 +193,7 @@ Fit a single photopeak in a lab ASCII spectrum using a gaussian fit function
 
 > NOTE: Doesnt consider multi-peak scenarios or the background component
 
-14) plot_any.cc (alt: load_any.cc)
+14) hybdrid_plot.cc
 
 Introduces user filename input, similar to ascii_canvas.cc, but more comprehensive
 
@@ -214,19 +214,19 @@ Gives ability to save histograms to root files (handy for saving ROOT Ntuples as
 Read ASCII file, OR, per-event Ntuple data, and plot a ROOT histogram, then save the histogram (will have to apply smearing to Ntuples still) (saves storing 10+GB .root files in local data, and can reference prior runs/configurations easier)
 ^ can use load_root.cc (custom_stats.cc) esque pipeline to load it back for post-processing
 
-16) onmi_plot.cc (alt: hybrid_plot.cc,  plot_cli.cc)
-
-NOTE: This should have been named plot_any.cc tbh (maybe rename plot_any to something else, as it kinda doesnt plot any as is) (also omni feels like it should be saved for final fitting macro)
-
-Was briefly named exponential fit, but going to separate out file loading and exponential fitting into two separate macros
+16) root_explorer.cc (alt: plot_cli.cc)
 
 Implements:
-- multiple root object type handling
 - reading root file for available objects
+- multiple root object type handling
 - prompting user with object choice
 - providing filtered list of names matching that object choice
 - loading and then plotting said named object choice
 - able to swap between "int" and "double" when reading from TTree branch entries (i.e., int for num photons, but double for distances/times) (NOTE: May be better to just do double for both tbh)
+
+NOTE: Was briefly named "exponential_fit.cc", but going to separate out file loading and exponential fitting into two separate macros.
+NOTE: Was then briefly named "omnit_fit.cc", but arguably the introduction of dynamic root object selection should be its own endeavour.
+NOTE: Have stripped ASCII handling features back, so that its now just an interactive CLI for selecting ROOT objects (rather than hardcoded tree/branch names).
 
 17a) multi_fit_a.cc
 
@@ -279,6 +279,14 @@ Potentially then saving the resultant spectra as a .root file.
 dead time, leading to live time being shorter than real time, due to high decays/s of sources and electronics signal 
 processing time), and background only (very little, if any dead time), the background spectra is scaled using the
 live time value listed in the ASCII file.
+
+22) alt: onmi_plot.cc, plot_any.cc (alt: load_any.cc)
+
+NOTE: This should have been named plot_any.cc tbh (maybe rename plot_any to something else, as it kinda doesnt plot any as is) (also omni feels like it should be saved for final fitting macro)
+
+Combines:
+- ROOT object browser CLI (root_explorer.cc)
+- Updated ASCII handling (read_spe.cc)
 
 20) exponential_fit.cc
 
