@@ -261,6 +261,8 @@ which ends up being a good first order approximation when considering the immedi
 
 Combines multi-peak fitting (from multi_fit_b.cc), and background component addition (from background_fit.cc).
 
+NOTE: This works for slightly merged peaks, i.e. 60Co ~(1170 keV & 1330 keV) and 108mAg ~(624 keV & 722 keV) photopeaks, but doesnt handle 133Ba ~(276 keV, 303 keV, 356 keV & 384 keV) very tightly merged peaks well (especially on lower resolution detectors such as NaI:Tl, insead of slightly better resolution LaBr:Ce detectors). This is something a future macro will dial in on.
+
 20) read_spe.cc
 
 The ASCII (.Spe) file reading in previous macros has been rudimentary. This simply improves upon the "fill_hist()" or "fill_hist_ascii()" methods seen prior.
@@ -269,7 +271,9 @@ The ASCII (.Spe) file reading in previous macros has been rudimentary. This simp
 
 ## TODOS
 
-21) background_subtract.cc
+21) subtract_background.cc (alt: background_subtract.cc)
+
+NOTE: Extension of read_spe.cc (utilises time header parsing)
 
 Fill a ROOT TH1 with an ASCII (.Spe) lab spectrum (recorded with a source), then subtracts ASCII (.Spe) background spectrum (recorded with no source)
 
@@ -284,11 +288,15 @@ live time value listed in the ASCII file.
 
 22) plot_any.ccc (alt: onmi_plot.cc, load_any.cc)
 
-NOTE: This should have been named plot_any.cc tbh (maybe rename plot_any to something else, as it kinda doesnt plot any as is) (also omni feels like it should be saved for final fitting macro)
-
 Combines:
 - ROOT object browser CLI (root_explorer.cc)
 - Updated ASCII handling (read_spe.cc)
+- Histogram saving (save_hist.cc)
+
+Introduces:
+- Optional post-processing for ROOT Ntuples (smearing)
+- Quick replotting functionality (via caching last used filename and ROOT object name)
+- plot() function overloads
 
 20) exponential_fit.cc
 

@@ -227,6 +227,8 @@ int load_ascii(std::string const& path) {
  * "$DATA:" is encountered, mark that line number, so if say the "$MEAS_TIM" block is
  * after the data block for whatever reason, then set line number back to that number at
  * the end of this method, so that fill_hist still begins at the correct spot
+ * 
+ * TODO: if (!in.good()) break;
  */
 int parse_headers(SpeMetaData& metaData) {
     // Handle missing input file
@@ -838,6 +840,8 @@ int create_hist(int const& nbins = 2048, int const& xmin = 0, int const& xmax = 
  * 
  * TODO: May want a separate close_ascii() method, and call it from the top level,
  * rather than calling it inside of here (separation of responsibilities)
+ * 
+ * TODO: if (!in.good()) break;
  */
 int fill_hist_ascii(int const& start, int const& end) {
     // Handle missing input file
