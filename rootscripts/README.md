@@ -224,8 +224,10 @@ Implements:
 - loading and then plotting said named object choice
 - able to swap between "int" and "double" when reading from TTree branch entries (i.e., int for num photons, but double for distances/times) (NOTE: May be better to just do double for both tbh)
 
-NOTE: Was briefly named "exponential_fit.cc", but going to separate out file loading and exponential fitting into two separate macros.
-NOTE: Was then briefly named "omnit_fit.cc", but arguably the introduction of dynamic root object selection should be its own endeavour.
+NOTE: Was briefly named "exponential_fit.cc", but going to separate out file loading and exponential fitting into two separate macros (was trying to introduce too many new features at once).
+
+NOTE: Was then briefly named "omnit_fit.cc", but arguably the introduction of dynamic root object selection should be its own small endeavour, trying to introduce that while also keeping the ASCII/ROOT file type logic from hybrid_fit.cc feels a bit much (but then combining the dynamic file handling of hybrid_fit.cc and dynamic object handling of this macro feels like a natural progression from here).
+
 NOTE: Have stripped ASCII handling features back, so that its now just an interactive CLI for selecting ROOT objects (rather than hardcoded tree/branch names).
 
 17a) multi_fit_a.cc
@@ -246,7 +248,7 @@ Performs fits on indidual peaks first, extracts params, then performs full fit
 
 18) background_fit.cc
 
-> NOTE: Extension of ascii_fit.cc (multi-peak fitting is intentionally omitted for this one to focus on the linear component)
+> NOTE: Extension of ascii_fit.cc (multi-peak fitting is intentionally omitted from this one to focus on the linear component)
 
 Fit a single peak in an ASCII lab spectrum using a gaussian + 1st order polynomial background fit function
 
@@ -257,13 +259,13 @@ which ends up being a good first order approximation when considering the immedi
 
 19) spectra_fit.cc (alt: spectrum_fit.cc, lab_fit.cc)
 
-Combines multi-peak fitting (from multi_fit_b.cc) and background component addition (from background_fit.cc)
+Combines multi-peak fitting (from multi_fit_b.cc), and background component addition (from background_fit.cc).
 
 20) read_spe.cc
 
 The ASCII (.Spe) file reading in previous macros has been rudimentary. This simply improves upon the "fill_hist()" or "fill_hist_ascii()" methods seen prior.
 
-> NOTE: This parses this header blocks ($...:), instead of relying on arbitrary line numbers, which in turn also allows for extracting live time (relevant for background subtraction) from the file.
+> NOTE: This parses BSA-style header blocks ($...:), instead of relying on arbitrary line numbers, which in turn also allows for extracting parameters such as live time (relevant for background subtraction), and channel numbers from the file.
 
 ## TODOS
 
@@ -280,7 +282,7 @@ dead time, leading to live time being shorter than real time, due to high decays
 processing time), and background only (very little, if any dead time), the background spectra is scaled using the
 live time value listed in the ASCII file.
 
-22) alt: onmi_plot.cc, plot_any.cc (alt: load_any.cc)
+22) plot_any.ccc (alt: onmi_plot.cc, load_any.cc)
 
 NOTE: This should have been named plot_any.cc tbh (maybe rename plot_any to something else, as it kinda doesnt plot any as is) (also omni feels like it should be saved for final fitting macro)
 
