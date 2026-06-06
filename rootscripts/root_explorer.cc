@@ -1,4 +1,5 @@
-// Load an ASCII (.Spe) or ROOT (.root) file into memory, fill a histogram, and display it on a canvas
+// Load a ROOT (.root) file into memory, prompt the user for object choice, load chosen object,
+// open or fill a histogram, and display it on a canvas
 
 // ROOT lib
 #include <TDirectory.h>
@@ -17,31 +18,18 @@
 #include <TRandom.h> // gRandom
 
 // C lib
-#include <fstream>
-#include <sstream>
 #include <optional>
 // #include <unordered_set>
 // #include <unordered_map>
 // #include <variant>
 
 // Global root object variables
-std::ifstream inASCII;
 TFile* inROOT = nullptr;
 TTree* nTuple = nullptr;
 TBranch* branch = nullptr;
 TLeaf* leaf = nullptr;
-TH1 *hpx = nullptr;
-TCanvas *canvas = nullptr;
-
-// Accepted file types
-enum class FileType {
-    ROOT,
-    ASCII,
-    NULLFILE
-};
-
-// Active file type flag
-FileType fileType = FileType::NULLFILE;
+TH1* hpx = nullptr;
+TCanvas* canvas = nullptr;
 
 // Currently supported object types
 enum class RootObjectType {
@@ -53,16 +41,23 @@ enum class RootObjectType {
 // Active object type flag
 RootObjectType rootObjectType = RootObjectType::NULLOBJ;
 
+// ...
+struct SelectionReturnType {
+    int selectedTypeIdx;
+    std:: string selectedObjectType;
+    std::unordered_map<std::string, std::vector<std::string>> categoryMap;
+};
+
 /*
  * Load in plotting and fitting functions
  * 
  * NOTE: Executes automatically on script start (shares name with the macro file)
  * NOTE: Choose another function name if you wish to manually call it instead
  */
-int omni_plot() {
+int root_explorer() {
     // Usage
     std::cout << "\n-----------------------------------------------------------------------\n";
-    std::cout << "\nConvert ASCII & ROOT Ntuples to Root Histogram.\n";
+    std::cout << "\nROOT object browser - load histograms and convert Ntuples to Root Histogram.\n";
     std::cout << "\nTo get started, call: plot(\"path.ext\"), passing path to ASCII (.Spe) or ROOT (.root) file as param.\n";
     std::cout << "\nTo save the plotted histogram, call save(\"dir/out.root\").\n";
     std::cout << "\n-----------------------------------------------------------------------\n";
@@ -72,22 +67,18 @@ int omni_plot() {
 }
 
 /*
- * Takes path as arg, validates string is valid, updates it if needed, calls draw_histo
+ * Takes path as arg, validates string is valid, updates it if needed
  * 
- * NOTE: Can pass file extension check by going "./somefile"
- * TODO: rfind("/"), to get just the file name, before attempting to find file extension,
+ * NOTE: arg[0]: const (so its immutable)
+ * 
+ * NOTE: Uses rfind("/"), to isolate the file name, before attempting to find file extension,
  * makes checking for file extensions bit cleaner
  * 
  * TODO: Handle filenames such as .gitignore ?
  * else if (extDelimiterIdx == 0) {} 
  * NOTE: Kinda dont need to with ext check tho
- * 
- * TODO: Not sure about updating path var directly in tilde expansion, maybe just return 
- * new string in that enclosure
- * 
- * NOTE: arg[0]: std::string const path (so its immutable)
  */
-std::string check_path(std::string const& path) { // std::string check_path(std::string const path) {
+std::string check_path(std::string const& path) {
     // Print path to stdout
     std::cout << "\nUser provided path: " << path << "\n";
     
@@ -149,26 +140,15 @@ std::string check_path(std::string const& path) { // std::string check_path(std:
     // std::cout << token << std::endl;
     
     // Acceptable file extensions
-    std::string const spe = ".Spe"; // const char*
     std::string const root = ".root"; // const char*
     
     // Check path ends with valid extension, reject invalid file type
-    if (token != spe && token != root) {
+    if (token != root) {
         // Write to stdout
         std::cerr << "\nError: Invalid extension.\n";
         
         // Error value
         return "";
-    }
-    // If its an ASCII file extension, log it and set ASCII flag
-    else if (token == spe) {
-        std::cout << "\nASCII file detected.\n";
-        fileType = FileType::ASCII;
-    }
-    // If its a ROOT file extension, log it and set ROOT flag
-    else if (token == root) {
-        std::cout << "\nROOT file detected.\n";
-        fileType = FileType::ROOT;
     }
 
     // Replace tilde if passed
@@ -320,53 +300,6 @@ void root_cleanup() {
 }
 
 /*
- * Handle closing ASCII input file after reading complete
- * 
- * NOTE: Dont need: if (!inASCII.is_open()) check before clear here, will always
- * return false, std::ifstream close delegates task to lower level file buffer,
- * and if os error occurs, stream is marked broken by setting failbit, and even
- * if failbit is triggered, connection between ifstream object and the file is
- * completely severed
- * 
- * NOTE: Also, calling .clear() on clean stream does no harm
- */
-void ascii_cleanup() {
-    inASCII.close(); // Sever connection
-    inASCII.clear(); // NOTE: Resets the flags for the next file
-}
-
-/*
- * Validate .Spe file can be opened/exists, load it into local memory if so
- * 
- * TODO: Probably wanna validate is expected ASCII format too:
- * line 1: $SPEC_ID:
- * 
- * NOTE: std::ifstream sets internal error flags immediately on failure,
- * so only need to check (!inASCII) really
- */
-int load_ascii(std::string const& path) {
-    // Open the ASCII file with validated .Spe extension
-    inASCII.open(path);
-    
-    // Ensure file was found, exit with error if its not
-    // NOTE: No need to reprompt, user can just call the function again
-    if (!inASCII || !inASCII.is_open()) {
-        // Error message
-        std::cerr << "Error: File not found.\n";
-        // NOTE: Triggers if file is missing, corrupted, or locked
-        
-        // Error
-        return 1;
-    };
-    
-    // Success message
-    std::cout << "\nASCII file has been loaded into memory.\n";
-    
-    // No errors, all good
-    return 0;
-}
-
-/*
  * Open ROOT file containing ROOT objects, load it into local memory, check its not empty 
  * (i.e., contains at least one ROOT object)
  */
@@ -412,8 +345,10 @@ int load_root_file(std::string const& path) {
  * 
  * TODO: Could just read number of chars equal to high, instead of user having to press enter
  * ^ but this wouldnt work if low was 1 digit, and high was 2 digits
+ * 
+ * TODO: std::from_chars (returns error codes instead of throwing)
  */
-int prompt_user_int(int low, int high) {
+int prompt_user_int(int const low, int const high) {
     // Prompt user for input
     // std::cout << "[int]: ";
     
@@ -475,13 +410,6 @@ int prompt_user_int(int low, int high) {
         }
     }
 }
-
-// ...
-struct SelectionReturnType {
-    int selectedTypeIdx;
-    std:: string selectedObjectType;
-    std::unordered_map<std::string, std::vector<std::string>> categoryMap;
-};
 
 /*
  * TTree (Ntuple), TH1D (1D Histogram)
@@ -703,7 +631,7 @@ std::optional<SelectionReturnType> select_root_type() {
     }
     
     // ...
-    struct SelectionReturnType result { selectedTypeIdx, selectedObjectType, categoryMap };
+    SelectionReturnType result = { selectedTypeIdx, selectedObjectType, categoryMap };
     
     // ...
     return result;
@@ -1132,30 +1060,6 @@ int load_root(std::string const& path) {
 }
 
 /*
- * Executes ASCII or ROOT file procedures based on file type flag
- */
-int load_file(std::string const& path) {
-    // Success status
-    int status = 1;
-    // NOTE: Defaults to failure (1), and will only be set to success (0) on valid file load
-    
-    // Attempt to load the ASCII file into memory
-    if (fileType == FileType::ASCII) {
-        status = load_ascii(path);
-    }
-    // Attempt to load the ROOT file into memory
-    else if (fileType == FileType::ROOT) {
-        status = load_root(path);
-    }
-    // Reject invalid usage
-    else {
-        std::cerr << "\nError (load_file()): File type not set.\n";
-    }
-    
-    return status;
-}
-
-/*
  * Instantiate a ROOT histogram object
  * 
  * TODO: Have user specify whether hist params should be automatically calculated,
@@ -1176,7 +1080,13 @@ int load_file(std::string const& path) {
  * hpx->SetDirectory(nullptr);
  * Is it not better to just call it at the end of this function?
  */
-int create_hist() {
+int create_hist(int nbins = 0, double xmin = -1, double xmax = 0) {
+    if (rootObjectType != RootObjectType::TTree) {
+        std::cerr << "\nError: Invalid object type.\n";
+    }
+    
+    std::cout << "\nHIST PARAMS:\nX Min: " << xmin << " X Max: " << xmax << " Num Bins: " << nbins << "\n";
+    
     // Histogram args
     // int const nbins = 2048; // 2048 channels (bins)
     // int const xmin = 0; // min channel
@@ -1191,45 +1101,35 @@ int create_hist() {
     // int const xmax = 3000; // max channel (3500 photons)
     
     // Histogram args
-    std::string title;
-    std::string legendTitle;
-    int nbins = -1; // 2048 channels (bins) // NOTE: Decent
-    // int xmin = -1; // min channel value (i.e., usually 0, but maybe non-zero, or negative)
-    // int xmax = -1; // max channel value (i.e., 3500 photons, 2000 mm, etc)
-    double xmin = -1.; // min channel value (i.e., usually 0, but maybe non-zero, or negative)
-    double xmax = -1.; // max channel value (i.e., 3500 photons, 2000 mm, etc)
+    // std::string title;
+    // std::string legendTitle;
+    // int nbins = -1; // 2048 channels (bins) // NOTE: Decent
+    // // int xmin = -1; // min channel value (i.e., usually 0, but maybe non-zero, or negative)
+    // // int xmax = -1; // max channel value (i.e., 3500 photons, 2000 mm, etc)
+    // double xmin = -1.; // min channel value (i.e., usually 0, but maybe non-zero, or negative)
+    // double xmax = -1.; // max channel value (i.e., 3500 photons, 2000 mm, etc)
     
     // std::string leafType;
-    std::string_view leafType;
+    // std::string_view leafType;
+    
+    // title = strcpy(nTuple->GetName());
+    // strcpy(nTuple->GetName(), title);
+    // title = (char*)(nTuple->GetName());
+    // legendTitle =(char*)(branch->GetName());
+    
+    // char const* nTupleName = nTuple->GetName();
+    // char const* branchName = branch->GetName();
+    
+    std::string const nTupleName = nTuple->GetName();
+    char const* branchName = branch->GetName();
+    
+    double branchMin = nTuple->GetMinimum(branchName);
+    
+    std::string title = nTupleName + "Hpx"; // NOTE: Using the TTree name itself causes ROOT to think the histogram already exists
+    std::string legendTitle = branchName;
     
     // Lab spectra are already 2048 channels and appropriately binned
-    if (fileType == FileType::ASCII) {
-        title = "EnergySpectrum";
-        legendTitle = "Energy Spectrum";
-        nbins = 2048;
-        // xmin = 0;
-        // xmax = 2048;
-        xmin = 0.;
-        xmax = 2048.;
-        // xTitle = "Channels";
-    }
-    // ...
-    else if ((fileType == FileType::ROOT) && (rootObjectType == RootObjectType::TTree)) {
-        // title = strcpy(nTuple->GetName());
-        // strcpy(nTuple->GetName(), title);
-        // title = (char*)(nTuple->GetName());
-        // legendTitle =(char*)(branch->GetName());
-        
-        // char const* nTupleName = nTuple->GetName();
-        // char const* branchName = branch->GetName();
-        
-        std::string const nTupleName = nTuple->GetName();
-        char const* branchName = branch->GetName();
-        
-        double branchMin = nTuple->GetMinimum(branchName);
-        
-        title = nTupleName + "Hpx"; // NOTE: Using the TTree name itself causes ROOT to think the histogram already exists
-        legendTitle = branchName;
+    if (nbins == 0 && xmin == -1 && xmax == 0) {
         nbins = 2048; // TODO: Not sure on best approach for dynamic binning currently
         // xmin = nTuple->GetMinimum(branchName); // should be zero
         xmin = ((branchMin < 0.) ? branchMin : 0.); // should be zero
@@ -1239,17 +1139,19 @@ int create_hist() {
         // xTitle = branchName;
         
         std::cout << "\nXMIN: " << xmin << " XMAX: " << xmax << "\n";
-        
-        // ...
-        // std::cout << "BRANCH TYPE: " << branch->GetClassName() << "\n"; // NOTE: Prints ""
-        
-        // Get TTree data type by reading the leaves
-        
-        // char const* leafType = branch->GetLeaf(branchName)->GetTypeName(); // NOTE: Gives: "Double_t"
-        // leafType = branch->GetLeaf(branchName)->GetTypeName(); // NOTE: Gives: "Double_t"
-        
-        // TODO: This leaf grabbig logic may be better suited to the load pipeline
-        // can make global leaf variable, and just call GetTypeName() here
+    }
+    
+    
+    // ...
+    // std::cout << "BRANCH TYPE: " << branch->GetClassName() << "\n"; // NOTE: Prints ""
+    
+    // Get TTree data type by reading the leaves
+    
+    // char const* leafType = branch->GetLeaf(branchName)->GetTypeName(); // NOTE: Gives: "Double_t"
+    // leafType = branch->GetLeaf(branchName)->GetTypeName(); // NOTE: Gives: "Double_t"
+    
+    // TODO: This leaf grabbig logic may be better suited to the load pipeline
+    // can make global leaf variable, and just call GetTypeName() here
 //         TLeaf* leaf = branch->GetLeaf(branchName);
 //         
 //         // NOTE: Fallback incase branch name and name required by GetLeaf() differ
@@ -1258,16 +1160,15 @@ int create_hist() {
 //             // Static cast is safe as we know list of leaves is not empty from 
 //             // load pipeline, and were calling get leaves
 //         }
-        
-        // ...
-        leafType = leaf->GetTypeName();
-        
-        // ...
-        // std::cout << "LEAF TYPE: " << leafType << "\n";
-    }
     
     // ...
-    if (title.empty() || legendTitle.empty() || nbins == -1 || xmin == -1 || xmax == -1) {
+    std::string leafType = leaf->GetTypeName();
+    
+    // ...
+    // std::cout << "LEAF TYPE: " << leafType << "\n";
+    
+    // ...
+    if (title.empty() || legendTitle.empty() || nbins == 0 || xmin == -1 || xmax == 0) {
         std::cerr << "\nError: Failed to define histogram args.\n";
         
         // TODO: Clean objects (ASCII OR ROOT logic)
@@ -1292,7 +1193,7 @@ int create_hist() {
     // gDirectory->ls();
     
     // ...
-    if ((fileType == FileType::ASCII) || ((fileType == FileType::ROOT) && (leafType == "Int_t"))) {
+    if (leafType == "Int_t") {
         // ...
         std::cout << "\n>>> Creating TH1I...\n";
         
@@ -1310,7 +1211,7 @@ int create_hist() {
         // hpx->SetDirectory(nullptr);
     }
     // ...
-    else if ((fileType == FileType::ROOT) && (leafType == "Double_t")) {
+    else if (leafType == "Double_t") {
         // ...
         std::cout << "\n>>> Creating TH1D...\n";
         
@@ -1332,8 +1233,7 @@ int create_hist() {
     if (!hpx) {
         std::cerr << "\nError (create_hist()): Histogram not found!\n";
         // Need to close file (could be ascii or root)
-        if (inROOT) root_cleanup();
-        else if (inASCII.is_open()) ascii_cleanup(); // NOTE: if (inASCII) always returns true
+        root_cleanup();
         return 1;
     }
     
@@ -1356,8 +1256,7 @@ int create_hist() {
  * 
  * TODO: When calling plot(), may need to 
  */
-double post_processing(int entry) {
-// int post_processing(int entry) {
+double post_processing(int const entry) {
 // TODO: int const post_processing(int entry, int nbins = 2048, int xmax = 3500) {
     // In counting statistics: sigma = sqrt(N)
     double const sigma = std::sqrt(entry);
@@ -1423,7 +1322,7 @@ double post_processing(int entry) {
 int fill_hist_ntuple() {
     // Handle invalid branch name
     if (!branch) {
-        std::cerr << "\nError: TTree branch not found. Couldnt fill histogram. Closing root file and deconstructing Ntuple.\n";
+        std::cerr << "\nError: TTree branch not found. Couldnt fill histogram. Closing root file and clearing pointers.\n";
         root_cleanup();
         return 1;
     }
@@ -1483,12 +1382,16 @@ int fill_hist_ntuple() {
     
     std::cout << "\nSetting branch address for: " << branchName << "\n";
     
+    // Data type identifiers (returned by TLeaf->GetTypeName())
+    std::string const intType = "Int_t";
+    std::string const doubleType = "Double_t";
+    
     //...
-    if (dataType == "Int_t") {
+    if (dataType == intType) {
         // std::cout << "\n>>> INT TYPE\n";
         nTuple->SetBranchAddress(branchName, &intEntry);
     } 
-    else if (dataType == "Double_t") {
+    else if (dataType == doubleType) {
         // std::cout << "\n>>> DOUBLE TYPE\n";
         nTuple->SetBranchAddress(branchName, &doubleEntry);
     }
@@ -1542,8 +1445,8 @@ int fill_hist_ntuple() {
         // Add a count to the appropriate bin for that value
         // hpx->Fill(entry);
         
-        if (dataType == "Int_t") hpx->Fill(intEntry);
-        else if (dataType == "Double_t") hpx->Fill(doubleEntry);
+        if (dataType == intType) hpx->Fill(intEntry);
+        else if (dataType == doubleType) hpx->Fill(doubleEntry);
     }
     
     // ...
@@ -1563,160 +1466,6 @@ int fill_hist_ntuple() {
     std::cout << "\nHistogram filled from ROOT Ntuple.\n";
     
     // No errors, all good
-    return 0;
-}
-
-/*
- * Iterate through ASCII file, populating histogram with per-bin values
- * 
- * TODO: Dont start from arbitrary line 13 and go until line 2060 
- * (parse the infile header for start, $DATA, then skip next line, then the following line is bin 0)
- * (when you read $ROI, break)
- * 
- * TODO: Parsing the entire file, yet only reading lines 13 -> 2060
- * 
- * TODO: if (!in.good()) check inside of while loop
- * 
- * TODO: !inASCII will always return true, do !inASCII.is_open()
- */
-int fill_hist_ascii() {
-    // Handle missing input file
-    if (!inASCII) {
-        std::cerr << "\nError (draw_hist_ascii()): No ASCII infile to read!\n";
-        return 1;
-    }
-    
-    // Handle missing histogram
-    if (!hpx) {
-        std::cerr << "\nError (draw_hist_ascii()): Histogram not found!\n";
-        ascii_cleanup();
-        return 1;
-    }
-    
-    // ...
-    std::cout << "\nFilling histogram from ASCII file...\n";
-    
-    // Line counter
-    int currentLine = 0;
-
-    // ...
-    std::string line;
-    
-    // Histo bin counter
-    int currentBin = 0;
-    
-    // Get line reads a line from input stream into a string, until end of stream encountered
-    while (std::getline(inASCII, line)) {
-        // Print line number
-        // std::cout << nlines << std::endl;
-        
-        // Print each line
-        // std::istringstream iss(line);
-        // std::string a;
-        // if (!(iss >> a)) break;
-        // std::cout << a << std::endl;        
-       
-        // Increment line counter
-        currentLine++;
-        
-        // Print 
-        std::istringstream stringStream(line);
-        std::string lineContent; // contains current line string
-        
-        // ...
-        if (!(stringStream >> lineContent)) break;
-        
-        // Only parse lines 13-2060 (TODO: FIX THIS HARDCODED SLOP)
-        if (currentLine >= 13 && currentLine <= 2060) {
-            // Debug
-            // std::cout << a << std::endl;
-            // std::cout << stoi(a) << std::endl;
-            
-            // Convert string to integer
-            int const converted = stoi(lineContent);
-            
-            // Set current bin to the integer value on current line
-            hpx->SetBinContent(currentBin, converted);
-            // NOTE: Dont use h->Fill(converted), Instead of filling bin 0 with line 0,
-            // its filling bin 0 every time 0 is encountered
-            
-            // Increment bin counter
-            currentBin++;
-        }
-    }
-    
-    // Detach histogram from input file, then close input file
-    hpx->SetDirectory(nullptr);
-    ascii_cleanup();
-    
-    // ...
-    std::cout << "\nHistogram filled from ASCII file. ASCII file closed.\n";
-    
-    // No errors, all good
-    return 0;
-}
-
-/*
- * Router for histogram fill methodology, switches based on input file type
- */
-int fill_hist() {
-    // ...
-    std::cout << "\nRouting to: " << (fileType == FileType::ASCII ? "ASCII" : "ROOT") << " handler.\n";
-    
-    // If hist is not filled by one means or another defaults to error
-    int status = 1;
-    
-    // Switch on file type, set status to 0 if hist was filled successfully
-    if (fileType == FileType::ASCII) {
-        status = fill_hist_ascii();
-    }
-    else if (fileType == FileType::ROOT) {
-        status = fill_hist_ntuple(); // TODO: Getting branchname here is actually a bit of a shitter, may have to do global branch object, or global branch name
-    }
-    
-    // Success message
-    if (status == 0) {
-        std::cout << "\nHistogram has been populated.\n";
-    }
-    
-    // No errors, all good
-    return status;
-}
-
-/*
- * Filter outliers in exponential/power/log normal plots:
- * 
- * - 99.5% quantile * 1.05
- * - 99.9% quantile
- */
-int rebin_hist() {
-    // Handle missing histogram
-    if (!hpx) {
-        std::cerr << "\nError (rebin_hist()): Histogram not found!\n";
-        // NOTE: All files and objects should already be closed/deconstructed at this point
-        return 1;
-    }
-    
-    // int mergeBins = 2; // number of bins to merge
-    // hpx->Rebin();
-    // hpx->RebinAxis(, );
-    // hpx->RebinX();
-    // hpx->SetAxisRange(xmin, xmax);
-    
-    std::cout << "Skewness: " << hpx->GetSkewness() << "\n";
-    // NOTE: Vals < ~-2 or > ~+2: imply exponential, power, or log normal distribution
-    // NOTE: Energy spectrum outputs ~-0.2, so can be disambiguated
-    
-    int const numQuartiles = 4;
-    double out[numQuartiles] = {};
-    double quartiles[numQuartiles] = {0.75, 0.99, 0.995, 0.999};
-    
-    hpx->GetQuantiles(numQuartiles, out, quartiles);
-    
-    for (int i = 0; i < numQuartiles; i++) {
-        std::cout << ">>> " << quartiles[i] << "th Quartile: " << out[i] << "\n";
-    }
-    
     return 0;
 }
 
@@ -1741,9 +1490,8 @@ int create_canvas() {
         std::cerr << "\nError (create_canvas()): Couldnt create canvas!\n";
         return 1;
         
-        // NOTE: Both ASCII and ROOT files (and objects) should already be cleaned
-        // by this point, the only thing that may be floating around in memory is
-        // the histogram
+        // NOTE: Both ROOT files and objects should already be cleaned by this point
+        // the only thing that may be floating around in memory is the histogram
         
         // TODO: Maybe:
         // delete hpx;
@@ -1783,9 +1531,12 @@ int render_hist() {
     if (rootObjectType == RootObjectType::TH1D) {
         hpx->Draw("HIST"); // NOTE: For TH1 created by Geant4, need to specify hist flag
     }
-    else {
+    else if (rootObjectType == RootObjectType::TTree) {
         // Draw histogram to the canvas with default option
         hpx->Draw(); // NOTE: With ntuples, "HIST" no longer needed
+    }
+    else {
+        std::cerr << "\nError [render_hist()]: Unrecognised object type.\n";
     }
     
     // ...
@@ -1821,9 +1572,9 @@ int render_hist() {
  * Validate file path, load file into memory, instantiate histogram, fill histogram,
  * instantiate canvas, render histogram
  */
-int plot(std::string const userPath, const double xmin = 0, const double xmax = 0, const int nbins = 0) {
+int plot(std::string const userPath, int const nbins = 0, double const xmin = 0, double const xmax = 0, std::string const objectName = "") {
     // ...
-    // std::cout << "\nHIST PARAMS:\nX Min: " << xmin << " X Max: " << xmax << " Num Bins: " << nbins << "\n";
+    std::cout << "\nHIST PARAMS:\nX Min: " << xmin << " X Max: " << xmax << " Num Bins: " << nbins << "\n";
     
     // NOTE: Must delete TBranch -> then delete TTree -> then delete TFile,
     // trying to delete the TBranch AFTER already deleting the TTree will result in a segfault
@@ -1843,10 +1594,6 @@ int plot(std::string const userPath, const double xmin = 0, const double xmax = 
         std::cout << "\nFound existing Ntuple, clearing...\n";
         // delete nTuple;
         // nTuple = nullptr;
-        return 1;
-    }
-    if (inASCII.is_open()) { // NOTE: if (inASCII) always returns true (even after .close() & .clear())
-        std::cout << "\nFound existing ASCII file, clearing...\n";
         return 1;
     }
     if (inROOT) {
@@ -1894,8 +1641,8 @@ int plot(std::string const userPath, const double xmin = 0, const double xmax = 
         return 1;
     }
     
-    // Attempt to load ASCII or ROOT file into memory
-    int const fileError = load_file(path);
+    // Attempt to load ROOT file into memory
+    int const fileError = load_root(path);
     
     if (fileError) {
         std::cerr << "\nAborting: Load file error!\n";
@@ -1905,15 +1652,13 @@ int plot(std::string const userPath, const double xmin = 0, const double xmax = 
     // TODO: is it worth having both load_file and load_object?
     // load_object would only run for non-ascii files
     
-    // Only call: create_hist() & fill_hist(); if its ROOT Ntuple, or ASCII
-    // ^ if its ROOT Histogram, hpx pointer will already be populated
-    
+    // Only call: create_hist() & fill_hist(); if its ROOT Ntuple
+    // NOTE: If its ROOT Histogram, hpx pointer will already be populated
     // TODO: This enlosure feels a bit dirty, likely a better way to do this
-    // if ((fileType != FileType::ROOT) && (rootObjectType != RootObjectType::TH1D)) { // TEST: Uncomment to get Ntuple still loaded error
-    if (rootObjectType != RootObjectType::TH1D) {
+    if (rootObjectType == RootObjectType::TTree) {
     
         // Attempt to instantiate histogram object
-        int const histError = create_hist();
+        int const histError = create_hist(nbins, xmin, xmax);
         
         if (histError) {
             std::cerr << "\nAborting: Create hist error!\n";
@@ -1921,7 +1666,7 @@ int plot(std::string const userPath, const double xmin = 0, const double xmax = 
         }
         
         // Attempt to populate histogram from ASCII or ROOT file
-        int const fillError = fill_hist();
+        int const fillError = fill_hist_ntuple();
         
         if (fillError) {
             std::cerr << "\nAborting: Fill hist error!\n";
@@ -1929,7 +1674,7 @@ int plot(std::string const userPath, const double xmin = 0, const double xmax = 
         }
     }
     
-    // Attempt to create canvas and paint the histogram
+    // Attempt to instatiate canvas and populate global pointer
     int const canvasError = create_canvas();
     
     if (canvasError) {
@@ -1949,7 +1694,7 @@ int plot(std::string const userPath, const double xmin = 0, const double xmax = 
 //         }
 //     }
     
-    // ...
+    // Attempt to draw histogram to canvas
     int const renderError = render_hist();
     
     if (renderError) {
@@ -1959,7 +1704,6 @@ int plot(std::string const userPath, const double xmin = 0, const double xmax = 
     
     // Ensure flags are reset for consecutive calls (i.e., the if == TH1D logic above will run when loading a ROOT TH1D, THEN, an ASCII file (as ASCII logic doesnt touch the RootObjectType flag))
     rootObjectType = RootObjectType::NULLOBJ;
-    fileType = FileType::NULLFILE;
     
     // No errors, all good
     return 0;
@@ -2099,64 +1843,3 @@ int save(std::string const path) {
     // No errors, all good
     return 0; 
 }
-
-/*
- * TODO:
- * 
- */
-// custom centroid + FWHM for shoulders / merged peaks
-// 
-// is exactly how real spectroscopy software evolves.
-// 
-// Because eventually:
-// 
-// GetMaximumBin() fails for merged peaks
-// automatic RMS fails on asymmetric structures
-// background biases sigma
-// overlapping peaks require multi-Gaussian fits
-// 
-// At that stage people usually move toward:
-// 
-// gaus(0) + gaus(3) + pol1(6)
-// 
-// style composite fits.
-
-
-
-// NOTE: In spectroscopy, a very common workflow is actually:
-// 
-// User zooms near a peak
-// Find maximum bin
-// Estimate FWHM locally
-// Use fit window around:
-// ±2σ
-// ±3σ
-// or ~1.5×FWHM
-// 
-// That gives stable fits without too much background contamination.
-
-
-
-// NOTE: Instead of:
-// 
-// hpx->GetRMS()
-// 
-// you may eventually prefer a local RMS estimate around the peak.
-// 
-// Or even simpler:
-// 
-// estimate sigma directly from half-max crossings.
-// 
-// That’s actually very spectroscopy-ish and often surprisingly robust.
-// 
-// Something like:
-// 
-// find left half-max crossing
-// find right half-max crossing
-// 
-// FWHM = right - left
-// sigma = FWHM / 2.355
-// 
-// Then:
-// 
-// fit window = peakX ± (2 * FWHM)

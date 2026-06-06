@@ -30,12 +30,12 @@ TCanvas* canvas = nullptr;
 // Metadata object type for ASCII (.Spe) files
 struct SpeMetaData {
     // Will be assigned the live and real time of the detector
-    unsigned int liveTime = 0;
-    unsigned int realTime = 0;
+    int liveTime = 0;
+    int realTime = 0;
     
     // Will be assigned start and end channel numbers (i.e., 0 and 2047)
-    unsigned int start = 0;
-    unsigned int end = 0;
+    int start = 0;
+    int end = 0;
 };
 
 /*
@@ -67,7 +67,7 @@ int read_spe() {
  * else if (extDelimiterIdx == 0) {} 
  * NOTE: Kinda dont need to with ext check tho
  */
-std::string check_path(std::string const& path) { // std::string check_path(std::string const path) {
+std::string check_path(std::string const& path) {
     // Print path to stdout
     std::cout << "\nUser provided path: " << path << "\n";
     
@@ -344,7 +344,7 @@ int parse_headers(SpeMetaData& metaData) {
  * @xmin // minimum channel
  * @xmax // maximum channel
  */
-int create_hist(unsigned int const& nbins = 2048, unsigned int const& xmin = 0, unsigned int const& xmax = 2048) {
+int create_hist(int const& nbins = 2048, int const& xmin = 0, int const& xmax = 2048) {
     // Histogram args
     // int const nbins = 2048; // 2048 channels (bins)
     // int const xmin = 0; // min channel
@@ -839,7 +839,7 @@ int create_hist(unsigned int const& nbins = 2048, unsigned int const& xmin = 0, 
  * TODO: May want a separate close_ascii() method, and call it from the top level,
  * rather than calling it inside of here (separation of responsibilities)
  */
-int fill_hist_ascii(unsigned int const& start, unsigned int const& end) {
+int fill_hist_ascii(int const& start, int const& end) {
     // Handle missing input file
     if (!in.is_open()) {
         std::cerr << "\nError: No infile to read!\n";
@@ -858,11 +858,11 @@ int fill_hist_ascii(unsigned int const& start, unsigned int const& end) {
     std::string buffer;
     
     // Only try to parse once $DATA header encountered
-    unsigned int dataValue;
+    long long dataValue;
 
     // Only parse data values (i.e. next 2048 lines for 2048 channels)
     // Increment from start up to max channel number, i.e. 2047
-    for (unsigned int i = start; i <= end; i++) {
+    for (int i = start; i <= end; i++) {
         // std::cout << buffer << "\n"; // NOTE: debug
         
         // Go to next line, try to read it into the buffer

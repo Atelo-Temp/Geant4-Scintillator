@@ -438,14 +438,7 @@ plot("~/geant4/geant4-v11.3.2/project/data/21_final_Ntuple_NaI-Tl_gpsvolsrc_rand
 save("~/geant4/geant4-v11.3.2/project/data/21_hist.root")
 ```
 
-### omni_plot.cc
-
-ASCII file
-
-```c++
-// Absolute pathing
-plot("~/Maestro/LaBr/LaBr_300s_sources/137Cs_LaBr_750v_10coarse_3cm.Spe")
-```
+### root_explorer.cc
 
 ROOT file (containing Ntuples & Histogram)
 
@@ -584,4 +577,43 @@ fit({1350,1550},50) // ~1170 keV & ~1330 keV
 ```c++
 plot("~/Maestro/LaBr/LaBr_300s_sources/133Ba_LaBr_750v_10coarse_3cm.Spe") // 133Ba - LaBr
 fit({320,350,420,450},50) // ~(276 keV, 303 keV, 356 keV & 384 keV)
+```
+
+### plot_any.cc / omni_plot.cc
+
+ASCII file
+
+```c++
+// Absolute pathing
+plot("~/Maestro/LaBr/LaBr_300s_sources/137Cs_LaBr_750v_10coarse_3cm.Spe")
+```
+
+ROOT file (containing Ntuples & Histogram)
+
+```c++
+// From ./rootscripts
+plot("../final/build/output0.root")
+```
+
+```c++
+// From ./rootscripts
+plot("../data/21_final_Ntuple_NaI-Tl_gpsvolsrc_randomseed_EM4-PIXE-cut100um_source-casing_diffusebackpaint_0-96R_sigalpha0-1_rindexAir_pc-20nm-GND-R-QE_3cm_137cs_1024bin_1-8res_1000000event.root")
+```
+
+```c++
+// Absolute pathing
+plot("~/geant4/geant4-v11.3.2/project/data/21_final_Ntuple_NaI-Tl_gpsvolsrc_randomseed_EM4-PIXE-cut100um_source-casing_diffusebackpaint_0-96R_sigalpha0-1_rindexAir_pc-20nm-GND-R-QE_3cm_137cs_1024bin_1-8res_1000000event.root")
+```
+
+ROOT file (containing only a histogram)
+
+```c++
+plot("../data/21_hist.root")
+```
+
+Save plotted histogram
+
+```c++
+save("~/geant4/geant4-v11.3.2/project/data/21_hist.root") // absolute pathing
+save("../data/21_hist.root") // from ./rootscripts
 ```
