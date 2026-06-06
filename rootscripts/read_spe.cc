@@ -30,12 +30,12 @@ TCanvas* canvas = nullptr;
 // Metadata object type for ASCII (.Spe) files
 struct SpeMetaData {
     // Will be assigned the live and real time of the detector
-    unsigned int liveTime;
-    unsigned int realTime;
+    unsigned int liveTime = 0;
+    unsigned int realTime = 0;
     
     // Will be assigned start and end channel numbers (i.e., 0 and 2047)
-    unsigned int start;
-    unsigned int end;
+    unsigned int start = 0;
+    unsigned int end = 0;
 };
 
 /*
@@ -320,6 +320,12 @@ int parse_headers(SpeMetaData& metaData) {
             // Debug
             std::cout << "\nStart: " << metaData.start << " End: " << metaData.end << "\n";
             
+            // Ensure end > start
+            if (metaData.start >= metaData.end) {
+                std::cerr << "\nError: Malformed channel range.\n";
+                return 1;
+            }
+            
             // Fin 2/2
             parsedDataHeader = true;
         }
@@ -333,6 +339,10 @@ int parse_headers(SpeMetaData& metaData) {
 
 /*
  * Instantiate a ROOT histogram object
+ * 
+ * @nbins // number of channels (bins)
+ * @xmin // minimum channel
+ * @xmax // maximum channel
  */
 int create_hist(unsigned int const& nbins = 2048, unsigned int const& xmin = 0, unsigned int const& xmax = 2048) {
     // Histogram args
@@ -852,7 +862,7 @@ int fill_hist_ascii(unsigned int const& start, unsigned int const& end) {
 
     // Only parse data values (i.e. next 2048 lines for 2048 channels)
     // Increment from start up to max channel number, i.e. 2047
-    for (int i = start; i <= end; i++) {
+    for (unsigned int i = start; i <= end; i++) {
         // std::cout << buffer << "\n"; // NOTE: debug
         
         // Go to next line, try to read it into the buffer
@@ -871,7 +881,7 @@ int fill_hist_ascii(unsigned int const& start, unsigned int const& end) {
         }
         // NOTE: Strips leading whitespace, which is desirable as data entries have format:
         // "       0", "    8010", etc
-        // NOTE: std::to_chars doesnt strip leading whitespace, otherwise it would be preferred
+        // NOTE: std::from_chars doesnt strip leading whitespace, otherwise it would be preferred
         
         // Set current bin to the integer value on current line
         hpx->SetBinContent(i + 1, dataValue);
@@ -990,7 +1000,7 @@ int plot (std::string const fileName) {
     // TEST ...
     
     // Attempt to instantiate histogram object
-    int const histError = create_hist((metaData.end - (metaData.start + 1)), metaData.start, (metaData.end + 1));
+    int const histError = create_hist((metaData.end - metaData.start + 1), metaData.start, (metaData.end + 1));
     
     if (histError) {
         std::cerr << "\nAborting: Create hist error!\n";
