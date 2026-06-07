@@ -85,23 +85,6 @@ int plot_any() {
     std::cout << "\nTo save the plotted histogram, call save(\"dir/out.root\").\n";
     std::cout << "\n-----------------------------------------------------------------------\n";
     
-    
-    std::cout << "\nLOOP 1 START\n";
-    
-    std::vector<double> data = {};
-    
-    for (long long i = 0; i < 10000000; i++) {
-        data.push_back(i);
-    }
-    
-    std::cout << "\nLOOP 1 DONE\n";
-    
-    for (long long i = 0; i < 10000000; i++) {
-        long long const val = data[i];
-    }
-    
-    std::cout << "\nLOOP 2 DONE\n";
-    
     // fin
     return 0;
 }
