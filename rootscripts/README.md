@@ -230,6 +230,8 @@ NOTE: Was then briefly named "omnit_fit.cc", but arguably the introduction of dy
 
 NOTE: Have stripped ASCII handling features back, so that its now just an interactive CLI for selecting ROOT objects (rather than hardcoded tree/branch names).
 
+NOTE: This is being kept in an intentionally rough draft state, lots of commented out code, etc. Mainly for future reference.
+
 17a) multi_fit_a.cc
 
 > NOTE: Extension of ascii_fit.cc
@@ -269,24 +271,24 @@ The ASCII (.Spe) file reading in previous macros has been rudimentary. This simp
 
 > NOTE: This parses BSA-style header blocks ($...:), instead of relying on arbitrary line numbers, which in turn also allows for extracting parameters such as live time (relevant for background subtraction), and channel numbers from the file.
 
-## TODOS
-
 21) subtract_background.cc (alt: background_subtract.cc)
 
-NOTE: Extension of read_spe.cc (utilises time header parsing)
+NOTE: Extension of read_spe.cc (utilises ".Spe" file time header parsing)
 
-Fill a ROOT TH1 with an ASCII (.Spe) lab spectrum (recorded with a source), then subtracts ASCII (.Spe) background spectrum (recorded with no source)
+Fill a ROOT TH1 with an ASCII (.Spe) lab spectrum (recorded with a source), then subtract ASCII (.Spe) background spectrum (recorded with no source)
 
 NOTE: Likely best to populate two histograms hpx1 = source spectrum, hpx2 = background spectrum, use: TH1::Add(hpx1, hpx2, 1, -1);
-
-Potentially then saving the resultant spectra as a .root file.
 
 > NOTE: To account for differences in live times between the spectra recorded with a source (typically has greater
 dead time, leading to live time being shorter than real time, due to high decays/s of sources and electronics signal 
 processing time), and background only (very little, if any dead time), the background spectra is scaled using the
 live time value listed in the ASCII file.
 
-22) plot_any.ccc (alt: onmi_plot.cc, load_any.cc)
+TODO: Potentially reintroduce saving for the resultant spectra as a .root file in a future iteration.
+
+## TODOS
+
+22) plot_any.cc (alt: onmi_plot.cc, load_any.cc)
 
 Combines:
 - ROOT object browser CLI (root_explorer.cc)
@@ -298,7 +300,7 @@ Introduces:
 - Quick replotting functionality (via caching last used filename and ROOT object name)
 - plot() function overloads
 
-20) exponential_fit.cc
+22) exponential_fit.cc
 
 NOTE: The prior work done on this has been extracted out to omni_plot.cc, as handling multiple root object inputs, and tree/branch names, is quite an involved process, and dont want to implement too many new features into a single
 
@@ -307,7 +309,7 @@ TODO: Make a copy of omni_plot.cc when its done, then just reintroduce fitting
 
 TODO: Currently just whipping up a rough draft of fit(), need to update it to match refined fit() methodology in ascii_fit()
 
-21) any_fit.cc (alt: fit_any.cc, fitter.cc)
+23) any_fit.cc (alt: fit_any.cc, fitter.cc)             <<< TODO: This has largely been addressed by previous macros
 
 Hybrid fitting, able to handle both ascii files (lab) and root files (simulation)
 
@@ -321,7 +323,7 @@ that is a good stepping stone to a comprehensive fitting macro
 - Takes .root / .Spe filename as argument rather than hardcoded
 - Parses the filename to identify whether its .root or .Spe, runs histogramming pipeline for respective file type
 
-22) hybrid_fit.cc (alt: smart_fit.cc)
+24) hybrid_fit.cc (alt: smart_fit.cc)                   <<< TODO: This has largely been addressed by previous macros
 
 Hybrid fitting, able to handle both ascii files (lab) and root files (simulation)
 ^ maybe also able to determine whether it needs a gaussian or gaus + pol fit
@@ -332,17 +334,17 @@ NOTE: I think this main functionality should be determining whether to use gaus 
 ^ maybe even whether to use exponential etc
 ^ sinice 17) kinda ticks most of these other boxes, but trying to fit smart fitting would overcrowd 17)
 
-23) omni_fit.cc
+25) omni_fit.cc
 
 Full functionality of all previous fitting capabilities, plus final touches
 
 TODO: Maybe think of a way to determine if input data has aliasing issue, and needs gaussian smearing
 
-24) dimension_plotter.cc
+26) dimension_plotter.cc
 
 Introduce 2D and 3D histogramming
 
-24) dimension_plotter.cc
+27) dimension_plotter.cc
 
 Introduce 2D and 3D fitting
 
@@ -585,6 +587,12 @@ fit({1350,1550},50) // ~1170 keV & ~1330 keV
 ```c++
 plot("~/Maestro/LaBr/LaBr_300s_sources/133Ba_LaBr_750v_10coarse_3cm.Spe") // 133Ba - LaBr
 fit({320,350,420,450},50) // ~(276 keV, 303 keV, 356 keV & 384 keV)
+```
+
+### subtract_background.cc
+
+```c++
+subtract("~/Maestro/NaI/NaI_2inch_300s_sources/137Cs_NaI_800v_20coarse_3cm.Spe", "~/Maestro/NaI/NaI_2inch_300s_sources/Background_NaI_800v_20coarse_600s.Spe") // 137Cs - NaI2'
 ```
 
 ### plot_any.cc / omni_plot.cc

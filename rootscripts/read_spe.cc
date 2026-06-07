@@ -973,7 +973,8 @@ int render_hist() {
 }
 
 /*
- * Executes automatically on script start (NOTE: Choose another function name if you wish to manually call it instead)
+ * Validate file path, load file into memory, instantiate histogram, fill histogram,
+ * instantiate canvas, render histogram
  */
 int plot (std::string const fileName) {
     // Check provided path is valid (will return empty string if not valid)
