@@ -65,10 +65,15 @@ std::string const intType = "Int_t";
 std::string const doubleType = "Double_t";
 
 // ...
+struct QueryReturnType {
+    std::unordered_map<int, std::string> objectMap;
+    std::unordered_map<std::string, std::vector<std::string>> categoryMap;
+};
+
+// ...
 struct SelectionReturnType {
     int selectedTypeIdx;
-    std:: string selectedObjectType;
-    std::unordered_map<std::string, std::vector<std::string>> categoryMap;
+    std::string selectedObjectType;
 };
 
 // Metadata object type for ASCII (.Spe) files
@@ -453,7 +458,7 @@ int parse_headers(SpeMetaData& metaData) {
  */
 int load_ascii(std::string const& path) {
     // Attempt to load the ASCII into memory
-    int const fileError = load_ascii(path);
+    int const fileError = load_ascii_file(path);
     
     if (fileError) {
         std::cerr << "\nAborting: Load file error!\n";
@@ -605,18 +610,14 @@ int prompt_user_int(int const low, int const high) {
  * to this function, or leave as is, will revisit this design choice later
  * 
  */
-std::optional<SelectionReturnType> select_root_type() {
+std::optional<QueryReturnType> get_root_types() {
     // Handle unloaded root file (i.e., via calling this method directly, or some bug)
     if (!inROOT) {
         std::cerr << "\nError: File not found!\n";
         return std::nullopt;
     }
     
-    // inROOT->ls();
-    // std::cout << inROOT->FindKey("TTree") << std::endl;
-    // auto y = inROOT->FindKey("TTree");
-    
-    // ...
+    // Get list containing keys for each object in the ROOT file
     TList* entries = inROOT->GetListOfKeys();
     
     // ...
@@ -626,35 +627,24 @@ std::optional<SelectionReturnType> select_root_type() {
     }
     
     // ...
-    // std::cout << "LAST INDEX: " << entries->LastIndex() << std::endl; // 5
-    // std::cout << "SIZE: " << entries->GetSize() << std::endl; // 6
-    
-    // ...
-    // inROOT->GetFileCounter();
-    
-    // ...
     std::cout << "\nShowing ROOT object types available in file: " << inROOT->GetName() << "\n";
     
-    // ...
-    // TList* entries = inROOT->GetList(); // NOTE: This doesnt work with loop below, pretty sure you have to do address thing, like in branch iteration
-    
-    // ...
+    // A set containing the unique object types found in the ROOT file
     // std::unordered_set<std::string> objectTypes = {}; // NOTE: will automatically create std::string copy of const char*
     std::unordered_set<std::string_view> objectTypes = {}; // NOTE: ...
-    // NOTE: Key: 
-    // Value
+    // NOTE: Value: "TTree", "TH1D", etc
     
     // Key-value map of access indices assigned to each object type
     std::unordered_map<int, std::string> objectMap = {}; // NOTE: ...
-    // NOTE: Key:
-    // Value:
+    // NOTE: Key: 1, 2, 3, 4, etc
+    // Value: "TTree", "TH1D", etc
     
-    // Key-value
+    // Key-value map of object types, and the available objects matching that description
     std::unordered_map<std::string, std::vector<std::string>> categoryMap = {}; // NOTE: ...
     // NOTE: Key: "TTree", "TH1D", etc
     // Value: {"EventData", "TrackData", etc}, {"PhotonsSpectrum"}
     
-    // ...
+    // Iterate over all objects in the ROOT file
     for (int i = 0; i < entries->GetSize(); i++) {
         // Get the TKey* at index i
         TObject* entry = entries->At(i); // TKey*
@@ -665,50 +655,12 @@ std::optional<SelectionReturnType> select_root_type() {
         // Get the name that was assigned to the ROOT object (Ntuple, TH1D, etc) at creation (i.e., EventData, TrackData, etc)
         char const* objectName = entry->GetName();
         // std::cout << i << ": " << objectName << std::endl; // NOTE: Prints the name of each object (EventData, TrackData, etc)
-        // TODO: STORE THESE NAMES IN A MAP UNDER KEY OF TTree, TH1D, etc
-        
-        // std::cout << "FILE TYPE A: " << inROOT->GetType(objectName) << std::endl; // TEST: Prints: 0
-        // NOTE: I think this is more for checking 
-        
-        // ..
-        // auto x = entry->IsA(); // Returns TClass*
-        // std::cout << "CLASSNAME: " << x->ClassName()  << std::endl; // NOTE: Prints "TClass"
-        
-        // entry->InheritsFrom(TTree::Class());
-        
-        // if (entry->IsA() == TTree::Class()) { // NOTE: Doesnt work
-        // if (entry->InheritsFrom(TTree::Class())) { // NOTE: Doesnt work
-//         if (entry->IsA()->InheritsFrom(TTree::Class())) { // NOTE: Doesnt work
-//             std::cout << "IS TTREE\n";
-//         }
-//         else if (entry->IsA() == TH1::Class()) { // NOTE: Doesnt work
-//             std::cout << "IS TH1\n";
-//         }
-//         
-        // std::cout << "CLASSNAME: " << entry->IsA()->GetActualClass(entry)->GetName() << std::endl; // TEST: Prints: TKey
-        // TODO: Could do a safety check here, check GetName() returns TKey BEFORE static_cast ...?
-        
-        // std::cout << "OBJECT NAME:" << TClass::GetClass(objectName) << std::endl; // TEST: Prints: 0
-        
-        // ...
-        // auto key = dynamic_cast<TKey*>(entry);
+ 
+        // Cast TObject* to TKey*
         auto key = static_cast<TKey*>(entry); 
         // NOTE: Since "GetListOfKeys()" returns TList<TKey*>, we can safely static_cast here,
         // if there was any doubt about it being TKeys, static_cast would not be safe
-        
-        // std::cout << "CLASSNAME: " << key->GetClassName() << std::endl;
-        // std::cout << "CLASSNAME: " << entry->IsA()->GetName() << std::endl; // "TKey"
-        
-        // ..
-        // entry->get
-        
-        // std::cout << "CLASSNAME: " << inROOT->Get(entry->GetName())->ClassName() << std::endl; // NOTE: This works for getting names: TTree, TH1D, but is a little messy
-        // inROOT->GetObject(entry->GetName(), pointerToAssignTo); // NOTE: Not good here, requires assignment
-        
-        // uniqueObjects.push_back(key->GetClassName());
-        
-        // if (objectTypes.find(key->GetClassName())) objectTypes.insert(key->GetClassName());
-        // if (objectTypes.contains(key->GetClassName())) objectTypes.insert(key->GetClassName());
+        // TODO: Could do a safety check here, check GetName() returns TKey BEFORE static_cast ...?
         
         // Returns the type of object this key is associated with (i.e., TTree, TH1D, etc)
         char const* objectType = key->GetClassName();
@@ -727,28 +679,19 @@ std::optional<SelectionReturnType> select_root_type() {
             categoryMap[objectType] = entry;
         }
         
-        // ...
-        // if (objectTypes.find(objectType) == objectTypes.end()) { // .find returns key if found, or .end() if not found
-        // if (!objectTypes.count(objectType)) { // returns: not found = 0, found = 1
-        //     objectTypes.insert(objectType);
-        //     std::cout << "NEW KEY\n";
-        // }
-        // else std::cout << "DUPLICATE KEY\n";
-        
         // Add unique object types to the set
         std::pair pair = objectTypes.insert(objectType); // NOTE: Automatically only adds on unique
-        // NOTE: insert returns a pair of: iterator & success status
+        // NOTE: Insert returns a pair of: iterator & success status
         
         // If success status = true, item was inserted, else status = false
         if (pair.second) {
             // ...
             int const itemNo = objectTypes.size();
             
-            // ..
-            // std::cout << "NEW KEY: " << objectType << std::endl;
+            // Print each unique object type discovered to stdout, with linked index
             std::cout << itemNo << ") " << objectType << std::endl;
             
-            // ...
+            // Assign the object type as value for the integer key
             objectMap[itemNo] = objectType; // NOTE: Inserts if missing, updates if present
             // NOTE: objectMap.insert(itemNo, objectType); requires iterator as arg[0],
             // i.e. if you want to re-enter a recently removed const iterator, not add
@@ -758,9 +701,13 @@ std::optional<SelectionReturnType> select_root_type() {
     // NOTE: Either just get all names now, and determine what object type is later
     // i.e. print all TTrees and Hists, let user select from those
     
-    // std::cout << "SET SIZE: " << objectTypes.size() << std::endl;
-    // std::cout << "MAP SIZE: " << objectMap.size() << std::endl;
-    
+    return QueryReturnType { objectMap, categoryMap };
+}
+
+/*
+ * ...
+ */
+std::optional<SelectionReturnType> select_root_type(std::unordered_map<int, std::string>& objectMap) {
     // ...
     int selectedTypeIdx = -1;
     
@@ -769,11 +716,12 @@ std::optional<SelectionReturnType> select_root_type() {
         std::cerr << "\nError: ROOT object map is empty.\n";
         return std::nullopt;
     }
-    // ...
+    // If only one object type found, auto select that type
     else if (objectMap.size() == 1) {
         std::cout << "\nOnly one ROOT object type found, selecting...\n";
         selectedTypeIdx = 1;
-    } 
+    }
+    // Otherwise prompt user for object type selection
     else {
         // ...
         std::cout << "\nWhat ROOT object type would you like to access? (type a number from the options above, or enter q to exit):\n";
@@ -782,20 +730,13 @@ std::optional<SelectionReturnType> select_root_type() {
         selectedTypeIdx = prompt_user_int(1, objectMap.size()); // each integer is mapped to an object type
         // NOTE: Non-zero based indexing feels more appropriate for this, with options starting
         // at one, and going up to the size of the map
-        
-        // std::cout << "USER SELECTED INT: " << selectedTypeIdx << std::endl;
     }
     
-    // ...
-    std::string selectedObjectType = objectMap.at(selectedTypeIdx); // Retrieve the string associate with the integer key
+    // Retrieve the string associate with the integer key
+    std::string selectedObjectType = objectMap.at(selectedTypeIdx);
     // NOTE: Equivalent to .get() in typescript
     
-    // std::cout << "USER SELECTED OBJECT: " << selectedObjectType << std::endl;
-    // std::cout << "FILE TYPE B: " << inROOT->GetType(objectType.c_str()) << std::endl; // TEST: Prints: 0
-    
-    // Or print all object types, and show list of only those
-    
-    // ...
+    // Enable flag for chosen object type
     if (selectedObjectType == "TTree") {
         rootObjectType = RootObjectType::TTree;
     }
@@ -804,7 +745,7 @@ std::optional<SelectionReturnType> select_root_type() {
     }
     
     // ...
-    struct SelectionReturnType result { selectedTypeIdx, selectedObjectType, categoryMap };
+    struct SelectionReturnType result { selectedTypeIdx, selectedObjectType };
     // NOTE: "struct" keyword here is optional in c++, but mandatory in c
     
     // ...
@@ -837,9 +778,9 @@ std::optional<SelectionReturnType> select_root_type() {
  * const auto& [selectedTypeIdx, selectedObjectType, categoryMap] = *params; 
  * dereference pointer, bind by reference to avoid copies
  */
-std::string select_root_object(SelectionReturnType const& selectionParams) {
+std::string select_root_object(SelectionReturnType const& selectionParams, std::unordered_map<std::string, std::vector<std::string>>& categoryMap) {
     // Destructure the param object
-    auto const& [selectedTypeIdx, selectedObjectType, categoryMap] = selectionParams;
+    auto const& [selectedTypeIdx, selectedObjectType] = selectionParams;
     // NOTE: Zero copies, no pointer syntax
     
     // ...
@@ -990,12 +931,12 @@ std::string select_branch() {
     // ...
     std::string chosenBranch;
     
-    // ...
+    // If there is only one branch available, select it
     if (numEntries == 1) {
         std::cout << "\nOnly one branch found in TTree, selecting...\n";
         chosenBranch = branchMap.at(1);
     }
-    // ...
+    // Otherwise prompt user for selection
     else {
         std::cout << "\nWhat branch would you like to access? (type a number from the options above, or enter q to exit):\n";
         int res = prompt_user_int(1, numEntries);
@@ -1005,7 +946,7 @@ std::string select_branch() {
     // ...
     std::cout << "\nBranch: \"" << chosenBranch << "\" selected.\n";
     
-    // Cache chosen tree branch name
+    // Cache chosen branch name
     lastBranchName = chosenBranch;
     
     return chosenBranch;
@@ -1072,10 +1013,10 @@ int cache_leaf() {
         return 1;
     }
     
-    // ...
+    // Query chosen branch name
     char const* branchName = branch->GetName();
     
-    // Cache a pointer to a leaf (for data type access later)
+    // Cache a pointer to a leaf in this branch (for data type access later)
     leaf = branch->GetLeaf(branchName);
     
     // Fallback (incase branch name and name required by GetLeaf() differ)
@@ -1096,7 +1037,42 @@ int cache_leaf() {
 }
 
 /*
- * Load histogram object (TH1D, TH1I, etc) from ROOT input file and attach pointer
+ * Load Ntuple object (TTree) from ROOT input file and cache pointers
+ */
+int load_root_tree(char const* name) {
+    // Cache TTree pointer
+    int const loadTreeError = cache_tree(name);
+    if (loadTreeError) {
+        std::cerr << "\nError: Failed to cache TTree pointer.\n";
+        return 1;// TODO: Not sure about another layer of nesting here}
+    }
+    
+    // Prompt user to select from available TBranches in TTree
+    std::string const branchName = select_branch();
+    if (branchName.empty()) {
+        std::cerr << "\nError: Failed to get branch selection.\n";
+        return 1;
+    }
+    
+    // Cache TBranch pointer
+    int const loadBranchError = cache_branch(branchName);
+    if (loadBranchError) {
+        std::cerr << "\nError: Failed to cache TBranch pointer.\n";
+        return 1;
+    }
+    
+    // Cache TLeaf pointer
+    int const cacheLeafError = cache_leaf();
+    if (cacheLeafError) {
+        std::cerr << "\nError: Failed to cache TLeaf pointer.\n";
+        return 1;
+    }
+    
+    return 0;
+}
+
+/*
+ * Load histogram object (TH1D, TH1I, etc) from ROOT input file and cache pointer
  */
 int load_root_hist(char const* histName) {
     // Handle incorrect path
@@ -1137,35 +1113,13 @@ int load_root_object(std::string const& objectName) {
     // Convert std::string to c string pointer
     char const* name = objectName.c_str();
     
-    // ...
-    // int status = 1; 
-    // NOTE: Defaults to failure (1), can only be set to success (0) if object type is selected
-    
     // Load object router
     if (rootObjectType == RootObjectType::TTree) {
-        // ...
-        int const loadTreeError = cache_tree(name);
-        // if (loadTreeError) return status; // TODO: Not sure about another layer of nesting here
-        if (loadTreeError) return 1; // TODO: Not sure about another layer of nesting here
-        
-        // ...
-        std::string const branchName = select_branch(); // TODO: setting status twice here feels redundant
-        // if (branchName.empty()) return status;
-        if (branchName.empty()) return 1;
-        
-        // ...
-        // status = load_branch(branchName);
-        int const loadBranchError = cache_branch(branchName);
-        if (loadBranchError) return 1;
-        
-        // ...
-        int const cacheLeafError = cache_leaf();
-        if (cacheLeafError) return 1;
+        int const loadRootTreeError = load_root_tree(name);
+        if (loadRootTreeError) return 1;
     }
-    // ...
     else if (rootObjectType == RootObjectType::TH1D) {
-        // ...
-        // status = load_root_hist(name);
+        // Get pointer to TH1 object in ROOT file and cache it
         int const loadRootHistError = load_root_hist(name);
         if (loadRootHistError) return 1;
     } 
@@ -1176,12 +1130,10 @@ int load_root_object(std::string const& objectName) {
         // clean up after themselves if an error arises in their logic
     }
     
-    // ...
-    // if (!status) std::cout << "\nROOT object loaded.\n";
+    // Success
     std::cout << "\nROOT object loaded.\n";
     
     // ...
-    // return status;
     return 0;
 }
 
@@ -1189,16 +1141,17 @@ int load_root_object(std::string const& objectName) {
  * Handles full ROOT file pipeline:
  * 
  * 1) Open ROOT file, load it into local memory, check its not empty
- * 2) Get list of object types, and have user select object type of interest
- * 3) Have user select from list of objects matching said type
- * 4) load the chosen object 
+ * 2) Get list of object types
+ * 3) Have user select object type of interest
+ * 4) Have user select from list of objects matching said type
+ * 5) Load the chosen object (cache pointers)
  * 
  * NOTE: Not implementing 2D/3D hist shit just yet, can save that for a later date 
  * (will need to select multiple branch names, etc)
  * ^ this should just be flexible enough to handle any Ntuples i create from the sim for now
  */
 int load_root(std::string const& path) {
-    // ....
+    // Attempt to open the ROOT file
     int const loadError = load_root_file(path);
     
     if (loadError) {
@@ -1206,26 +1159,35 @@ int load_root(std::string const& path) {
         return 1;
     }
     
-    // ....
-    std::optional<SelectionReturnType> const success = select_root_type(); // choose TTree (Ntuple), TH1D (1D Hist), etc
+    // Query the ROOT object to get a list of object types, and create key-value maps
+    std::optional<QueryReturnType> querySuccess = get_root_types();
     
-    if (!success) {
+    if (!querySuccess.has_value()) {
+        std::cerr << "\nError: Failed to query ROOT file.\n";
+        return 1;
+    }
+    
+    QueryReturnType query = querySuccess.value();
+    
+    // Prompt user for ROOT object type
+    std::optional<SelectionReturnType> const selectionSuccess = select_root_type(query.objectMap); // choose TTree (Ntuple), TH1D (1D Hist), etc
+    
+    if (!selectionSuccess) {
         std::cerr << "\nError: Failed to get user selection for object type.\n";
         return 1;
     }
     
-    // ...
-    SelectionReturnType const result = success.value();
+    SelectionReturnType const result = selectionSuccess.value();
     
-    // ...
-    std::string const objectName = select_root_object(result); // get tree/hist/etc name
+    // Prompt user for ROOT object name
+    std::string const objectName = select_root_object(result, query.categoryMap); // get tree/hist/etc name
     
     if (objectName.empty()) {
         std::cerr << "\nError: ROOT object name is empty.\n";
         return 1;
     }
     
-    // ....
+    // Cache pointers for chosen ROOT object
     int const loadObjectError = load_root_object(objectName); // load root object with said name
     
     if (loadObjectError) {
@@ -1268,19 +1230,22 @@ int load_file(std::string const& path) {
 /*
  * Instantiate a ROOT histogram object
  * 
+ * @nbins // number of channels (bins)
+ * @xmin // min channel value (i.e., usually 0, but maybe non-zero, or negative)
+ * @xmax // max channel value (i.e., 3500 photons, 2000 mm, 30 ns, etc)
+ * 
  * TODO: Have user specify whether hist params should be automatically calculated,
  * via finding max value from dataset (+say 5-10% for xmax), and either calulating nbins, or leaving at 1024-4096 bins
  * or if theyd like a specific setup (i.e. 2048 channels)
  * 
- * TODO: Set title based on input type
+ * NOTE: Sets title based on input type
  * i.e., ASCII = "Energy Spectrum"
  * ROOT Ntuple = name of ntuple
  * (this function wont be called with ROOT hist, so dont need to handle that)
  * 
- * TODO: Need to choose TH1 type based on input type too
+ * NOTE: Chooses TH1 type based on input type
  * i.e., ASCII = TH1I
  * ROOT Ntuple = TH1I, OR, TH1D
- * ^ maybe see if there is a way to check whether its an int or double ntuple
  * 
  * TODO: Im calling this in fill_hist_ntuple & fill_hist_ascii:
  * hpx->SetDirectory(nullptr);
@@ -1288,123 +1253,55 @@ int load_file(std::string const& path) {
  */
 int create_hist(int nbins = -1, double xmin = -1, double xmax = -1) {
     // Histogram args
-    // int const nbins = 2048; // 2048 channels (bins)
-    // int const xmin = 0; // min channel
-    // int const xmax = 2048; // max channel (3500 photons)
-    
-    // int const nbins = 21; // 2048 channels (bins) // NOTE: Too few
-    // int const nbins = 200; // 2048 channels (bins) // NOTE: Too few 
-    // int const nbins = 1024; // 2048 channels (bins) // NOTE: Good
-    // int const nbins = 2048; // 2048 channels (bins) // NOTE: Decent
-    // // int const nbins = 4096; // 2048 channels (bins) // NOTE: Almost too many (but less compressed than 2048 on log scale)
-    // int const xmin = 0; // min channel
-    // int const xmax = 3000; // max channel (3500 photons)
-    
-    // Histogram args
     std::string title;
     std::string legendTitle;
-    /*int nbins = -1; // 2048 channels (bins) // NOTE: Decent
-    // int xmin = -1; // min channel value (i.e., usually 0, but maybe non-zero, or negative)
-    // int xmax = -1; // max channel value (i.e., 3500 photons, 2000 mm, etc)
-    double xmin = -1.; // min channel value (i.e., usually 0, but maybe non-zero, or negative)
-    double xmax = -1.;*/ // max channel value (i.e., 3500 photons, 2000 mm, etc)
-    
+
+    // ...
     // std::string leafType;
     std::string_view leafType;
     
-    // Lab spectra are already 2048 channels and appropriately binned
+    // Handle ASCII (.Spe) file format
     if (fileType == FileType::ASCII) {
+        // ...
         title = "EnergySpectrum";
         legendTitle = "Energy Spectrum";
-        // nbins = 2048;
-        // // xmin = 0;
-        // // xmax = 2048;
-        // xmin = 0.;
-        // xmax = 2048.;
-        // // xTitle = "Channels";
         
         // TODO: I feel like these should be passed as params
         nbins = metaData.end - metaData.start + 1;
         xmin = metaData.start;
         xmax = metaData.end + 1;
     }
-    // ...
+    // Handle ROOT Ntuple
     else if ((fileType == FileType::ROOT) && (rootObjectType == RootObjectType::TTree)) {
-        // title = strcpy(nTuple->GetName());
-        // strcpy(nTuple->GetName(), title);
-        // title = (char*)(nTuple->GetName());
-        // legendTitle =(char*)(branch->GetName());
-        
-        // char const* nTupleName = nTuple->GetName();
-        // char const* branchName = branch->GetName();
-        
+        // ...
         std::string const nTupleName = nTuple->GetName();
         char const* branchName = branch->GetName();
         
         double branchMin = nTuple->GetMinimum(branchName);
         
+        // ...
         title = nTupleName + "Hpx"; // NOTE: Using the TTree name itself causes ROOT to think the histogram already exists
         legendTitle = branchName;
+        
+        // ...
         nbins = 2048; // TODO: Not sure on best approach for dynamic binning currently
-        // xmin = nTuple->GetMinimum(branchName); // should be zero
-        xmin = ((branchMin < 0.) ? branchMin : 0.); // should be zero
-        // xmin = 0;
-        // xmin = 0.;
+        xmin = ((branchMin < 0.) ? branchMin : 0.); // should be zero, unless negative axis
         xmax = (nTuple->GetMaximum(branchName)) * 1.1; // +10%
-        // xTitle = branchName;
         
         std::cout << "\nXMIN: " << xmin << " XMAX: " << xmax << "\n";
         
-        // ...
-        // std::cout << "BRANCH TYPE: " << branch->GetClassName() << "\n"; // NOTE: Prints ""
-        
         // Get TTree data type by reading the leaves
-        
-        // char const* leafType = branch->GetLeaf(branchName)->GetTypeName(); // NOTE: Gives: "Double_t"
-        // leafType = branch->GetLeaf(branchName)->GetTypeName(); // NOTE: Gives: "Double_t"
-        
-        // TODO: This leaf grabbig logic may be better suited to the load pipeline
-        // can make global leaf variable, and just call GetTypeName() here
-//         TLeaf* leaf = branch->GetLeaf(branchName);
-//         
-//         // NOTE: Fallback incase branch name and name required by GetLeaf() differ
-//         if (!leaf) {
-//             leaf = static_cast<TLeaf*>(branch->GetListOfLeaves()->At(0)); 
-//             // Static cast is safe as we know list of leaves is not empty from 
-//             // load pipeline, and were calling get leaves
-//         }
-        
-        // ...
         leafType = leaf->GetTypeName();
-        
-        // ...
         // std::cout << "LEAF TYPE: " << leafType << "\n";
     }
     
-    // ...
+    // Reject invalid histogram args
     if (title.empty() || legendTitle.empty() || nbins == -1 || xmin == -1 || xmax == -1) {
         std::cerr << "\nError: Failed to define histogram args.\n";
-        
-        // TODO: Clean objects (ASCII OR ROOT logic)
-        
+        if (fileType == FileType::ASCII) ascii_cleanup();
+        else if (fileType == FileType::ROOT) root_cleanup();
         return 1;
     }
-    
-    // TEST: Debug
-    // if (hpx) {
-    //     std::cerr << "\nHISTOGRAM IS NOT NULL\n";
-    // }
-    
-    // TEST: Debug
-    // TH1::AddDirectory(false);
-    // NOTE: Resolves:
-    // Warning in <TFile::Append>: Replacing existing TH1: TrackData (Potential memory leak).
-    // But why?
-    // That warning shouldnt be coming up in the first place?
-    // NOTE: Because histogram names were colliding with ntuple names
-    
-    // TEST: Debug
-    // gDirectory->ls();
     
     // ...
     if ((fileType == FileType::ASCII) || ((fileType == FileType::ROOT) && (leafType == intType))) {
@@ -1421,8 +1318,6 @@ int create_hist(int nbins = -1, double xmin = -1, double xmax = -1) {
         );
         // NOTE: TH1I works while num photons is int, but may need long64 (TH1L) for gain applied num photons,
         // or TH1F (float - 4 bytes) / TH1D (double - 8 bytes) if using floating point values
-        
-        // hpx->SetDirectory(nullptr);
     }
     // ...
     else if ((fileType == FileType::ROOT) && (leafType == doubleType)) {
@@ -1437,10 +1332,6 @@ int create_hist(int nbins = -1, double xmin = -1, double xmax = -1) {
             xmin, // x low
             xmax // x up
         );
-        // NOTE: TH1I works while num photons is int, but may need long64 (TH1L) for gain applied num photons,
-        // or TH1F (float - 4 bytes) / TH1D (double - 8 bytes) if using floating point values
-        
-        // hpx->SetDirectory(nullptr);
     }
     
     // Handle missing histogram (failed instantiation for any reason)
@@ -1454,6 +1345,9 @@ int create_hist(int nbins = -1, double xmin = -1, double xmax = -1) {
     
     // X-axis title
     // hpx->SetXTitle("Distance (mm)");
+    
+    // ...
+    // hpx->SetDirectory(nullptr);
     
     std::cout << "\nHistogram instantiated.\n";
     
@@ -1927,7 +1821,7 @@ int render_hist() {
  * 
  * TODO: Maybe move away from global objects, and lean into functional a little more
  */
-int plot_x(std::string const userPath, std::string const objectName = "", double const xmin = 0, double const xmax = 0, int const nbins = 0) {
+int plot_x(std::string const userPath, std::string const objectName = "", std::string const branchName = "", double const xmin = 0, double const xmax = 0, int const nbins = 0) {
     // ...
     // std::cout << "\nHIST PARAMS:\nX Min: " << xmin << " X Max: " << xmax << " Num Bins: " << nbins << "\n";
     
@@ -2024,6 +1918,7 @@ int plot_x(std::string const userPath, std::string const objectName = "", double
     // TODO: This enlosure feels a bit dirty, likely a better way to do this
     // if ((fileType != FileType::ROOT) && (rootObjectType != RootObjectType::TH1D)) { // TEST: Uncomment to get Ntuple still loaded error
     if (rootObjectType != RootObjectType::TH1D) {
+    // if (fileType == FileType::ASCII || (fileType == FileType::ROOT && rootObjectType == RootObjectType::TTree)) {
     
         // Attempt to instantiate histogram object
         int const histError = create_hist(nbins, xmin, xmax);
@@ -2098,8 +1993,8 @@ int plot(std::string const userPath) {
 /*
  * Overload 2) Manual ROOT object name specification and automated histogramming
  */
-int plot(std::string const userPath, std::string const objectName) {
-    int const success = plot_x(userPath, objectName);
+int plot(std::string const userPath, std::string const objectName, std::string const branchName) {
+    int const success = plot_x(userPath, objectName, branchName);
     return success;
 };
 
@@ -2107,15 +2002,15 @@ int plot(std::string const userPath, std::string const objectName) {
  * Overload 3) ROOT object selection CLI and pre-defined histogramming parameters
  */
 int plot(std::string const userPath, int const nbins, double const xmin, double const xmax) {
-    int const success = plot_x(userPath, "", nbins, xmin, xmax);
+    int const success = plot_x(userPath, "", "", nbins, xmin, xmax);
     return success;
 };
 
 /*
  * Overload 4) Manual ROOT object name specification, and pre-defined histogramming parameters
  */
-int plot(std::string const userPath, std::string const objectName, int const nbins, double const xmin, double const xmax) {
-    int const success = plot_x(userPath, objectName, nbins, xmin, xmax);
+int plot(std::string const userPath, std::string const objectName, std::string const branchName, int const nbins, double const xmin, double const xmax) {
+    int const success = plot_x(userPath, objectName, branchName, nbins, xmin, xmax);
     return success;
 }
 
@@ -2133,15 +2028,23 @@ int plot(std::string const userPath, std::string const objectName, int const nbi
 int replot(int const nbins = 0, double const xmin = 0, double const xmax = 0) {
     // ...
     if (fileType != FileType::ROOT) {
+        std::cerr << "Replot only available for ROOT objects.\n";
         return 1;
     }
     if (rootObjectType != RootObjectType::TTree) {
+        std::cerr << "Replot only available for ROOT Ntuples.\n";
         return 1;
     }
     if (lastPath.empty()) {
+        std::cerr << "Path not cached.\n";
         return 1;
     }
     if (lastObjectName.empty()) {
+        std::cerr << "Ntuple name not cached.\n";
+        return 1;
+    }
+    if (lastBranchName.empty()) {
+        std::cerr << "Branch name not cached.\n";
         return 1;
     }
     
@@ -2150,7 +2053,7 @@ int replot(int const nbins = 0, double const xmin = 0, double const xmax = 0) {
     // int const success = plot(*lastPath, nbins, xmin, xmax);
     
     std::cout << "LAST PATH: " << lastPath << "\n";
-    int const success = plot_x(lastPath, lastObjectName, nbins, xmin, xmax);
+    int const success = plot_x(lastPath, lastObjectName, lastBranchName, nbins, xmin, xmax);
     
     return success;
 }

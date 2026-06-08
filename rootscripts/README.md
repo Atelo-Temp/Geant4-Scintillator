@@ -288,7 +288,7 @@ TODO: Potentially reintroduce saving for the resultant spectra as a .root file i
 
 ## TODOS
 
-22) plot_any.cc (alt: onmi_plot.cc, load_any.cc)
+22) plot_any.cc (alt: onmi_plot.cc, load_any.cc, versa_plot.cc), flexi_plot.cc
 
 Combines:
 - ROOT object browser CLI (root_explorer.cc)
@@ -607,12 +607,12 @@ plot("~/Maestro/LaBr/LaBr_300s_sources/137Cs_LaBr_750v_10coarse_3cm.Spe")
 ROOT file (containing Ntuples & Histogram)
 
 ```c++
-// From ./rootscripts
+// Relative pathing (from ./rootscripts)
 plot("../final/build/output0.root")
 ```
 
 ```c++
-// From ./rootscripts
+// Relative pathing (from ./rootscripts)
 plot("../data/21_final_Ntuple_NaI-Tl_gpsvolsrc_randomseed_EM4-PIXE-cut100um_source-casing_diffusebackpaint_0-96R_sigalpha0-1_rindexAir_pc-20nm-GND-R-QE_3cm_137cs_1024bin_1-8res_1000000event.root")
 ```
 
@@ -625,6 +625,13 @@ ROOT file (containing only a histogram)
 
 ```c++
 plot("../data/21_hist.root")
+```
+
+Replot ROOT Ntuple
+
+```c++
+plot("../final/build/output0.root")
+replot(1024,0,5000) // nbins, xmin, xmax
 ```
 
 Save plotted histogram
