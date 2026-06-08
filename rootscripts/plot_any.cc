@@ -176,7 +176,7 @@ std::string check_path(std::string const& path) {
     // NOTE: 0, delimiterIdx would get everything prior to delimiter
     
     // Debug
-    // std::cout << token << std::endl;
+    // std::cout << token << "\n";
     
     // Acceptable file extensions
     std::string const spe = ".Spe"; // const char*
@@ -211,11 +211,11 @@ std::string check_path(std::string const& path) {
     if (path[0] == tilde) {
         // Get the home path (~) from the environment variable
         char const* home = getenv("HOME");
-        // std::cout << home << std::endl; // debug
+        // std::cout << home << "\n"; // debug
         
         // Trim "~" from the start of the string (start at idx = 1, as "~" at 0)
         std::string const trimmedPath = path.substr(1, path.size());
-        // std::cout << trimmedPath << std::endl; // debug
+        // std::cout << trimmedPath << "\n"; // debug
         
         // Update the path, replacing "~" with "/home/user"
         returnPath = home + trimmedPath;
@@ -525,6 +525,8 @@ int load_root_file(std::string const& path) {
  * ^ but this wouldnt work if low was 1 digit, and high was 2 digits
  * 
  * TODO: std::from_chars (returns error codes instead of throwing)
+ * 
+ * TODO: if (!std::getline(...))
  */
 int prompt_user_int(int const low, int const high) {
     // Prompt user for input
@@ -541,7 +543,10 @@ int prompt_user_int(int const low, int const high) {
         std::cout << "[int]: ";
         
         // Capture the line;
-        std::getline(std::cin, userInput);
+        if (!std::getline(std::cin, userInput)) {
+            std::cerr << "\nError: Failed to read from stdin.\n";
+            return 1;
+        }
         
         // ..
         int converted = -1;
@@ -569,7 +574,7 @@ int prompt_user_int(int const low, int const high) {
         }
         // ..
         catch (const std::invalid_argument& e) {
-            if (strcmp(e.what(), "stoi")) std::cerr << e.what() << std::endl; // print trailing chars message, but not "stoi" default error msg
+            if (strcmp(e.what(), "stoi")) std::cerr << e.what() << "\n"; // print trailing chars message, but not "stoi" default error msg
             std::cerr << "Invalid argument!\n";
             continue; // skip logic check below, and try take input again
         }
@@ -581,7 +586,7 @@ int prompt_user_int(int const low, int const high) {
         
         // ...
         if ((converted > high) || (converted < low)) {
-            std::cout << "Please select an integer between: " << low << " and " << high << std::endl;
+            std::cout << "Please select an integer between: " << low << " and " << high << "\n";
         } else {
             // ...
             return converted;
@@ -590,25 +595,12 @@ int prompt_user_int(int const low, int const high) {
 }
 
 /*
- * TTree (Ntuple), TH1D (1D Histogram)
+ * Checks what objects are in the root file, creates key-value pairings, renders list
  * 
- * Checks what objects are in the root file
- * If there is only one object type, select that by default, skip prompt
- * ^ (if there is no histogram, go the Ntuple route)
- * 
- * NOTE: OPTION #1: Print all object names,
- * have user select desired object name,
- * determine what the object type is,
- * route to the appropriate handler for said object type
- * i.e. print all TTrees and Hists, let user select from those
- * 
- * NOTE: OPTION #2: Print all unique object types
- * let user select appropriate object type
- * show list of only those
+ * TTree (Ntuple), TH1D (1D Histogram), etc
  * 
  * TODO: Not sure whether to define some of these maps in load_root, and pass in pointers
  * to this function, or leave as is, will revisit this design choice later
- * 
  */
 std::optional<QueryReturnType> get_root_types() {
     // Handle unloaded root file (i.e., via calling this method directly, or some bug)
@@ -654,7 +646,7 @@ std::optional<QueryReturnType> get_root_types() {
         
         // Get the name that was assigned to the ROOT object (Ntuple, TH1D, etc) at creation (i.e., EventData, TrackData, etc)
         char const* objectName = entry->GetName();
-        // std::cout << i << ": " << objectName << std::endl; // NOTE: Prints the name of each object (EventData, TrackData, etc)
+        // std::cout << i << ": " << objectName << "\n"; // NOTE: Prints the name of each object (EventData, TrackData, etc)
  
         // Cast TObject* to TKey*
         auto key = static_cast<TKey*>(entry); 
@@ -664,7 +656,7 @@ std::optional<QueryReturnType> get_root_types() {
         
         // Returns the type of object this key is associated with (i.e., TTree, TH1D, etc)
         char const* objectType = key->GetClassName();
-        // std::cout << "CLASSNAME: " << objectType << std::endl;
+        // std::cout << "CLASSNAME: " << objectType << "\n";
         
         // If they object type key already exists in the object, pull the existing entry,
         // add the new name to the vector, update the entry in the map
@@ -685,11 +677,12 @@ std::optional<QueryReturnType> get_root_types() {
         
         // If success status = true, item was inserted, else status = false
         if (pair.second) {
-            // ...
+            // Derive indices for object types based on set size
             int const itemNo = objectTypes.size();
             
             // Print each unique object type discovered to stdout, with linked index
-            std::cout << itemNo << ") " << objectType << std::endl;
+            std::cout << itemNo << ") " << objectType << "\n";
+            // NOTE: I.e., 1) TH1D\n 2) TTree\n
             
             // Assign the object type as value for the integer key
             objectMap[itemNo] = objectType; // NOTE: Inserts if missing, updates if present
@@ -706,6 +699,8 @@ std::optional<QueryReturnType> get_root_types() {
 
 /*
  * ...
+ * 
+ * NOTE: If there is only one object, that name is selected by default, skipping user prompt
  */
 std::optional<SelectionReturnType> select_root_type(std::unordered_map<int, std::string>& objectMap) {
     // ...
@@ -742,6 +737,9 @@ std::optional<SelectionReturnType> select_root_type(std::unordered_map<int, std:
     }
     else if (selectedObjectType == "TH1D") {
         rootObjectType = RootObjectType::TH1D;
+    }
+    else {
+        std::cerr << "\nError: Unsupported ROOT object type.\n";
     }
     
     // ...
@@ -784,7 +782,7 @@ std::string select_root_object(SelectionReturnType const& selectionParams, std::
     // NOTE: Zero copies, no pointer syntax
     
     // ...
-    std::cout << "\nShowing options for object type: " << selectedTypeIdx << " - " << selectedObjectType << std::endl;
+    std::cout << "\nShowing options for object type: " << selectedTypeIdx << " - " << selectedObjectType << "\n";
     // std::cout << "\nWhat object would you like to access? (type a number from the options below, or enter q to exit):\n";
     
     // Get a list of all objects matching the chosen type
@@ -793,7 +791,7 @@ std::string select_root_object(SelectionReturnType const& selectionParams, std::
     // ...
     for (int i = 0; i < filteredObjects.size(); i++) {
         // ...
-        std::cout << (i + 1) << ") " << filteredObjects[i] << std::endl;
+        std::cout << (i + 1) << ") " << filteredObjects[i] << "\n";
     }
     
     // If there is only one object matching that type, select it by default
@@ -807,11 +805,11 @@ std::string select_root_object(SelectionReturnType const& selectionParams, std::
     
     // ...
     int const selectedObjectIdx = prompt_user_int(1, filteredObjects.size());
-    // std::cout << "USER SELECTED INT: " << selectedObjectIdx << std::endl;
+    // std::cout << "USER SELECTED INT: " << selectedObjectIdx << "\n";
     
     // ...
     std::string selectedObjectName = filteredObjects.at(selectedObjectIdx - 1); // NOTE: Make selection zero-indexed again (minus 1)
-    // std::cout << "USER SELECTED OBJECT: " << selectedObjectName << std::endl;
+    // std::cout << "USER SELECTED OBJECT: " << selectedObjectName << "\n";
     
     // Cache chosen root object name
     lastObjectName = selectedObjectName;
@@ -871,7 +869,7 @@ int cache_tree(char const* treeName) {
 }
 
 /*
- * ...
+ * Select branch name from those available in chosen TTree
  * 
  * 1) Prints valid branch names for selected TTree object
  * 
@@ -913,10 +911,10 @@ std::string select_branch() {
         return "";
     }
     
-    // ...
+    // Store indices associated with branches in the chosen TTree
     std::unordered_map<int, std::string> branchMap = {};
-    // NOTE: Key: ...
-    // Value: ...
+    // NOTE: Key: 1, 2, 3, 4, etc ...
+    // Value: "DetectionDistance", "TimeOfFlight", etc
     
     std::cout << "\nShowing branches in TTree - " << nTuple->GetName() << ":\n";
     
@@ -1003,7 +1001,7 @@ int cache_branch(std::string const& selectedBranch) {
 /*
  * Caches a pointer to a leaf in the active TTree branch
  * 
- * NOTE: Saves making multiple leaf requests later for branch data type querying
+ * NOTE: Saves making multiple get leaf requests later for branch data type querying
  */
 int cache_leaf() {
     // Handle invalid branch name
@@ -1149,6 +1147,19 @@ int load_root_object(std::string const& objectName) {
  * NOTE: Not implementing 2D/3D hist shit just yet, can save that for a later date 
  * (will need to select multiple branch names, etc)
  * ^ this should just be flexible enough to handle any Ntuples i create from the sim for now
+ * 
+ * 
+ * NOTE: OPTION #1: Print all object names,
+ * have user select desired object name,
+ * determine what the object type is,
+ * route to the appropriate handler for said object type
+ * i.e. print all TTrees and Hists, let user select from those
+ * 
+ * NOTE: OPTION #2: Print all unique object types
+ * let user select appropriate object type
+ * show list of only those
+ * 
+ * NOTE: #2 seems more scalable
  */
 int load_root(std::string const& path) {
     // Attempt to open the ROOT file
@@ -1520,16 +1531,10 @@ int fill_hist_ntuple() {
         return 1;
     }
     
-    // ...
+    // Query the cached TBranch for its name
     char const* branchName = branch->GetName();
     
-    // std::cout << "\nSetting branch address for: " << branchName << "\n";
-    
     // std::cout << "\nDisabling non-essential branches...\n";
-    
-    // ...
-    // std::string const dataType = branch->GetLeaf(branchName)->GetTypeName();
-    // std::string_view const dataType = branch->GetLeaf(branchName)->GetTypeName();
     
     // Disable all branches from being read by TTree->GetEntry()
     nTuple->SetBranchStatus("*", false);
@@ -1540,7 +1545,6 @@ int fill_hist_ntuple() {
     // NOTE: For iteration over multiple branches, we would just enable those too
     
     // ...
-    // std::cout << "\nDisabling non-essential branches...\n";
     std::cout << "\nNon-essential branches have been disabled.\n";
     
     // ...
@@ -1550,34 +1554,29 @@ int fill_hist_ntuple() {
         return 1;
     }
     
-    // ...
+    // Query the cached TLeaf for TTree data type
     std::string_view const dataType = leaf->GetTypeName();
-    
     std::cout << "\n>>> Data type: " << dataType << "\n";
     
-    // To read a tree, neeed to associate variables with the trees branches
-    // double entry;
-    // int entry; // TODO: This needs to change based on Ntuple type (int, double, etc)
-    // std::variant<int, double> entry;
-    // nTuple->SetBranchAddress(branchName, &entry);
-    // NOTE: When loading a tree entry, the tree will set the variables to the branches value as read from the storage
-    
-    // ...
+    // Define branch entry variables
     int intEntry;
     double doubleEntry;
+    // NOTE: Variable used changes based on Ntuple type (int, double, etc)
     
     std::cout << "\nSetting branch address for: " << branchName << "\n";
     
-    //...
+    // Switch on int or double branch type
     if (dataType == intType) {
-        // std::cout << "\n>>> INT TYPE\n";
+        // To read a tree, neeed to associate variables with the trees branches
         nTuple->SetBranchAddress(branchName, &intEntry);
+        // NOTE: When loading a tree entry, the tree will set the variables to the 
+        // branches value as read from the storage
     } 
     else if (dataType == doubleType) {
-        // std::cout << "\n>>> DOUBLE TYPE\n";
         nTuple->SetBranchAddress(branchName, &doubleEntry);
     }
-    // NOTE: Multiple variables can be set to different branches here, and TTree->GetEntry(i) will update all variables to the current index
+    // NOTE: Multiple variables can be set to different branches here, and TTree->GetEntry(i) 
+    // will update all variables to the current index
     
     // ...
     std::cout << "\nBranch address set to: " << branchName << "\n";
@@ -1589,7 +1588,7 @@ int fill_hist_ntuple() {
     // ...
     std::cout << "\nGot num entries: " << numEntries << "\n";
     
-    // ...
+    // Reject empty branch
     if (numEntries == 0) {
         std::cerr << "\nError: Selected TTree branch contains no entries! Closing root file, and deconstructing Ntuple/branch.\n";
         root_cleanup();
@@ -1598,15 +1597,6 @@ int fill_hist_ntuple() {
     
     // ...
     std::cout << "\nFilling histogram from TTree branch...\n";
-    
-    
-    // TEST
-    // double mean;
-    // double min;
-    // double max;
-    // ...
-    // TEST
-    
     
     // Read all entries in the branch
     for (long long i = 0; i < numEntries; i++) {
@@ -1625,10 +1615,9 @@ int fill_hist_ntuple() {
         // std::cout << entry; // debug
         
         // Add a count to the appropriate bin for that value
-        // hpx->Fill(entry);
-        
         if (dataType == intType) hpx->Fill(intEntry);
         else if (dataType == doubleType) hpx->Fill(doubleEntry);
+        // NOTE: Switching on int/double data type
     }
     
     // ...
@@ -1637,6 +1626,8 @@ int fill_hist_ntuple() {
     // Detach histogram from input file, then close input file
     hpx->SetDirectory(nullptr);
     root_cleanup(); 
+    // NOTE: Now that histogram has been populated via nTuple data, the ROOT infile
+    // can safely be closed, doing so beforehand may cause undefined behaviour
     // NOTE: There may be some future usecase where this is undesireable, i.e.,
     // keeping the ntuple available for another reason, although in that case the
     // ROOT file itself would also need to stay open
@@ -1783,7 +1774,7 @@ int render_hist() {
     }
     else {
         // Draw histogram to the canvas with default option
-        hpx->Draw(); // NOTE: With ntuples, "HIST" no longer needed
+        hpx->Draw(); // NOTE: With histos filled from ASCII & ntuples, "HIST" no longer needed
     }
     
     // ...
@@ -1795,18 +1786,6 @@ int render_hist() {
     // 10 = only number of entries
     // 110 = entries and mean
     // NOTE: Prefix zeros must be removed, as "01" is treated as octal number
-    
-    
-    // TEST - This could also go at the end of fill_hist_ntuple()
-    // if ((fileType == FileType::ROOT) && (rootObjectType == RootObjectType::TTree)) {
-        // NOTE: If file type == ROOT & object type == TH1, the ROOT file will already 
-        // be closed by this point
-        // root_cleanup();
-        // NOTE: Now that histogram has been populated via nTuple data, the ROOT infile
-        // can safely be closed, doing so beforehand may cause undefined behaviour
-    // }
-    // TEST
-    
     
     // ...
     std::cout << "\nHistogram rendered to canvas.\n";
@@ -2015,26 +1994,26 @@ int plot(std::string const userPath, std::string const objectName, std::string c
 }
 
 /*
+ * ...
+ * 
  * 1) User plots object of choice via interactive CLI
  * 2) User sees plot and knows how theyd like to rebin / rescale x-axis
  * 3) User calls replot with those values, without having to re-enter file name or going through CLI again,
  * due to cached "lastPath" and "lastObjectName"
- * 
- * 
- * ALTERNATIVE: 
- * 1) automatically set nbins to a large multiple of 64, i.e. 2048
- * 2) SetRangeUser to reduce xmax
  */
 int replot(int const nbins = 0, double const xmin = 0, double const xmax = 0) {
     // ...
-    if (fileType != FileType::ROOT) {
-        std::cerr << "Replot only available for ROOT objects.\n";
-        return 1;
-    }
-    if (rootObjectType != RootObjectType::TTree) {
-        std::cerr << "Replot only available for ROOT Ntuples.\n";
-        return 1;
-    }
+    // if (fileType != FileType::ROOT) {
+    //     std::cerr << "Replot only available for ROOT objects.\n";
+    //     return 1;
+    // }
+    // if (rootObjectType != RootObjectType::TTree) {
+    //     std::cerr << "Replot only available for ROOT Ntuples.\n";
+    //     return 1;
+    // }
+    // NOTE: Im clearing these at the end of plot() ...
+    
+    
     if (lastPath.empty()) {
         std::cerr << "Path not cached.\n";
         return 1;
@@ -2048,11 +2027,14 @@ int replot(int const nbins = 0, double const xmin = 0, double const xmax = 0) {
         return 1;
     }
     
-    // std::cout << "LAST PATH: " << lastPath << "\n";
-    // std::cout << "LAST PATH: " << *lastPath << "\n";
-    // int const success = plot(*lastPath, nbins, xmin, xmax);
-    
+    // ...
     std::cout << "LAST PATH: " << lastPath << "\n";
+    std::cout << "LAST TTREE: " << lastObjectName << "\n";
+    std::cout << "LAST BRANCH: " << lastBranchName << "\n";
+    
+    return 1;
+    
+    // ...
     int const success = plot_x(lastPath, lastObjectName, lastBranchName, nbins, xmin, xmax);
     
     return success;
@@ -2079,7 +2061,10 @@ int prompt_user_char(std::string const &question = "Do you wish to overwrite exi
     // Enter user input loop
     while (true) {
         // Capture the line
-        std::getline(std::cin, userInput); // NOTE: std::cin >> userInput;
+        if (!std::getline(std::cin, userInput)) { // NOTE: std::cin >> userInput;
+            std::cerr << "\nError: Failed to read from stdin.\n";
+            return 1;
+        } 
         
         // Handle yes/no reponse, or invalid input
         if (userInput == "y") {
@@ -2192,64 +2177,3 @@ int save(std::string const path) {
     // No errors, all good
     return 0; 
 }
-
-/*
- * TODO:
- * 
- */
-// custom centroid + FWHM for shoulders / merged peaks
-// 
-// is exactly how real spectroscopy software evolves.
-// 
-// Because eventually:
-// 
-// GetMaximumBin() fails for merged peaks
-// automatic RMS fails on asymmetric structures
-// background biases sigma
-// overlapping peaks require multi-Gaussian fits
-// 
-// At that stage people usually move toward:
-// 
-// gaus(0) + gaus(3) + pol1(6)
-// 
-// style composite fits.
-
-
-
-// NOTE: In spectroscopy, a very common workflow is actually:
-// 
-// User zooms near a peak
-// Find maximum bin
-// Estimate FWHM locally
-// Use fit window around:
-// ±2σ
-// ±3σ
-// or ~1.5×FWHM
-// 
-// That gives stable fits without too much background contamination.
-
-
-
-// NOTE: Instead of:
-// 
-// hpx->GetRMS()
-// 
-// you may eventually prefer a local RMS estimate around the peak.
-// 
-// Or even simpler:
-// 
-// estimate sigma directly from half-max crossings.
-// 
-// That’s actually very spectroscopy-ish and often surprisingly robust.
-// 
-// Something like:
-// 
-// find left half-max crossing
-// find right half-max crossing
-// 
-// FWHM = right - left
-// sigma = FWHM / 2.355
-// 
-// Then:
-// 
-// fit window = peakX ± (2 * FWHM)
