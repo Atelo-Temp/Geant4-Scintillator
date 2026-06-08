@@ -30,8 +30,8 @@ TFile* inROOT = nullptr;
 TTree* nTuple = nullptr;
 TBranch* branch = nullptr;
 TLeaf* leaf = nullptr;
-TH1 *hpx = nullptr;
-TCanvas *canvas = nullptr;
+TH1* hpx = nullptr;
+TCanvas* canvas = nullptr;
 
 // Store last accessed path, object name, and optionally branch name (for ttrees), for replot functionality
 // NOTE: For replot, TH1 should never be considered anyways, so it should be treeName & branchName ...
@@ -70,6 +70,17 @@ struct SelectionReturnType {
     std:: string selectedObjectType;
     std::unordered_map<std::string, std::vector<std::string>> categoryMap;
 };
+
+// Metadata object type for ASCII (.Spe) files
+struct SpeMetaData {
+    // Will be assigned the live and real time of the detector
+    int liveTime = 0;
+    int realTime = 0;
+    
+    // Will be assigned start and end channel numbers (i.e., 0 and 2047)
+    int start = 0;
+    int end = 0;
+} metaData;
 
 /*
  * Load in plotting and fitting functions
@@ -257,17 +268,18 @@ void ascii_cleanup() {
 }
 
 /*
- * Validate .Spe file can be opened/exists, load it into local memory if so
+ * Validate .Spe file can be opened/exists, loading it into local memory in readonly mode if so
  * 
  * TODO: Probably wanna validate is expected ASCII format too:
  * line 1: $SPEC_ID:
  * 
  * NOTE: std::ifstream sets internal error flags immediately on failure,
- * so only need to check (!inASCII) really
+ * so only need to check (!inASCII.is_open) really
  */
-int load_ascii(std::string const& path) {
+int load_ascii_file(std::string const& path) {
     // Open the ASCII file with validated .Spe extension
-    inASCII.open(path);
+    inASCII.open(path, std::ios_base::in);
+    // NOTE: Read-only mode (std::ios_base::in)
     
     // Ensure file was found, exit with error if its not
     // NOTE: No need to reprompt, user can just call the function again
@@ -284,6 +296,179 @@ int load_ascii(std::string const& path) {
     std::cout << "\nASCII file has been loaded into memory.\n";
     
     // No errors, all good
+    return 0;
+}
+
+/*
+ * Read lines from the BSA-style ASCII file, extracting parameters from relevant blocks
+ * 
+ * Leaves the infile on the line just before channel 0 data
+ * 
+ * NOTE: If "$MEAS_TIM:" is encountered:
+ * 1) Read the next line for detector times
+ * 300 307
+ * 2) Set
+ * liveTime = 300;
+ * realTime = 307;
+ * 
+ * Parses the infile header for start, $DATA, then skip next line, then the following line is bin 0
+ * 
+ * NOTE: If "$DATA:" is encountered:
+ * 1) Read the next line for min/max channel numbers, i.e.:
+ * 0 2047
+ * 2) Parse the channel numbers and assign them to variables, i.e.:
+ * start = 0;
+ * end = 2047;
+ * 3) Leaves the infile on the line before first data entry, so subsequently fill_hist
+ * first call to getline(...) will immediately return data
+ * 
+ * TODO: Probably wanna validate is expected ASCII format too:
+ * line 1: $SPEC_ID:
+ * 
+ * TODO: Since some blocks ($) come after the data block, could add a parse_footer() method down the line too,
+ * but currently those blocks are not needed
+ * 
+ * TODO: Not currently worthwhile, as my BSA-style files all follow the same format, but
+ * for scalability in the future, may want to have a line counter variable, and when
+ * "$DATA:" is encountered, mark that line number, so if say the "$MEAS_TIM" block is
+ * after the data block for whatever reason, then set line number back to that number at
+ * the end of this method, so that fill_hist still begins at the correct spot
+ * 
+ * TODO: if (!in.good()) break;
+ */
+int parse_headers(SpeMetaData& metaData) {
+    // Handle missing input file
+    if (!inASCII.is_open()) {
+        std::cerr << "\nError: No infile to read!\n";
+        return 1;
+    }
+    
+    std::cout << "\nParsing ASCII headers...\n";
+    
+    // Buffer to store lines from the infile
+    std::string buffer;
+    
+    // Loop control flags
+    bool parsedTimeHeader = false;
+    bool parsedDataHeader = false;
+    // NOTE: Using two flags ensures regardless of which order the headers are encountered,
+    // both will be parsed before loop completes
+    
+    // Execute until relevant headers have been parsed
+    while (!parsedTimeHeader || !parsedDataHeader) {
+        // std::cout << nlines << "\n"; // Print line number (NOTE: debug)
+        // std::cout << buffer << "\n"; // Print line contents (NOTE: debug)
+        
+        // Get line reads a line from input stream into a string, until end of stream encountered
+        if (!std::getline(inASCII, buffer)) {
+            std::cerr << "\nError: Failed to read line.\n";
+            return 1;
+        }
+        // NOTE: Stores characters from current line of infile in the buffer, until "\n" is encountered
+        // NOTE: Contents of buffer are erased at the start of next line before reading commences again
+        // NOTE: The "\n" at the end of the line is not stored in the buffer, but "\r" etc may be
+        
+        // Remove trailing carriage return (lines contain hidden carriage return: "$MEAS_TIM:\r")
+        if (!buffer.empty() && (buffer.back() == '\r')) buffer.pop_back();
+        // NOTE: Single quote for single character delimiter, double quotes for string of chars
+        
+        // Block identifier containing detector time information (live time & real time)
+        if (buffer == "$MEAS_TIM:") {
+            // Go to next line, read it into the buffer
+            if (!std::getline(inASCII, buffer)) {
+                std::cerr << "\nError: Failed to read line.\n";
+                return 1;
+            }
+            // std::cout << buffer << "\n"; // NOTE: debug
+            
+            // Create a stream for the current line to parse individual values
+            std::istringstream stringStream(buffer);
+            // NOTE: Using string stream saves doing: lineContent.substr(whitespaceIdx); etc
+            // also, will convert from string to integer automatically
+            
+            // Try to pipe the line into the two line contents variables
+            // NOTE: The ">>" operator skips preceding whitespace, then reads chars until whitespace 
+            // is encountered again, i.e., extracts one word, or one number, etc, at a time, so:
+            if (!(stringStream >> metaData.liveTime >> metaData.realTime)) {
+                std::cerr << "\nError: Failed to pipe line.\n"; // NOTE: Expecting: <livetime> <truetime>
+                return 1;
+            }
+            // NOTE: The ">>" operator attempts to read data from the stream and parse it into
+            // the variable. The expression "stream >> variable" returns a reference to the stream
+            // itself. When placed inside an if statement, the stream is automatically evaluated as 
+            // a boolean, returning true if read was successful or false if it failed.       
+            
+            // Debug
+            std::cout << "\nLive Time: " << metaData.liveTime << " Real Time: " << metaData.realTime << "\n";
+            
+            // Fin 1/2
+            parsedTimeHeader = true;
+        }
+        
+        // This header marks the start of the data entries
+        // NOTE: The next line will contain lower/upper channel numbers,
+        // and then the line after that will be the channel 0 value
+        else if (buffer == "$DATA:") {
+            // Go to next line, try to read it into the buffer
+            if (!std::getline(inASCII, buffer)) {
+                std::cerr << "\nError: Failed to read line.\n";
+                return 1;
+            }
+            // std::cout << buffer << "\n"; // NOTE: debug
+            
+            // Create a stream for the current line
+            std::istringstream stringStream(buffer);
+            
+            // Expecting: <lower channel number> <upper channel number>
+            if (!(stringStream >> metaData.start >> metaData.end)) {
+                std::cerr << "\nError: Failed to pipe line.\n";
+                return 1;
+            }
+            
+            // Debug
+            std::cout << "\nStart: " << metaData.start << " End: " << metaData.end << "\n";
+            
+            // Ensure end > start
+            if (metaData.start >= metaData.end) {
+                std::cerr << "\nError: Malformed channel range.\n";
+                return 1;
+            }
+            
+            // Fin 2/2
+            parsedDataHeader = true;
+        }
+    }
+    
+    std::cout << "\nParsed ASCII headers.\n";
+    
+    // ...
+    return 0;
+}
+
+/*
+ * Handles full ASCII file pipeline:
+ * 
+ * 1) Open ASCII file, load it into local memory, check its not empty (will error out on missing headers)
+ * 2) Read through the headers, cache detector live/real times, and channel numbers
+ */
+int load_ascii(std::string const& path) {
+    // Attempt to load the ASCII into memory
+    int const fileError = load_ascii(path);
+    
+    if (fileError) {
+        std::cerr << "\nAborting: Load file error!\n";
+        return 1;
+    }
+    
+    // Attempt to parse detector times and channel numbers from the BSA-style blocks
+    // SpeMetaData metaData;
+    int const headerError = parse_headers(metaData);
+    
+    if (headerError) {
+        std::cerr << "\nAborting: Header parsing error!\n";
+        return 1;
+    }
+    
     return 0;
 }
 
@@ -1014,7 +1199,7 @@ int load_root_object(std::string const& objectName) {
  */
 int load_root(std::string const& path) {
     // ....
-    int loadError = load_root_file(path);
+    int const loadError = load_root_file(path);
     
     if (loadError) {
         std::cerr << "\nError: Failed to load ROOT file into memory.\n";
@@ -1022,7 +1207,7 @@ int load_root(std::string const& path) {
     }
     
     // ....
-    std::optional<SelectionReturnType> success = select_root_type(); // choose TTree (Ntuple), TH1D (1D Hist), etc
+    std::optional<SelectionReturnType> const success = select_root_type(); // choose TTree (Ntuple), TH1D (1D Hist), etc
     
     if (!success) {
         std::cerr << "\nError: Failed to get user selection for object type.\n";
@@ -1030,10 +1215,10 @@ int load_root(std::string const& path) {
     }
     
     // ...
-    SelectionReturnType result = success.value();
+    SelectionReturnType const result = success.value();
     
     // ...
-    std::string objectName = select_root_object(result); // get tree/hist/etc name
+    std::string const objectName = select_root_object(result); // get tree/hist/etc name
     
     if (objectName.empty()) {
         std::cerr << "\nError: ROOT object name is empty.\n";
@@ -1041,7 +1226,7 @@ int load_root(std::string const& path) {
     }
     
     // ....
-    int loadObjectError = load_root_object(objectName); // load root object with said name
+    int const loadObjectError = load_root_object(objectName); // load root object with said name
     
     if (loadObjectError) {
         std::cerr << "\nError: Failed to access ROOT object.\n";
@@ -1056,6 +1241,8 @@ int load_root(std::string const& path) {
 
 /*
  * Executes ASCII or ROOT file procedures based on file type flag
+ * 
+ * NOTE: Router to appropriate file type handler
  */
 int load_file(std::string const& path) {
     // Success status
@@ -1129,12 +1316,17 @@ int create_hist(int nbins = -1, double xmin = -1, double xmax = -1) {
     if (fileType == FileType::ASCII) {
         title = "EnergySpectrum";
         legendTitle = "Energy Spectrum";
-        nbins = 2048;
-        // xmin = 0;
-        // xmax = 2048;
-        xmin = 0.;
-        xmax = 2048.;
-        // xTitle = "Channels";
+        // nbins = 2048;
+        // // xmin = 0;
+        // // xmax = 2048;
+        // xmin = 0.;
+        // xmax = 2048.;
+        // // xTitle = "Channels";
+        
+        // TODO: I feel like these should be passed as params
+        nbins = metaData.end - metaData.start + 1;
+        xmin = metaData.start;
+        xmax = metaData.end + 1;
     }
     // ...
     else if ((fileType == FileType::ROOT) && (rootObjectType == RootObjectType::TTree)) {
@@ -1264,6 +1456,82 @@ int create_hist(int nbins = -1, double xmin = -1, double xmax = -1) {
     // hpx->SetXTitle("Distance (mm)");
     
     std::cout << "\nHistogram instantiated.\n";
+    
+    // No errors, all good
+    return 0;
+}
+
+/*
+ * Iterate through ASCII file, populating histogram with per-bin values
+ * 
+ * NOTE: Assumes parse_headers() has been called first, so that next call to getline()
+ * returns channel 0 data
+ * 
+ * TODO: May want a separate close_ascii() method, and call it from the top level,
+ * rather than calling it inside of here (separation of responsibilities)
+ * 
+ * TODO: if (!in.good()) break;
+ */
+int fill_hist_ascii(int const& start, int const& end) {
+    // Handle missing input file
+    if (!inASCII.is_open()) {
+        std::cerr << "\nError: No infile to read!\n";
+        return 1;
+    }
+    
+    // Handle missing histogram
+    if (!hpx) {
+        std::cerr << "\nError (fill_hist()): Histogram not found!\n";
+        return 1;
+    }
+    
+    std::cout << "\nFilling histogram from ASCII file...\n";
+
+    // Buffer to store lines from the infile
+    std::string buffer;
+    
+    // Only try to parse once $DATA header encountered
+    long long dataValue;
+
+    // Only parse data values (i.e. next 2048 lines for 2048 channels)
+    // Increment from start up to max channel number, i.e. 2047
+    for (int i = start; i <= end; i++) {
+        // std::cout << buffer << "\n"; // NOTE: debug
+        
+        // Go to next line, try to read it into the buffer
+        if (!std::getline(inASCII, buffer)) {
+            std::cerr << "\nError: Failed to read line\n";
+            return 1;
+        }
+        
+        // Create a stream for the current line
+        std::istringstream dataStream(buffer);
+        
+        // Convert string to integer
+        if (!(dataStream >> dataValue)) {
+            std::cerr << "\nError: Failed to pipe data\n";
+            return 1;
+        }
+        // NOTE: Strips leading whitespace, which is desirable as data entries have format:
+        // "       0", "    8010", etc
+        // NOTE: std::from_chars doesnt strip leading whitespace, otherwise it would be preferred
+        
+        // Set current bin to the integer value on current line
+        hpx->SetBinContent(i + 1, dataValue);
+        // NOTE: Dont use h->Fill(converted), Instead of filling bin 0 with line 0,
+        // its filling bin 0 every time 0 is encountered
+        
+        // NOTE: When instantiating a ROOT histogram with nbins = 2048, there are actually
+        // 2050 bins created, with bin 0 being underflow, and bin 2050 being overflow, so we
+        // want to increment i by 1 when writing to bins
+    }
+    
+    // Detach histogram from input file, then close input file
+    hpx->SetDirectory(nullptr);
+    inASCII.close();
+    inASCII.clear();
+    
+    std::cout << "\nHistogram filled.\n";
     
     // No errors, all good
     return 0;
@@ -1490,96 +1758,6 @@ int fill_hist_ntuple() {
 }
 
 /*
- * Iterate through ASCII file, populating histogram with per-bin values
- * 
- * TODO: Dont start from arbitrary line 13 and go until line 2060 
- * (parse the infile header for start, $DATA, then skip next line, then the following line is bin 0)
- * (when you read $ROI, break)
- * 
- * TODO: Parsing the entire file, yet only reading lines 13 -> 2060
- * 
- * TODO: if (!in.good()) check inside of while loop
- * 
- * TODO: !inASCII will always return true, do !inASCII.is_open()
- */
-int fill_hist_ascii() {
-    // Handle missing input file
-    if (!inASCII) {
-        std::cerr << "\nError (draw_hist_ascii()): No ASCII infile to read!\n";
-        return 1;
-    }
-    
-    // Handle missing histogram
-    if (!hpx) {
-        std::cerr << "\nError (draw_hist_ascii()): Histogram not found!\n";
-        ascii_cleanup();
-        return 1;
-    }
-    
-    // ...
-    std::cout << "\nFilling histogram from ASCII file...\n";
-    
-    // Line counter
-    int currentLine = 0;
-
-    // ...
-    std::string line;
-    
-    // Histo bin counter
-    int currentBin = 0;
-    
-    // Get line reads a line from input stream into a string, until end of stream encountered
-    while (std::getline(inASCII, line)) {
-        // Print line number
-        // std::cout << nlines << std::endl;
-        
-        // Print each line
-        // std::istringstream iss(line);
-        // std::string a;
-        // if (!(iss >> a)) break;
-        // std::cout << a << std::endl;        
-       
-        // Increment line counter
-        currentLine++;
-        
-        // Print 
-        std::istringstream stringStream(line);
-        std::string lineContent; // contains current line string
-        
-        // ...
-        if (!(stringStream >> lineContent)) break;
-        
-        // Only parse lines 13-2060 (TODO: FIX THIS HARDCODED SLOP)
-        if (currentLine >= 13 && currentLine <= 2060) {
-            // Debug
-            // std::cout << a << std::endl;
-            // std::cout << stoi(a) << std::endl;
-            
-            // Convert string to integer
-            int const converted = stoi(lineContent);
-            
-            // Set current bin to the integer value on current line
-            hpx->SetBinContent(currentBin, converted);
-            // NOTE: Dont use h->Fill(converted), Instead of filling bin 0 with line 0,
-            // its filling bin 0 every time 0 is encountered
-            
-            // Increment bin counter
-            currentBin++;
-        }
-    }
-    
-    // Detach histogram from input file, then close input file
-    hpx->SetDirectory(nullptr);
-    ascii_cleanup();
-    
-    // ...
-    std::cout << "\nHistogram filled from ASCII file. ASCII file closed.\n";
-    
-    // No errors, all good
-    return 0;
-}
-
-/*
  * Router for histogram fill methodology, switches based on input file type
  */
 int fill_hist() {
@@ -1591,10 +1769,13 @@ int fill_hist() {
     
     // Switch on file type, set status to 0 if hist was filled successfully
     if (fileType == FileType::ASCII) {
-        status = fill_hist_ascii();
+        status = fill_hist_ascii(metaData.start, metaData.end);
     }
     else if (fileType == FileType::ROOT) {
         status = fill_hist_ntuple(); // TODO: Getting branchname here is actually a bit of a shitter, may have to do global branch object, or global branch name
+    } 
+    else {
+        std::cerr << "\nError: Unsupported file type.\n";
     }
     
     // Success message
@@ -1743,6 +1924,8 @@ int render_hist() {
 /*
  * Validate file path, load file into memory, instantiate histogram, fill histogram,
  * instantiate canvas, render histogram
+ * 
+ * TODO: Maybe move away from global objects, and lean into functional a little more
  */
 int plot_x(std::string const userPath, std::string const objectName = "", double const xmin = 0, double const xmax = 0, int const nbins = 0) {
     // ...
@@ -1824,6 +2007,13 @@ int plot_x(std::string const userPath, std::string const objectName = "", double
         std::cerr << "\nAborting: Load file error!\n";
         return 1;
     }
+    
+    // ...
+    // if (fileType == FileType::ASCII) {
+    //     nbins = metaData.end - metaData.start + 1;
+    //     xmin = metaData.start;
+    //     xmax = metaData.end + 1;
+    // }
     
     // TODO: is it worth having both load_file and load_object?
     // load_object would only run for non-ascii files
