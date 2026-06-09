@@ -8,21 +8,17 @@
 #include <TLeaf.h> // Incomplete type without explicit import
 #include <TH1.h>
 #include <TCanvas.h>
-#include <TF1.h>
 #include <TROOT.h> // TODO: I think this is unused ?
 #include <TStyle.h> // gStyle
-// #include <TFitResult.h> // NOTE: Fitting libs \/\/
-// #include <TPaveStats.h>
-// #include <TLatex.h> // ^^^^^^^
 #include <TRandom.h> // gRandom
 
 // C lib
-#include <fstream>
-#include <sstream>
-#include <optional>
-// #include <unordered_set>
-// #include <unordered_map>
-// #include <variant>
+#include <iostream> // cerr, cin, cout
+#include <fstream> // ifstream
+#include <sstream> // istringstream
+#include <optional> // optional, nullopt
+#include <unordered_set> // NOTE: Import not technically needed (something else must be importing it)
+#include <unordered_map> // NOTE: ^ same
 
 // Global root object variables
 std::ifstream inASCII;
@@ -32,13 +28,6 @@ TBranch* branch = nullptr;
 TLeaf* leaf = nullptr;
 TH1* hpx = nullptr;
 TCanvas* canvas = nullptr;
-
-// Store last accessed path, object name, and optionally branch name (for ttrees), for replot functionality
-// NOTE: For replot, TH1 should never be considered anyways, so it should be treeName & branchName ...
-// std::string const* lastPath = nullptr;
-std::string lastPath;
-std::string lastObjectName;
-std::string lastBranchName;
 
 // Accepted file types
 enum class FileType {
@@ -60,17 +49,13 @@ enum class RootObjectType {
 // Active object type flag
 RootObjectType rootObjectType = RootObjectType::NULLOBJ;
 
-// Data type identifiers (returned by TLeaf->GetTypeName())
-std::string const intType = "Int_t";
-std::string const doubleType = "Double_t";
-
-// ...
+// Maps formed when reading ROOT file object list
 struct QueryReturnType {
     std::unordered_map<int, std::string> objectMap;
     std::unordered_map<std::string, std::vector<std::string>> categoryMap;
 };
 
-// ...
+// Integer key to access maps, and type of object associated with that key
 struct SelectionReturnType {
     int selectedTypeIdx;
     std::string selectedObjectType;
@@ -86,6 +71,10 @@ struct SpeMetaData {
     int start = 0;
     int end = 0;
 } metaData;
+
+// Data type identifiers (returned by TLeaf->GetTypeName())
+std::string const intType = "Int_t";
+std::string const doubleType = "Double_t";
 
 /*
  * Load in plotting and fitting functions
@@ -233,15 +222,22 @@ std::string check_path(std::string const& path) {
 }
 
 /*
- * To be called on error
+ * To be called on error, or after data processing complete
  * 
  * NOTE: Since the TBranch is owned by the TTree, and the TTree is owned by the TFile
  * (assuming TTree->SetDirectory(nullptr) hasnt been called), it is not necessary to
- * manually call "delete" on the TBranch or TTree, 
+ * manually call "delete" on the TBranch or TTree
+ * 
+ * NOTE: Closing the TFile causes destructors for each of the other objects to be called
+ * 
+ * NOTE: Hence, calling DELETE on TTREE after already DELETING TFILE causes a segfault
+ * (assuming TTree->SetDirectory() wasnt called)
+ * 
+ * NOTE: Calling DELETE on TBRANCH after already DELETING TTREE causes a segfault
+ * 
+ * NOTE: Calling DELETE on BRANCH after FILE IS CLOSED also causes a segfault
  * 
  * NOTE: Calling TTree->SetDirector(nullptr) is unwise
- * 
- * NOTE: Closing the TFile
  */
 void root_cleanup() {
     // Call the TFile destructor
@@ -610,7 +606,7 @@ std::optional<QueryReturnType> get_root_types() {
     }
     
     // Get list containing keys for each object in the ROOT file
-    TList* entries = inROOT->GetListOfKeys();
+    TList const* entries = inROOT->GetListOfKeys();
     
     // ...
     if (!entries) {
@@ -649,7 +645,7 @@ std::optional<QueryReturnType> get_root_types() {
         // std::cout << i << ": " << objectName << "\n"; // NOTE: Prints the name of each object (EventData, TrackData, etc)
  
         // Cast TObject* to TKey*
-        auto key = static_cast<TKey*>(entry); 
+        auto key = static_cast<TKey*>(entry);
         // NOTE: Since "GetListOfKeys()" returns TList<TKey*>, we can safely static_cast here,
         // if there was any doubt about it being TKeys, static_cast would not be safe
         // TODO: Could do a safety check here, check GetName() returns TKey BEFORE static_cast ...?
@@ -728,7 +724,7 @@ std::optional<SelectionReturnType> select_root_type(std::unordered_map<int, std:
     }
     
     // Retrieve the string associate with the integer key
-    std::string selectedObjectType = objectMap.at(selectedTypeIdx);
+    std::string const selectedObjectType = objectMap.at(selectedTypeIdx);
     // NOTE: Equivalent to .get() in typescript
     
     // Enable flag for chosen object type
@@ -743,7 +739,7 @@ std::optional<SelectionReturnType> select_root_type(std::unordered_map<int, std:
     }
     
     // ...
-    struct SelectionReturnType result { selectedTypeIdx, selectedObjectType };
+    struct SelectionReturnType const result { selectedTypeIdx, selectedObjectType };
     // NOTE: "struct" keyword here is optional in c++, but mandatory in c
     
     // ...
@@ -783,15 +779,15 @@ std::string select_root_object(SelectionReturnType const& selectionParams, std::
     
     // ...
     std::cout << "\nShowing options for object type: " << selectedTypeIdx << " - " << selectedObjectType << "\n";
-    // std::cout << "\nWhat object would you like to access? (type a number from the options below, or enter q to exit):\n";
     
     // Get a list of all objects matching the chosen type
-    std::vector<std::string>filteredObjects = categoryMap.at(selectedObjectType);
+    std::vector<std::string> const filteredObjects = categoryMap.at(selectedObjectType);
     
-    // ...
+    // Iterate over list of objects matching the chosen object type
     for (int i = 0; i < filteredObjects.size(); i++) {
-        // ...
+        // Display key-value list of objects
         std::cout << (i + 1) << ") " << filteredObjects[i] << "\n";
+        // I.e., 1) StepDataDetection\n, 2) StepDataAbsorption\n, etc
     }
     
     // If there is only one object matching that type, select it by default
@@ -803,16 +799,11 @@ std::string select_root_object(SelectionReturnType const& selectionParams, std::
     // ...
     std::cout << "\nWhat object would you like to access? (type a number from the options above, or enter q to exit):\n";
     
-    // ...
+    // Prompt user to select an object from the displayed list, via integer key
     int const selectedObjectIdx = prompt_user_int(1, filteredObjects.size());
-    // std::cout << "USER SELECTED INT: " << selectedObjectIdx << "\n";
     
-    // ...
-    std::string selectedObjectName = filteredObjects.at(selectedObjectIdx - 1); // NOTE: Make selection zero-indexed again (minus 1)
-    // std::cout << "USER SELECTED OBJECT: " << selectedObjectName << "\n";
-    
-    // Cache chosen root object name
-    lastObjectName = selectedObjectName;
+    // Use the integer key to retrieve the name of the object selected
+    std::string const selectedObjectName = filteredObjects.at(selectedObjectIdx - 1); // NOTE: Make selection zero-indexed again (minus 1)
     
     return selectedObjectName;
 }
@@ -891,7 +882,7 @@ std::string select_branch() {
     std::cout << "\nFetching branch list...\n";
     
     // Get iterable list of branches in this TTree
-    TObjArray* branches = nTuple->GetListOfBranches(); 
+    TObjArray const* branches = nTuple->GetListOfBranches(); 
 
     if (!branches) {
         std::cerr << "\nError: Couldnt get TTree branches array!\n";
@@ -903,7 +894,7 @@ std::string select_branch() {
     std::cout << "\nBranch list has been loaded.\n";
     
     // Get the number of branches in the TTree
-    int numEntries = branches->GetEntries();
+    int const numEntries = branches->GetEntries();
     
     if (numEntries == 0) {
         std::cerr << "\nError: Selected TTree contains no branches!\n";
@@ -920,7 +911,7 @@ std::string select_branch() {
     
     // Iterate through the branches of the TTree
     for (int i = 0; i < numEntries; i++) {
-        TObject* entry = branches->At(i); // NOTE: Is TBranch*
+        TObject const* entry = branches->At(i); // NOTE: Is TBranch*
         char const* branchName = entry->GetName();
         std::cout << (i + 1) << ") " << branchName << "\n";
         branchMap[i + 1] = branchName;
@@ -937,15 +928,12 @@ std::string select_branch() {
     // Otherwise prompt user for selection
     else {
         std::cout << "\nWhat branch would you like to access? (type a number from the options above, or enter q to exit):\n";
-        int res = prompt_user_int(1, numEntries);
+        int const res = prompt_user_int(1, numEntries);
         chosenBranch = branchMap.at(res);
     }
     
     // ...
     std::cout << "\nBranch: \"" << chosenBranch << "\" selected.\n";
-    
-    // Cache chosen branch name
-    lastBranchName = chosenBranch;
     
     return chosenBranch;
 }
@@ -1245,10 +1233,6 @@ int load_file(std::string const& path) {
  * @xmin // min channel value (i.e., usually 0, but maybe non-zero, or negative)
  * @xmax // max channel value (i.e., 3500 photons, 2000 mm, 30 ns, etc)
  * 
- * TODO: Have user specify whether hist params should be automatically calculated,
- * via finding max value from dataset (+say 5-10% for xmax), and either calulating nbins, or leaving at 1024-4096 bins
- * or if theyd like a specific setup (i.e. 2048 channels)
- * 
  * NOTE: Sets title based on input type
  * i.e., ASCII = "Energy Spectrum"
  * ROOT Ntuple = name of ntuple
@@ -1258,53 +1242,64 @@ int load_file(std::string const& path) {
  * i.e., ASCII = TH1I
  * ROOT Ntuple = TH1I, OR, TH1D
  * 
+ * TODO: Have user specify whether hist params should be automatically calculated,
+ * via finding max value from dataset (+say 5-10% for xmax), and either calulating 
+ * nbins, or leaving at 1024-4096 bins or if theyd like a specific setup (i.e.,
+ * 2048 channels)
+ * 
  * TODO: Im calling this in fill_hist_ntuple & fill_hist_ascii:
  * hpx->SetDirectory(nullptr);
  * Is it not better to just call it at the end of this function?
+ * 
+ * TODO: nbins, xmin, xmax, args are currently useless at the moment, largely just 
+ * placeholders for when i implement replotting, etc
  */
 int create_hist(int nbins = -1, double xmin = -1, double xmax = -1) {
     // Histogram args
     std::string title;
     std::string legendTitle;
 
-    // ...
-    // std::string leafType;
-    std::string_view leafType;
+    // Will be used to store data type of chosen TBranch if ROOT TTree is selected
+    std::string_view leafType; // std::string leafType;
     
     // Handle ASCII (.Spe) file format
     if (fileType == FileType::ASCII) {
-        // ...
+        // For now, is safe assumption that this is an energy spectrum exported from Maestro
         title = "EnergySpectrum";
         legendTitle = "Energy Spectrum";
         
-        // TODO: I feel like these should be passed as params
+        // Use the meta data parsed from the ASCII file to define channels and low/high
         nbins = metaData.end - metaData.start + 1;
         xmin = metaData.start;
         xmax = metaData.end + 1;
+        // TODO: These should be passed as params, instead of global object access
     }
     // Handle ROOT Ntuple
     else if ((fileType == FileType::ROOT) && (rootObjectType == RootObjectType::TTree)) {
-        // ...
+        // Get the TTree and TBranch names
         std::string const nTupleName = nTuple->GetName();
         char const* branchName = branch->GetName();
         
-        double branchMin = nTuple->GetMinimum(branchName);
-        
-        // ...
+        // Name the histogram after the ROOT object
         title = nTupleName + "Hpx"; // NOTE: Using the TTree name itself causes ROOT to think the histogram already exists
         legendTitle = branchName;
         
-        // ...
-        nbins = 2048; // TODO: Not sure on best approach for dynamic binning currently
-        xmin = ((branchMin < 0.) ? branchMin : 0.); // should be zero, unless negative axis
-        xmax = (nTuple->GetMaximum(branchName)) * 1.1; // +10%
+        // Get the minimum/maximum values in the chosen TBranch
+        double const branchMin = nTuple->GetMinimum(branchName);
+        double const branchMax = nTuple->GetMaximum(branchName);
         
-        std::cout << "\nXMIN: " << xmin << " XMAX: " << xmax << "\n";
+        // Set xmin to zero or branch minimum, whichever is lower, and xmax to max + 10%
+        nbins = 2048; // TODO: Dynamic binning
+        xmin = ((branchMin < 0.) ? branchMin : 0.); // should be zero, unless negative axis
+        xmax = (branchMax) * 1.1; // +10% (NOTE: Using max is very succeptible to outliers)
         
         // Get TTree data type by reading the leaves
         leafType = leaf->GetTypeName();
         // std::cout << "LEAF TYPE: " << leafType << "\n";
     }
+    
+    std::cout << "\nHistogram args set to:\n";
+    std::cout << ">>> Num Bins: " << nbins << " XMIN: " << xmin << " XMAX: " << xmax << "\n";
     
     // Reject invalid histogram args
     if (title.empty() || legendTitle.empty() || nbins == -1 || xmin == -1 || xmax == -1) {
@@ -1314,9 +1309,8 @@ int create_hist(int nbins = -1, double xmin = -1, double xmax = -1) {
         return 1;
     }
     
-    // ...
+    // Handle ASCII files and ROOT TBranches containing integers
     if ((fileType == FileType::ASCII) || ((fileType == FileType::ROOT) && (leafType == intType))) {
-        // ...
         std::cout << "\n>>> Creating TH1I...\n";
         
         // Create a histogram (TH1I = integer - channel/counts both ints)
@@ -1330,9 +1324,8 @@ int create_hist(int nbins = -1, double xmin = -1, double xmax = -1) {
         // NOTE: TH1I works while num photons is int, but may need long64 (TH1L) for gain applied num photons,
         // or TH1F (float - 4 bytes) / TH1D (double - 8 bytes) if using floating point values
     }
-    // ...
+    // Handle ROOT TBranches containing doubles
     else if ((fileType == FileType::ROOT) && (leafType == doubleType)) {
-        // ...
         std::cout << "\n>>> Creating TH1D...\n";
         
         // Create a histogram (TH1D = double)
@@ -1357,7 +1350,7 @@ int create_hist(int nbins = -1, double xmin = -1, double xmax = -1) {
     // X-axis title
     // hpx->SetXTitle("Distance (mm)");
     
-    // ...
+    // Detach the histogram from the current open ROOT TFile
     // hpx->SetDirectory(nullptr);
     
     std::cout << "\nHistogram instantiated.\n";
@@ -1443,78 +1436,11 @@ int fill_hist_ascii(int const& start, int const& end) {
 }
 
 /*
- * NOTE: With the higher resolution (2048 bins vs 1024 bins previously),
- * aliasing is seen when plotting the Ntuples data in a histogram,
- * to account for the higher resolution, we can apply a gaussian smearing
- * to reduce the jagged edges
- * 
- * TODO: Make smearing optional, potentially via boolean param
- * 
- * TODO: When calling plot(), may need to 
- */
-double post_processing(int const entry) {
-// int post_processing(int entry) {
-// TODO: int const post_processing(int entry, int nbins = 2048, int xmax = 3500) {
-    // In counting statistics: sigma = sqrt(N)
-    double const sigma = std::sqrt(entry);
-    // TODO: This assumes pure Poisson statistics, in a real detector system,
-    // resolution is a combination of:
-    // sigma_scintillator + sigma_transfer + sigma_PMT
-    // in geant4 RESOLUTIONSCALE covers sigma_scintillator,
-    // geometry and photocathode efficiency covers sigma_transfer,
-    // and this sigma covers sigma_PMT (but doesnt neccesarily model is accurately)
-    
-    // double const sigma = 0.5 * std::sqrt(entry);
-    // double const sigma = entry * (0.08 / 2.355);
-    // NOTE: ^ 1.8 res scale, n * (res lab / 2.355) = 114.02 FWHM
-    
-    // Apply gaussian smearing to the photons detected in this event
-    double const smeared = gRandom->Gaus(entry, sigma);
-    // TODO: potentially reduce gaussian smearing, reducing from:
-    // sigma = sqrt(n)
-    // to:
-    // sigma = 0.5 * sqrt(n)
-    // reduces FWHM from ~105.35 FWHM (at 1.8 res scale), to 91.16 (still at 1.8 res scale)
-    // NOTE: Impacts FWHM more than i initially thought
-    
-    // Conversion factor from num optical photons "detected" to 0-2048 channel number
-    double const conversion = 2048. / 3500.;
-    // double const conversion = 1024. / 3500.;
-    // NOTE: 3500 photons is arbitrary currently, in practice, this value should
-    // reflect the upper window limit for the energy region of interest, i.e.:
-    // 0 - 2 MeV
-    
-    // TODO: ^^ potentially make nbins & xmax global variables, set prior to fit,
-    // or pass them in as params to this fn
-    
-    // Convert entry to channel number
-    // int const channel = conversion * smeared; // int channel = std::floor(conversion * entry);
-    double const channel = conversion * smeared;
-    // NOTE: Let H1 handle binning doubles rather than flooring
-    
-    // NOTE: Can also apply a gain factor (but would likely want to establish 
-    // this value accurately from the physical detector rather than using estimate):
-    // int const gain = 1e6;
-    // int const nTotal = entry * gain;
-    // double const sigma = gain * std::sqrt(entry);
-    // double const smeared = gRandom->Gaus(nTotal, sigma);
-    // double const conversion = 2048. / (3500. * gain);
-    // double const channel = conversion * smeared;
-    
-    return channel;
-}
-
-/*
  * Iterate through tree branch, populating histogram with per-event values
- * 
- * TODO: Split out getting branch and checking its valid, from the actual reading
- * of the branch. I.e.: load_branch(), read_branch()
  * 
  * TODO: Make post-processing optional
  * 
- * TODO: Make it so branchname is actually passed in as param
- * 
- * TODO: Maybe query list of branchnames in tree
+ * TODO: Make it so branch or branch name is actually passed in as param
  */
 int fill_hist_ntuple() {
     // Handle invalid branch name
@@ -1673,43 +1599,6 @@ int fill_hist() {
 }
 
 /*
- * Filter outliers in exponential/power/log normal plots:
- * 
- * - 99.5% quantile * 1.05
- * - 99.9% quantile
- */
-int rebin_hist() {
-    // Handle missing histogram
-    if (!hpx) {
-        std::cerr << "\nError (rebin_hist()): Histogram not found!\n";
-        // NOTE: All files and objects should already be closed/deconstructed at this point
-        return 1;
-    }
-    
-    // int mergeBins = 2; // number of bins to merge
-    // hpx->Rebin();
-    // hpx->RebinAxis(, );
-    // hpx->RebinX();
-    // hpx->SetAxisRange(xmin, xmax);
-    
-    std::cout << "Skewness: " << hpx->GetSkewness() << "\n";
-    // NOTE: Vals < ~-2 or > ~+2: imply exponential, power, or log normal distribution
-    // NOTE: Energy spectrum outputs ~-0.2, so can be disambiguated
-    
-    int const numQuartiles = 4;
-    double out[numQuartiles] = {};
-    double quartiles[numQuartiles] = {0.75, 0.99, 0.995, 0.999};
-    
-    hpx->GetQuantiles(numQuartiles, out, quartiles);
-    
-    for (int i = 0; i < numQuartiles; i++) {
-        std::cout << ">>> " << quartiles[i] << "th Quartile: " << out[i] << "\n";
-    }
-    
-    return 0;
-}
-
-/*
  * Instantiates a canvas object, populating the global variable
  */
 int create_canvas() {
@@ -1749,9 +1638,10 @@ int create_canvas() {
 /*
  * Renders the populated histogram object on to the instantiated canvas
  * 
- * TODO: May not always want to setOptStat(0)
+ * NOTE: May not always want to setOptStat(0), is useful for energy spectra,
+ * but for exponentials etc, having a way to leave it enabled is useful
  */
-int render_hist() {
+int render_hist(bool hideDefaultStats = true) {
     // Handle error creating canvas
     if (!canvas) {
         std::cerr << "\nError (render_hist()): Couldnt find canvas!\n";
@@ -1781,7 +1671,7 @@ int render_hist() {
     canvas->Update(); // NOTE: Afaik, this is not needed
     
     // Clean the default histogram statistics box (498.4, 291.1)
-    // gStyle->SetOptStat(0); // default = 1111 (NOTE: 000001111 with zeros removed)
+    if (hideDefaultStats) gStyle->SetOptStat(0); // default = 1111 (NOTE: 000001111 with zeros removed)
     // 0 = hides the statistics box entirely (leaving only fit box when fitted)
     // 10 = only number of entries
     // 110 = entries and mean
@@ -1800,28 +1690,21 @@ int render_hist() {
  * 
  * TODO: Maybe move away from global objects, and lean into functional a little more
  */
-int plot_x(std::string const userPath, std::string const objectName = "", std::string const branchName = "", double const xmin = 0, double const xmax = 0, int const nbins = 0) {
+int plot(std::string const userPath) {
     // ...
     // std::cout << "\nHIST PARAMS:\nX Min: " << xmin << " X Max: " << xmax << " Num Bins: " << nbins << "\n";
     
-    // NOTE: Must delete TBranch -> then delete TTree -> then delete TFile,
-    // trying to delete the TBranch AFTER already deleting the TTree will result in a segfault
-    // likewise for trying to delete TTree after deleting TFile (assuming TTree->SetDirectory() wasnt called)
-    // NOTE: This is incorrect ^^^ Just delete TFile
+    // Error handlers to catch bad program state (these should all have been cleared)
     if (leaf) {
         std::cout << "\nFound existing Ntuple branch leaf, clearing...\n";
         return 1;
     }
     if (branch) {
         std::cout << "\nFound existing Ntuple branch, clearing...\n";
-        // delete branch; // NOTE: CALLING DELETE ON BRANCH AFTER DELETING NTUPLE CAUSES A SEGFAULT
-        // branch = nullptr; // NOTE: CALLING DELETE ON BRANCH AFTER FILE IS CLOSED ALSO CAUSES A SEGFAULT SEEMINGLY
         return 1;
     }
     if (nTuple) {
         std::cout << "\nFound existing Ntuple, clearing...\n";
-        // delete nTuple;
-        // nTuple = nullptr;
         return 1;
     }
     if (inASCII.is_open()) { // NOTE: if (inASCII) always returns true (even after .close() & .clear())
@@ -1833,10 +1716,7 @@ int plot_x(std::string const userPath, std::string const objectName = "", std::s
         return 1;
     }
     // NOTE: The inASCII & inROOT cases should never really flag true now (closed after loading 
-    // TH1D or Ntuple, respectively, or on error trying to load them), but ntuple and branch can 
-    // still flag true, if the error occurs in create_hist() or fill_hist()
-    // (and since ASCII/ROOT Ntuples share some code execution, not sure deleting them on error 
-    // in is very clean)
+    // TH1D or Ntuple, respectively, or on error trying to load them)
     
     // Incase plot will be called multiple times in succession, ensure histo cleared each time
     if (hpx) {
@@ -1880,27 +1760,17 @@ int plot_x(std::string const userPath, std::string const objectName = "", std::s
         std::cerr << "\nAborting: Load file error!\n";
         return 1;
     }
-    
-    // ...
-    // if (fileType == FileType::ASCII) {
-    //     nbins = metaData.end - metaData.start + 1;
-    //     xmin = metaData.start;
-    //     xmax = metaData.end + 1;
-    // }
-    
-    // TODO: is it worth having both load_file and load_object?
+
+    // TODO: ^^^^ is it worth having both load_file and load_object?
     // load_object would only run for non-ascii files
     
-    // Only call: create_hist() & fill_hist(); if its ROOT Ntuple, or ASCII
+    // Only call: create_hist() & fill_hist(); if its ASCII or ROOT Ntuple
     // NOTE: If its ROOT Histogram, hpx pointer will already be populated
-    
     // TODO: This enlosure feels a bit dirty, likely a better way to do this
-    // if ((fileType != FileType::ROOT) && (rootObjectType != RootObjectType::TH1D)) { // TEST: Uncomment to get Ntuple still loaded error
-    if (rootObjectType != RootObjectType::TH1D) {
-    // if (fileType == FileType::ASCII || (fileType == FileType::ROOT && rootObjectType == RootObjectType::TTree)) {
+    if (fileType == FileType::ASCII || (fileType == FileType::ROOT && rootObjectType == RootObjectType::TTree)) {
     
         // Attempt to instantiate histogram object
-        int const histError = create_hist(nbins, xmin, xmax);
+        int const histError = create_hist();
         
         if (histError) {
             std::cerr << "\nAborting: Create hist error!\n";
@@ -1916,7 +1786,7 @@ int plot_x(std::string const userPath, std::string const objectName = "", std::s
         }
     }
     
-    // Attempt to create canvas and paint the histogram
+    // Attempt to create canvas
     int const canvasError = create_canvas();
     
     if (canvasError) {
@@ -1936,7 +1806,7 @@ int plot_x(std::string const userPath, std::string const objectName = "", std::s
 //         }
 //     }
     
-    // ...
+    // Attempt to draw the histogram to the canvas
     int const renderError = render_hist();
     
     if (renderError) {
@@ -1948,103 +1818,8 @@ int plot_x(std::string const userPath, std::string const objectName = "", std::s
     rootObjectType = RootObjectType::NULLOBJ;
     fileType = FileType::NULLFILE;
     
-     // TEST - Cache last used path
-    // std::cout << "\nPATH: " << path << "\n";
-    // std::cout << "\nPATH: " << &path << "\n";
-    // // lastPath = &path;
-    // std::cout << "\nPATH: " << lastPath << "\n";
-    // std::cout << "\nPATH: " << *lastPath << "\n";
-    lastPath = path;
-    // TEST
-    
     // No errors, all good
     return 0;
-}
-
-/*
- * Overload 1) ROOT object selection CLI and automated histogramming
- */
-int plot(std::string const userPath) {
-    int const success = plot_x(userPath);
-    return success;
-};
-
-/*
- * Overload 2) Manual ROOT object name specification and automated histogramming
- */
-int plot(std::string const userPath, std::string const objectName, std::string const branchName) {
-    int const success = plot_x(userPath, objectName, branchName);
-    return success;
-};
-
-/*
- * Overload 3) ROOT object selection CLI and pre-defined histogramming parameters
- */
-int plot(std::string const userPath, int const nbins, double const xmin, double const xmax) {
-    int const success = plot_x(userPath, "", "", nbins, xmin, xmax);
-    return success;
-};
-
-/*
- * Overload 4) Manual ROOT object name specification, and pre-defined histogramming parameters
- */
-int plot(std::string const userPath, std::string const objectName, std::string const branchName, int const nbins, double const xmin, double const xmax) {
-    int const success = plot_x(userPath, objectName, branchName, nbins, xmin, xmax);
-    return success;
-}
-
-/*
- * ...
- * 
- * 1) User plots object of choice via interactive CLI
- * 2) User sees plot and knows how theyd like to rebin / rescale x-axis
- * 3) User calls replot with those values, without having to re-enter file name or going through CLI again,
- * due to cached "lastPath" and "lastObjectName"
- */
-int replot(int const nbins = 0, double const xmin = 0, double const xmax = 0) {
-    // ...
-    // if (fileType != FileType::ROOT) {
-    //     std::cerr << "Replot only available for ROOT objects.\n";
-    //     return 1;
-    // }
-    // if (rootObjectType != RootObjectType::TTree) {
-    //     std::cerr << "Replot only available for ROOT Ntuples.\n";
-    //     return 1;
-    // }
-    // NOTE: Im clearing these at the end of plot() ...
-    
-    
-    if (lastPath.empty()) {
-        std::cerr << "Path not cached.\n";
-        return 1;
-    }
-    if (lastObjectName.empty()) {
-        std::cerr << "Ntuple name not cached.\n";
-        return 1;
-    }
-    if (lastBranchName.empty()) {
-        std::cerr << "Branch name not cached.\n";
-        return 1;
-    }
-    
-    // ...
-    std::cout << "LAST PATH: " << lastPath << "\n";
-    std::cout << "LAST TTREE: " << lastObjectName << "\n";
-    std::cout << "LAST BRANCH: " << lastBranchName << "\n";
-    
-    return 1;
-    
-    // ...
-    int const success = plot_x(lastPath, lastObjectName, lastBranchName, nbins, xmin, xmax);
-    
-    return success;
-}
-
-/*
- * TODO ...
- */
-int add_axis_title(std::string const& title) {
-    return 1;
 }
 
 /*

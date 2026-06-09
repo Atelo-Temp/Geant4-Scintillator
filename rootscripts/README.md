@@ -286,21 +286,25 @@ live time value listed in the ASCII file.
 
 TODO: Potentially reintroduce saving for the resultant spectra as a .root file in a future iteration.
 
-## TODOS
-
-22) plot_any.cc (alt: onmi_plot.cc, load_any.cc, versa_plot.cc), flexi_plot.cc
+22) plot_any.cc (alt: onmi_plot.cc, load_any.cc, versa_plot.cc, flexi_plot.cc)
 
 Combines:
 - ROOT object browser CLI (root_explorer.cc)
 - Updated ASCII handling (read_spe.cc)
 - Histogram saving (save_hist.cc)
 
+## TODOS
+
+23) replot.cc
+
+Extension of plot_any.cc
+
 Introduces:
 - Optional post-processing for ROOT Ntuples (smearing)
 - Quick replotting functionality (via caching last used filename and ROOT object name)
 - plot() function overloads
 
-22) exponential_fit.cc
+24) exponential_fit.cc
 
 NOTE: The prior work done on this has been extracted out to omni_plot.cc, as handling multiple root object inputs, and tree/branch names, is quite an involved process, and dont want to implement too many new features into a single
 
@@ -595,7 +599,7 @@ fit({320,350,420,450},50) // ~(276 keV, 303 keV, 356 keV & 384 keV)
 subtract("~/Maestro/NaI/NaI_2inch_300s_sources/137Cs_NaI_800v_20coarse_3cm.Spe", "~/Maestro/NaI/NaI_2inch_300s_sources/Background_NaI_800v_20coarse_600s.Spe") // 137Cs - NaI2'
 ```
 
-### plot_any.cc / omni_plot.cc
+### plot_any.cc
 
 ASCII file
 
@@ -627,16 +631,18 @@ ROOT file (containing only a histogram)
 plot("../data/21_hist.root")
 ```
 
+Save plotted histogram
+
+```c++
+save("~/geant4/geant4-v11.3.2/project/data/21_hist.root") // Absolute pathing
+save("../data/21_hist.root") // Relative pathing (from ./rootscripts)
+```
+
+### replot.cc
+
 Replot ROOT Ntuple
 
 ```c++
 plot("../final/build/output0.root")
 replot(1024,0,5000) // nbins, xmin, xmax
-```
-
-Save plotted histogram
-
-```c++
-save("~/geant4/geant4-v11.3.2/project/data/21_hist.root") // absolute pathing
-save("../data/21_hist.root") // from ./rootscripts
 ```
