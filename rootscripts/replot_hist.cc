@@ -145,8 +145,11 @@ std::string check_path(std::string const& path) {
     // If path had directory delimiter
     else {
         // Use only the file name for extension check
-        fileName = path.substr(dirDelimiterIdx);
+        fileName = path.substr(dirDelimiterIdx + 1);
+        // NOTE: +1, since otherwise it would be "/filename.ext"
     }
+    
+    std::cout << "\nFilename: " << fileName << "\n";
     
     // File extension delimiter
     std::string const extDelimiter = "."; // char const
@@ -180,7 +183,7 @@ std::string check_path(std::string const& path) {
     std::string const root = ".root"; // const char*
     
     // Check path ends with valid extension, reject invalid file type
-    if (token != spe && token != root) {
+    if ((token != spe) && (token != root)) {
         // Write to stdout
         std::cerr << "\nError: Invalid extension.\n";
         
@@ -209,6 +212,12 @@ std::string check_path(std::string const& path) {
         // Get the home path (~) from the environment variable
         char const* home = getenv("HOME");
         // std::cout << home << "\n"; // debug
+        
+        // Handle null envariable
+        if (!home) {
+            std::cerr << "\nError: Failed to get home path.\n";
+            return "";
+        }
         
         // Trim "~" from the start of the string (start at idx = 1, as "~" at 0)
         std::string const trimmedPath = path.substr(1, path.size());
