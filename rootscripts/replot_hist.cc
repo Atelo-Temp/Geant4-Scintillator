@@ -1534,7 +1534,7 @@ double post_processing(int const entry, int const nbins = 2048, double const xma
  * 
  * TODO: Make it so branch or branch name is actually passed in as param
  */
-int fill_hist_ntuple() {
+int fill_hist_ntuple(bool const doPostProcessing, int const nbins, double const xmax) {
     // Handle invalid branch name
     if (!branch) {
         std::cerr << "\nError: TTree branch not found. Couldnt fill histogram. Closing root file and deconstructing Ntuple.\n";
@@ -1633,8 +1633,23 @@ int fill_hist_ntuple() {
         // std::cout << entry; // debug
         
         // Add a count to the appropriate bin for that value
-        if (dataType == intType) hpx->Fill(intEntry);
-        else if (dataType == doubleType) hpx->Fill(doubleEntry);
+        // if (dataType == intType) hpx->Fill(intEntry);
+        // else if (dataType == doubleType) hpx->Fill(doubleEntry);
+        // NOTE: Switching on int/double data type
+        
+        // Add a count to the appropriate bin for that value, introduce smearing if requested
+        if (dataType == intType) {
+            if (doPostProcessing) {
+                doubleEntry = post_processing(intEntry, nbins, xmax);
+                hpx->Fill(doubleEntry);
+            } else {
+                hpx->Fill(intEntry);
+            }
+        }
+        else if (dataType == doubleType) {
+            if (doPostProcessing) doubleEntry = post_processing(doubleEntry, nbins, xmax);
+            hpx->Fill(doubleEntry);
+        }
         // NOTE: Switching on int/double data type
     }
     
@@ -1663,7 +1678,7 @@ int fill_hist_ntuple() {
 /*
  * Router for histogram fill methodology, switches based on input file type
  */
-int fill_hist() {
+int fill_hist(bool const doPostProcessing, int const nbins, double const xmax) {
     // ...
     std::cout << "\nRouting to: " << (fileType == FileType::ASCII ? "ASCII" : "ROOT") << " handler.\n";
     
@@ -1675,8 +1690,9 @@ int fill_hist() {
         status = fill_hist_ascii(metaData.start, metaData.end);
     }
     else if (fileType == FileType::ROOT) {
-        status = fill_hist_ntuple(); // TODO: Getting branchname here is actually a bit of a shitter, may have to do global branch object, or global branch name
-    } 
+        // status = fill_hist_ntuple(); // TODO: Getting branchname here is actually a bit of a shitter, may have to do global branch object, or global branch name
+        status = fill_hist_ntuple(doPostProcessing, nbins, xmax);
+    }
     else {
         std::cerr << "\nError: Unsupported file type.\n";
     }
@@ -1918,7 +1934,8 @@ int plot_x(
     if (fileType == FileType::ASCII || (fileType == FileType::ROOT && rootObjectType == RootObjectType::TTree)) {
     
         // Attempt to instantiate histogram object
-        int const histError = create_hist(nbins, xmin, xmax);
+        // int const histError = create_hist(nbins, xmin, xmax);
+        int const histError = create_hist(nbins, xmin, doPostProcessing ? nbins : xmax);
         
         if (histError) {
             std::cerr << "\nAborting: Create hist error!\n";
@@ -1926,7 +1943,7 @@ int plot_x(
         }
         
         // Attempt to populate histogram from ASCII or ROOT file
-        int const fillError = fill_hist();
+        int const fillError = fill_hist(doPostProcessing, nbins, xmax);
         
         if (fillError) {
             std::cerr << "\nAborting: Fill hist error!\n";
@@ -2010,7 +2027,7 @@ int plot(std::string const userPath, std::string const objectName, std::string c
  * 
  * TODO: Post-processing
  */
-int replot(int const nbins, double const xmin, double const xmax) {
+int replot(int const nbins, double const xmin, double const xmax, bool const doPostProcessing = false) {
     // ...
     if (fileType != FileType::ROOT) {
         std::cerr << "Replot only available for ROOT objects.\n";
@@ -2052,7 +2069,7 @@ int replot(int const nbins, double const xmin, double const xmax) {
     std::cout << "LAST BRANCH: " << lastBranchName << "\n";
     
     // ...
-    int const success = plot_x(lastPath, lastObjectName, lastBranchName, nbins, xmin, xmax, true);
+    int const success = plot_x(lastPath, lastObjectName, lastBranchName, nbins, xmin, xmax, true, doPostProcessing);
     
     return success;
 }
