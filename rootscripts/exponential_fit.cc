@@ -899,6 +899,52 @@ TF1* exponential_decay() {
  * - A_2 = amplitude (slow component)
  * - tau_fall_2 = decay time constant (slow component)
  * - C = Constant baseline or plateau (0 in this case with no background component)
+ * 
+ * # Automated Parameter Estimation:
+ * 
+ * At late times the fast component has completely died out (exp(-t/tau) = ~0),
+ * so the remaining data is purely the slow component.
+ * 
+ * ## Slow component
+ * 
+ * 1) Find the tail region:
+ * 
+ * total 1/e * 4-to-6
+ * OR
+ * last 30% of non-zero bins
+ * 
+ * 2) Estimate tau slow:
+ * 
+ * Grab two bins from this tail region (x_1 and x_2), calculate:
+ * tau_slow = (x_2 - x_1) / ln(y1 / y2)
+ * 
+ * 3) Estimate amplitude of slow component:
+ * 
+ * Project the slope back to the maximum bin using:
+ * A_slow = y_1 * exp((x_1 - x_max) / tau_slow)
+ * 
+ * NOTE: x_max is true maximum bin, as we want to know slow amplitude at that point
+ * 
+ * ## Fast component
+ * 
+ * Now that we have a rough estimate of the slow component,
+ * subtract it from the early data to isolate the fast decay
+ * 
+ * 1) Subtract the slow background:
+ * 
+ * For the early bins (right after the max bin), calculate a corrected yield:
+ * 
+ * y_corrected(x) = y_actual(x) - A_slow * exp(-(x - x_max) / tau_slow)
+ * 
+ * 2) Estimate tau fast:
+ * 
+ * Find the 1/e drop point of this corrected early data
+ * 
+ * 3) Estimate amplitude of fast component:
+ * 
+ * Calculate it by subtracting slow amplitude from absolute peak value:
+ * 
+ * A_fast = y_max - A_slow
  */
 TF1* exponential_decay_two_phase() {
     // Find the tallest point in the current histogram range
@@ -906,7 +952,7 @@ TF1* exponential_decay_two_phase() {
     double const peakX = hpx->GetXaxis()->GetBinCenter(maxBin); // get the x-axis location of max counts bin
     double const peakY = hpx->GetBinContent(maxBin); // get the y-axis number of counts for max bin, i.e. amplitude
     
-    std::cout << "Peak X: " << peakX << " Peak Y: " << peakY << "\n";
+    std::cout << "Peak X: " << peakX << ", Peak Y: " << peakY << "\n";
     
     // Define the fit window (low & high)
     // NOTE: the region of the histogram ROOT is allowed to use for the fit.
@@ -914,7 +960,116 @@ TF1* exponential_decay_two_phase() {
     double const high = hpx->GetXaxis()->GetXmax();
     
     
+    /////////////////
+    // SLOW COMPONENT
+    /////////////////
     
+    // Automate decay constant (tau_fall)
+    // NOTE: Find the point where the signal drops to 37% (1/e) of its peak after the max
+    int fallBin = maxBin;
+    
+    // While current bin less than max bins, and current bin value still greater than 1/e of the peak
+    while ((fallBin < hpx->GetNbinsX()) && (hpx->GetBinContent(fallBin) > peakY * 0.368)) {
+        fallBin++;
+    }
+    
+    std::cout << "1/e Bin: " << fallBin << "\n";
+
+    
+    
+    
+    std::cout << "1/e Bin * 4: " << fallBin * 4 << "\n";
+    std::cout << "1/e Bin * 5: " << fallBin * 5 << "\n";
+    std::cout << "1/e Bin * 6: " << fallBin * 6 << "\n";
+    
+    int const cutoff_5 = fallBin * 5;
+    int const nbins = 5;
+    
+    // Take mean of next n bins
+    double mean_x_1 = 0.;
+    double mean_y_1 = 0.;
+    
+    for (int i = cutoff_5; i < cutoff_5 + nbins; i++) {
+        mean_x_1 += i;
+        mean_y_1 += hpx->GetBinContent(i);
+    }
+    
+    // std::cout << "X_1: " << mean_x_1 << " Y_1: " << mean_y_1 << "\n";
+    
+    mean_x_1 /= nbins;
+    mean_y_1 /= nbins;
+    
+    std::cout << "X_1: " << mean_x_1 << ", Y_1: " << mean_y_1 << "\n";
+    
+    
+    // Take mean on subsequent n bins
+    int const cutoff_6 = fallBin * 6;
+    double mean_x_2 = 0.;
+    double mean_y_2 = 0.;
+    
+    for (int i = cutoff_6 - nbins; i < cutoff_6; i++) {
+        mean_x_2 += i;
+        mean_y_2 += hpx->GetBinContent(i);
+    }
+    
+    // std::cout << "X_2: " << mean_x_2 << " Y_2: " << mean_y_2 << "\n";
+    
+    mean_x_2 /= nbins;
+    mean_y_2 /= nbins;
+    
+    std::cout << "X_2: " << mean_x_2 << ", Y_2: " << mean_y_2 << "\n";
+    
+    // tau_slow = (x_2 - x_1) / ln(y1 / y2)
+    double const tau_slow = (mean_x_2 - mean_x_1) / std::log(mean_y_1 / mean_y_2);
+    
+    // if (tau_slow <= 0) ... // Fallback safety
+    
+    // A_slow = y_1 * exp((x_1 - x_max) / tau_slow)
+    double const amplitude_slow = hpx->GetBinContent(cutoff_5) * std::exp((cutoff_5 - peakX) / tau_slow);
+    
+    std::cout << "Tau (slow): " << tau_slow << ", Amplitude (slow): " << amplitude_slow << "\n";
+    
+    
+    /////////////////
+    // FAST COMPONENT
+    /////////////////
+    
+    // A_fast = y_max - A_slow
+    double const amplitude_fast = peakY - amplitude_slow;
+    
+    // 1/e value for fast component
+    double const e_fold = amplitude_fast * 0.368;
+    
+    // std::cout << "Amplitude (fast): " << amplitude_fast << ", E-Fold (fast): " << e_fold << "\n";
+    
+    int fallBinFast = maxBin;
+    
+    while (fallBinFast < hpx->GetNbinsX()) {
+        // Calculate a corrected yield:
+        // y_corrected(x) = y_actual(x) - A_slow * exp(-(x - x_max) / tau_slow)
+        
+        double const y_actual_x = hpx->GetBinContent(fallBinFast);
+        
+        double const y_slow = amplitude_slow * std::exp(-(fallBinFast - maxBin) / tau_slow);
+        
+        double const y_fast = y_actual_x - y_slow;
+        
+        // std::cout << "Y FAST: " << y_fast << "\n";
+        
+        if (y_fast <= e_fold) break;
+        
+        fallBinFast++;
+    }
+    
+    double const x_fall = hpx->GetBinCenter(fallBinFast);
+    
+    std::cout << "X Fall (fast): " << x_fall << "\n";
+    
+    double const tau_fast = x_fall - peakX;
+    
+    // if (tau_fast <= 0) ... // Fallback safety
+    
+    std::cout << "Tau (fast): " << tau_fast << ", Amplitude (fast): " << amplitude_fast << "\n";
     
     // ...
     // double const constant = 0.;
@@ -928,7 +1083,8 @@ TF1* exponential_decay_two_phase() {
     auto fitFn = new TF1("fitFn", fnString.c_str(), peakX, high); // set window low bound to peak
     
     // Assign fit params
-    fitFn->SetParameters(amplitude_fast, tau_fall_fast, amplitudeSlow, tau_fall_slow);
+    // fitFn->SetParameters(amplitude_fast, tau_fall_fast, amplitude_slow, tau_fall_slow);
+    fitFn->SetParameters(amplitude_fast, tau_fast, amplitude_slow, tau_slow);
     fitFn->SetParNames("Amplitude (fast)", "Decay Constant (fast)", "Amplitude (slow)", "Decay Constant (slow)");
     
     // ...
@@ -1077,6 +1233,22 @@ int fit(std::string const function) {
     // hence why "hpx->Draw()" works here instead of drawing the fit fn (but we lose the histogram view),
     // and why "hpx->Draw("HIST")" doesnt work alone, so calling draw on the stored fn is the way,
     // it is also not enough to just call Modified() & Update().
+    
+    // Format the output SetOptFit(pcev)
+    gStyle->SetOptFit(111); // NOTE: param is a bit-mask (4-digit integer)
+    // p = chi2 probability
+    // c = chi2 & number of degrees of freedom (NDF)
+    // e = Errors (standard deviations of the fitted parameters)
+    // v = Values (name/values of params)
+    // NOTE: Putting a leading 0 makes the compiler interpret the number as octal (base 8),
+    // note decimal, which can cause unexpected bit settings, using 111 treats its as a decimal,
+    // so avoid SetOptFit(0111), and use SetOptFit(111) instead.
+    
+    // TEST
+    // c->Update(); // NOTE: This can be omitted with the working combo
+    // gPad->Update(); // ^ same
+    // hpx->SetStats(1); // NOTE: Tried using this instead of SetOptFit, doesnt work, causes stats box not found
+    // hpx->SetStats(0); // this is called later, might be wiggle room in location, but if it aint broke...
     
     // TODO: Display relevant fit values in top right info box post-fit (chi^2, centroid, etc)
     
