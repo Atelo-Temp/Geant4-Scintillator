@@ -293,7 +293,6 @@ Combines:
 - Updated ASCII handling (read_spe.cc)
 - Histogram saving (save_hist.cc)
 
-
 23) replot.cc
 
 Extension of plot_any.cc
@@ -303,16 +302,20 @@ Introduces:
 - Quick replotting functionality (via caching last used filename and ROOT object name)
 - plot() function overloads
 
-## TODOS
-
 24) exponential_fit.cc
 
-NOTE: The prior work done on this has been extracted out to omni_plot.cc, as handling multiple root object inputs, and tree/branch names, is quite an involved process, and dont want to implement too many new features into a single
-
-TODO: Make a copy of omni_plot.cc when its done, then just reintroduce fitting
-^ or potentially keep it simpler and just focus on exponential fitting first, then combine the two later
+NOTE: The prior work done on this has been extracted out to plot_any.cc, as handling multiple root object inputs, and tree/branch names, is quite an involved process, and dont want to implement too many new features into a single
 
 TODO: Currently just whipping up a rough draft of fit(), need to update it to match refined fit() methodology in ascii_fit()
+
+NOTE: Purposefully uses a stripped back simpler ROOT object loading process, to keep the focus of this macro on the various fitting functions
+(requires manual implementation of tree name, branch name, nbins, xmin and xmax)
+
+Introduces:
+- ...
+- ...
+
+## TODOS
 
 23) any_fit.cc (alt: fit_any.cc, fitter.cc)             <<< TODO: This has largely been addressed by previous macros
 
@@ -655,12 +658,12 @@ replot(1024,0,5000) // nbins, xmin, xmax
 ```c++
 plot("../final/build/output0.root", "TrackData", "DetectionDistance", 4096, 0, 2500) // 2500 mm max
 // path, tree name, branch name, num bins, xmin, xmax
-fit(...)
+fit("double_exp_decay")
 ```
 
 ```c++
 plot("../final/build/output0.root", "TrackData", "TimeOfFlight", 4096, 0, 20) // 30 ns max
-fit(...)
+fit("double_exp_decay")
 ```
 
 ...

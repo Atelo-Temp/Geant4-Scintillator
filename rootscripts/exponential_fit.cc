@@ -888,7 +888,7 @@ TF1* exponential_decay() {
 /*
  * Exponential decay with a fast and slow component
  * 
- * AKA: biexponential decay OR double exponential decay
+ * AKA: Biexponential decay
  * 
  * y(t) = [A_1]*exp(-x/[tau_fall_1]) + [A_2]*exp(-x/[tau_fall_2]) + C
  * 
@@ -916,11 +916,13 @@ TF1* exponential_decay() {
  * 2) Estimate tau slow:
  * 
  * Grab two bins from this tail region (x_1 and x_2), calculate:
+ * 
  * tau_slow = (x_2 - x_1) / ln(y1 / y2)
  * 
  * 3) Estimate amplitude of slow component:
  * 
  * Project the slope back to the maximum bin using:
+ * 
  * A_slow = y_1 * exp((x_1 - x_max) / tau_slow)
  * 
  * NOTE: x_max is true maximum bin, as we want to know slow amplitude at that point
@@ -975,13 +977,12 @@ TF1* exponential_decay_two_phase() {
     
     std::cout << "1/e Bin: " << fallBin << "\n";
 
-    
-    
-    
+    // ...
     std::cout << "1/e Bin * 4: " << fallBin * 4 << "\n";
     std::cout << "1/e Bin * 5: " << fallBin * 5 << "\n";
     std::cout << "1/e Bin * 6: " << fallBin * 6 << "\n";
     
+    // ...
     int const cutoff_5 = fallBin * 5;
     int const nbins = 5;
     
@@ -1000,7 +1001,6 @@ TF1* exponential_decay_two_phase() {
     mean_y_1 /= nbins;
     
     std::cout << "X_1: " << mean_x_1 << ", Y_1: " << mean_y_1 << "\n";
-    
     
     // Take mean on subsequent n bins
     int const cutoff_6 = fallBin * 6;
@@ -1060,6 +1060,8 @@ TF1* exponential_decay_two_phase() {
         
         fallBinFast++;
     }
+    
+    // if (fallBinFast == hpx->GetNbinsX()) ...
     
     double const x_fall = hpx->GetBinCenter(fallBinFast);
     
@@ -1192,15 +1194,53 @@ int gamma_dist () {
 }
 
 /*
- * TODO: Define a top level: fit(), method, which directs you to exponential, double_exponential, etc, etc
- * 
- * TODO: Needs faster rise time to fit to the photon distance travelled data
+ * Top level fit interface, which directs to exponential, double_exponential, etc, handlers
  * 
  * 1) Log normal
  * 2) Gamma Distribution
  * 3) ExGaussian
+ * 
+ * # Calculate:
+ * 
+ * # Basic moments
+ * - mean
+ * - median
+ * - RMS
+ * 
+ * # Direct-path metrics
+ * - peak position
+ * - peak height
+ * - fraction below some threshold distance
+ * 
+ * # Tail metrics
+ * - A_slow
+ * - A_fast
+ * - Tau_slow
+ * - Tau_fast
  */
 int fit(std::string const function) {
+    // Handle missing histogram
+    if (!hpx) {
+        std::cerr << "\nError (render_hist()): Histogram not found!\n";
+        // NOTE: All files and objects should already be closed/deconstructed at this point
+        return 1;
+    }
+    
+    // Basic moments
+    double const mean = hpx->GetMean();
+    // double const median = hpx->
+    double const RMS = hpx->GetRMS();
+    double const skew = hpx->GetSkewness();
+    
+    // Direct-path metrics
+    // Find the tallest point in the current histogram range
+    int const maxBin = hpx->GetMaximumBin();
+    double const peakX = hpx->GetXaxis()->GetBinCenter(maxBin); // get the x-axis location of max counts bin
+    double const peakY = hpx->GetBinContent(maxBin); // get the y-axis number of counts for max bin, i.e. amplitude
+    
+    // NOTE: ^ These direct-path metrics are also calculated in function handlers, 
+    // either return them, or pass these in as args
+    
     // ...
     TF1* fitFn = nullptr;
     
