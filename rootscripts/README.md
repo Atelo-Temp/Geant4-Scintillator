@@ -293,7 +293,6 @@ Combines:
 - Updated ASCII handling (read_spe.cc)
 - Histogram saving (save_hist.cc)
 
-## TODOS
 
 23) replot.cc
 
@@ -303,6 +302,8 @@ Introduces:
 - Optional post-processing for ROOT Ntuples (smearing)
 - Quick replotting functionality (via caching last used filename and ROOT object name)
 - plot() function overloads
+
+## TODOS
 
 24) exponential_fit.cc
 
@@ -645,4 +646,25 @@ Replot ROOT Ntuple
 ```c++
 plot("../final/build/output0.root")
 replot(1024,0,5000) // nbins, xmin, xmax
+```
+
+### exponential_fit.cc
+
+...
+
+```c++
+plot("../final/build/output0.root", "TrackData", "DetectionDistance", 4096, 0, 2500) // 2500 mm max
+// path, tree name, branch name, num bins, xmin, xmax
+fit(...)
+```
+
+```c++
+plot("../final/build/output0.root", "TrackData", "TimeOfFlight", 4096, 0, 20) // 30 ns max
+fit(...)
+```
+
+...
+
+```c++
+// plot("../final/build/output0.root", "TrackDataAbsorb")
 ```

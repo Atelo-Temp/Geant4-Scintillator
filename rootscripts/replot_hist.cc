@@ -961,7 +961,6 @@ std::string select_branch() {
     return chosenBranch;
 }
 
-
 /*
  * Caches the TBranch pointer in the global variable
  * 
