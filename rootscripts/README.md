@@ -317,7 +317,23 @@ Introduces:
 
 ## TODOS
 
-23) any_fit.cc (alt: fit_any.cc, fitter.cc)             <<< TODO: This has largely been addressed by previous macros
+25) residuals.cc
+
+...
+
+Either uses ROOT builtin residual plotter, or calculates residuals and plots them manually
+
+...
+
+26) dataframe.cc
+
+...
+
+Leveraging ROOT multithreaded capabilities to read large datasets (>10m entries) quicker
+
+...
+
+27) any_fit.cc (alt: fit_any.cc, fitter.cc)             <<< TODO: This has largely been addressed by previous macros
 
 Hybrid fitting, able to handle both ascii files (lab) and root files (simulation)
 
@@ -331,7 +347,7 @@ that is a good stepping stone to a comprehensive fitting macro
 - Takes .root / .Spe filename as argument rather than hardcoded
 - Parses the filename to identify whether its .root or .Spe, runs histogramming pipeline for respective file type
 
-24) hybrid_fit.cc (alt: smart_fit.cc)                   <<< TODO: This has largely been addressed by previous macros
+28) hybrid_fit.cc (alt: smart_fit.cc)                   <<< TODO: This has largely been addressed by previous macros
 
 Hybrid fitting, able to handle both ascii files (lab) and root files (simulation)
 ^ maybe also able to determine whether it needs a gaussian or gaus + pol fit
@@ -342,19 +358,33 @@ NOTE: I think this main functionality should be determining whether to use gaus 
 ^ maybe even whether to use exponential etc
 ^ sinice 17) kinda ticks most of these other boxes, but trying to fit smart fitting would overcrowd 17)
 
-25) omni_fit.cc
+29) omni_fit.cc
 
 Full functionality of all previous fitting capabilities, plus final touches
 
 TODO: Maybe think of a way to determine if input data has aliasing issue, and needs gaussian smearing
 
-26) dimension_plotter.cc
+30) dimension_plotter.cc
 
 Introduce 2D and 3D histogramming
 
-27) dimension_plotter.cc
+31) dimension_fitter.cc
 
 Introduce 2D and 3D fitting
+
+32) smart_plot.cc
+
+- Uses bin formulas to determine number of bins (i.e. sqrt(num entries), albeit that specifically is not versatile enough)
+
+Potentially anchoring value to the nearest multiple of 64, or 128, or something (or maybe anchoring to 1024, 2048, 4096, etc)
+
+- Uses quartiles (95% or 99%) to determine xmax (or something along these lines)
+
+Potentially uses some sort of anchoring mechanism (95% quartile value + 5-10% to the value -> then seeks nearest ten, or hundred, or thousand, etc, based on x-axis values)
+^ to enable plots to be directly comparible, rather than xmax fluctuating every time the data changes slightly
+
+NOTE: Not sure how productive/useful this would be in practice (basically useless for energy spectra, limited use for other functions where data changes too), but would be an interesting exploration nonetheless
+^ perhaps for one shot datasets, where it doesnt have to be compared with similar axis values
 
 XX) downsampling.cc
 
