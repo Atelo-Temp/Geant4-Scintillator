@@ -293,7 +293,7 @@ Combines:
 - Updated ASCII handling (read_spe.cc)
 - Histogram saving (save_hist.cc)
 
-23) replot.cc
+23) replot_hist.cc (alt: replot.cc)
 
 Extension of plot_any.cc
 
@@ -302,7 +302,7 @@ Introduces:
 - Quick replotting functionality (via caching last used filename and ROOT object name)
 - plot() function overloads
 
-24) exponential_fit.cc
+24) exponential_fit.cc (alt: ...)
 
 NOTE: The prior work done on this has been extracted out to plot_any.cc, as handling multiple root object inputs, and tree/branch names, is quite an involved process, and dont want to implement too many new features into a single
 
@@ -316,6 +316,12 @@ Introduces:
 - ...
 
 ## TODOS
+
+25) oop_plot.cc (alt: oop.cc, object_oriented.cc)
+
+Rewriting core plotting code without the use of globals, instead using a couple dedicated classes in this case.
+
+> NOTE: Extension of replot.cc
 
 25) residuals.cc
 
@@ -385,6 +391,20 @@ Potentially uses some sort of anchoring mechanism (95% quartile value + 5-10% to
 
 NOTE: Not sure how productive/useful this would be in practice (basically useless for energy spectra, limited use for other functions where data changes too), but would be an interesting exploration nonetheless
 ^ perhaps for one shot datasets, where it doesnt have to be compared with similar axis values
+
+33) context.cc
+
+Rewriting core plotting code without the use of globals, instead using a context object in this case.
+
+> NOTE: Extension of replot.cc
+
+34) functional.cc
+
+Rewriting core plotting code without the use of globals, instead using functional programming return pipeline in this case.
+
+> NOTE: Extension of replot.cc
+
+> NOTE: This may be the messiest of the possible options tbh, will have to have so many optional return types, args, etc - maybe im missing a blatant solution though idk
 
 XX) downsampling.cc
 
