@@ -300,66 +300,6 @@ int prompt_user_int(int const low, int const high) {
 }
 
 /*
- * NOTE: With the higher resolution (2048 bins vs 1024 bins previously),
- * aliasing is seen when plotting the Ntuples data in a histogram,
- * to account for the higher resolution, we can apply a gaussian smearing
- * to reduce the jagged edges
- * 
- * TODO: Make smearing optional, potentially via boolean param
- * 
- * TODO: When calling plot(), may need to 
- */
-double post_processing(int const entry, int const nbins = 2048, double const xmax = 3500.) {
-    // In counting statistics: sigma = sqrt(N)
-    double const sigma = std::sqrt(entry);
-    // TODO: This assumes pure Poisson statistics, in a real detector system,
-    // resolution is a combination of:
-    // sigma_scintillator + sigma_transfer + sigma_PMT
-    // in geant4 RESOLUTIONSCALE covers sigma_scintillator,
-    // geometry and photocathode efficiency covers sigma_transfer,
-    // and this sigma covers sigma_PMT (but doesnt neccesarily model is accurately)
-    
-    // double const sigma = 0.5 * std::sqrt(entry);
-    // double const sigma = entry * (0.08 / 2.355);
-    // NOTE: ^ 1.8 res scale, n * (res lab / 2.355) = 114.02 FWHM
-    
-    // Apply gaussian smearing to the photons detected in this event
-    double const smeared = gRandom->Gaus(entry, sigma);
-    // TODO: potentially reduce gaussian smearing, reducing from:
-    // sigma = sqrt(n)
-    // to:
-    // sigma = 0.5 * sqrt(n)
-    // reduces FWHM from ~105.35 FWHM (at 1.8 res scale), to 91.16 (still at 1.8 res scale)
-    // NOTE: Impacts FWHM more than i initially thought
-    
-    // Conversion factor from num optical photons "detected" to 0-2048 channel number
-    double const conversion = nbins / xmax;
-    // double const conversion = 1024. / 3500.;
-    // NOTE: 3500 photons is arbitrary currently, in practice, this value should
-    // reflect the upper window limit for the energy region of interest, i.e.:
-    // 0 - 2 MeV
-    
-    // TODO: ^^ potentially make nbins & xmax global variables, set prior to fit,
-    // or pass them in as params to this fn
-    
-    // Convert entry to channel number
-    // int const channel = conversion * smeared; // int channel = std::floor(conversion * entry);
-    double const channel = conversion * smeared;
-    // NOTE: Let H1 handle binning doubles rather than flooring
-    
-    // NOTE: Can also apply a gain factor (but would likely want to establish 
-    // this value accurately from the physical detector rather than using estimate):
-    // int const gain = 1e6;
-    // int const nTotal = entry * gain;
-    // double const sigma = gain * std::sqrt(entry);
-    // double const smeared = gRandom->Gaus(nTotal, sigma);
-    // double const conversion = 2048. / (3500. * gain);
-    // double const channel = conversion * smeared;
-    
-    return channel;
-}
-
-/*
  * ...
  */
 class ASCIIHandler {
@@ -1626,21 +1566,8 @@ class ROOTHandler {
         * TODO: Im calling this in fill_hist_ntuple & fill_hist_ascii:
         * hpx->SetDirectory(nullptr);
         * Is it not better to just call it at the end of this function?
-        * 
-        * TODO: nbins, xmin, xmax, args are currently useless at the moment, largely just 
-        * placeholders for when i implement replotting, etc
-        * 
-        * TODO: Dont need forward declarations of some of these variables now that ASCII/ROOT
-        * logic is separated
         */
-        int create_hist_root(int nbins = -1, double xmin = -1., double xmax = -1.) {
-            // Histogram args
-            std::string title;
-            std::string legendTitle;
-
-            // Will be used to store data type of chosen TBranch if ROOT TTree is selected
-            std::string_view leafType; // std::string leafType;
-
+        int create_hist_root() {
             // Handle ROOT Ntuple
             
             // Get the TTree and TBranch names
@@ -1648,34 +1575,33 @@ class ROOTHandler {
             char const* branchName = branch->GetName();
             
             // Name the histogram after the ROOT object
-            title = nTupleName + "Hpx"; // NOTE: Using the TTree name itself causes ROOT to think the histogram already exists
-            legendTitle = branchName;
+            std::string const title = nTupleName + "Hpx"; // NOTE: Using the TTree name itself causes ROOT to think the histogram already exists
+            std::string const legendTitle = branchName;
             
             // Get the minimum/maximum values in the chosen TBranch
             double const branchMin = nTuple->GetMinimum(branchName);
             double const branchMax = nTuple->GetMaximum(branchName);
             
             // If histogram args havent been passed, auto bin
-            if (nbins == -1 && xmin == -1. && xmax == -1.) {
-                // Set xmin to zero or branch minimum, whichever is lower, and xmax to max + 10%
-                nbins = 2048; // TODO: Dynamic binning
-                xmin = ((branchMin < 0.) ? branchMin : 0.); // should be zero, unless negative axis
-                xmax = (branchMax) * 1.1; // +10% (NOTE: Using max is very succeptible to outliers)
-            }
+            
+            // Set xmin to zero or branch minimum, whichever is lower, and xmax to max + 10%
+            int const nbins = 2048; // TODO: Dynamic binning
+            double const xmin = ((branchMin < 0.) ? branchMin : 0.); // should be zero, unless negative axis
+            double const xmax = (branchMax) * 1.1; // +10% (NOTE: Using max is very succeptible to outliers)
+            
             // NOTE: If they have been passed, use them
             
             // Get TTree data type by reading the leaves
-            leafType = leaf->GetTypeName();
+            std::string_view const leafType = leaf->GetTypeName();
             // std::cout << "LEAF TYPE: " << leafType << "\n";
             
             std::cout << "\nHistogram args set to:\n";
             std::cout << ">>> Num Bins: " << nbins << " XMIN: " << xmin << " XMAX: " << xmax << "\n";
             
             // Reject invalid histogram args
-            if (title.empty() || legendTitle.empty() || nbins == -1 || xmin == -1 || xmax == -1) {
+            if (title.empty() || legendTitle.empty() || (xmin >= xmax)) {
                 std::cerr << "\nError: Failed to define histogram args.\n";
                 root_cleanup();
-                // return std::nullopt;
                 return 1;
             }
             
@@ -1713,7 +1639,6 @@ class ROOTHandler {
                 std::cerr << "\nError (create_hist()): Histogram not found!\n";
                 // Need to close file (could be ascii or root)
                 root_cleanup();
-                // return std::nullopt;
                 return 1;
             }
             
@@ -1726,7 +1651,6 @@ class ROOTHandler {
             std::cout << "\nHistogram instantiated.\n";
             
             // No errors, all good
-            // return hpx;
             return 0;
         }
         
@@ -1737,7 +1661,7 @@ class ROOTHandler {
         * 
         * TODO: Make it so branch or branch name is actually passed in as param
         */
-        int fill_hist_ntuple(TH1* hpx, bool const doPostProcessing, int const nbins, double const xmax) {
+        int fill_hist_ntuple(TH1* hpx) {
             // Handle invalid branch name
             if (!branch) {
                 std::cerr << "\nError: TTree branch not found. Couldnt fill histogram. Closing root file and deconstructing Ntuple.\n";
@@ -1837,15 +1761,9 @@ class ROOTHandler {
                 
                 // Add a count to the appropriate bin for that value, introduce smearing if requested
                 if (dataType == intType) {
-                    if (doPostProcessing) {
-                        doubleEntry = post_processing(intEntry, nbins, xmax);
-                        hpx->Fill(doubleEntry);
-                    } else {
-                        hpx->Fill(intEntry);
-                    }
+                    hpx->Fill(intEntry);
                 }
                 else if (dataType == doubleType) {
-                    if (doPostProcessing) doubleEntry = post_processing(doubleEntry, nbins, xmax);
                     hpx->Fill(doubleEntry);
                 }
                 // NOTE: Switching on int/double data type
@@ -1891,16 +1809,7 @@ class ROOTHandler {
         * and load_root(), which just seems like more hassle than its worth, and messy, compared
         * to just using a hpx class property ...
         */
-        std::optional<TH1*> plot_root(
-            std::string const& path,
-            std::string const& objectName = "",
-            std::string const& branchName = "",
-            int const nbins = -1,
-            double const xmin = -1.,
-            double const xmax = -1.,
-            bool const useCached = false,
-            bool const doPostProcessing = false
-        ) {
+        std::optional<TH1*> plot_root(std::string const& path) {
             // Error handlers to catch bad program state (these should all have been cleared)
             if (leaf) {
                 std::cout << "\nFound existing Ntuple branch leaf, clearing...\n";
@@ -1921,55 +1830,12 @@ class ROOTHandler {
             // NOTE: These cases should never really flag true now (closed after loading 
             // TH1D or Ntuple, respectively, or on error while trying to load them)
             
-            // TODO: THIS IF ELSE STATEMENT CAN BE REPLACED VIA: load_root(path, objectName, branchName)
-            // objectName = "", branchName = "", by default
-            // NOTE: WAIT NO IT CANT, THAT WOULD JUST ENABLE PASSING TREE/BRANCH NAME TO plot(...), NOT ENABLE REPLOT(...), still need useCached flag
-            // ....
-            if (!useCached) {
-                // Attempt to load ROOT file into memory
-                int const fileError = load_root(path);
-                
-                if (fileError) {
-                    std::cerr << "\nAborting: Load file error!\n";
-                    return std::nullopt;
-                }
-            }
-            // ...
-            else {
-                // ...
-                rootObjectType = RootObjectType::TTree;
-                
-                // Attempt to open the ROOT file
-                int const loadError = load_root_file(lastPath);
-                
-                if (loadError) {
-                    std::cerr << "\nError: Failed to load ROOT file into memory.\n";
-                    return std::nullopt;
-                }
-                
-                // Cache TTree pointer
-                int const loadTreeError = cache_tree(lastObjectName.c_str());
-                
-                if (loadTreeError) {
-                    std::cerr << "\nError: Failed to cache TTree pointer.\n";
-                    return std::nullopt;
-                }
+            // Attempt to load ROOT file into memory
+            int const fileError = load_root(path);
             
-                // Cache TBranch pointer
-                int const loadBranchError = cache_branch(lastBranchName);
-                
-                if (loadBranchError) {
-                    std::cerr << "\nError: Failed to cache TBranch pointer.\n";
-                    return std::nullopt;
-                }
-                
-                // Cache TLeaf pointer
-                int const cacheLeafError = cache_leaf();
-                
-                if (cacheLeafError) {
-                    std::cerr << "\nError: Failed to cache TLeaf pointer.\n";
-                    return std::nullopt;
-                }
+            if (fileError) {
+                std::cerr << "\nAborting: Load file error!\n";
+                return std::nullopt;
             }
             
             // Only call: create_hist() & fill_hist(); if its ROOT Ntuple
@@ -1978,7 +1844,7 @@ class ROOTHandler {
             if (rootObjectType == RootObjectType::TTree) {
             
                 // Attempt to instantiate histogram object
-                int const histError = create_hist_root(nbins, xmin, doPostProcessing ? nbins : xmax);
+                int const histError = create_hist_root();
                 
                 if (histError) {
                     std::cerr << "\nAborting: Create hist error!\n";
@@ -1986,7 +1852,7 @@ class ROOTHandler {
                 }
                 
                 // Attempt to populate histogram from ASCII or ROOT file
-                int const fillError = fill_hist_ntuple(hpx, doPostProcessing, nbins, xmax);
+                int const fillError = fill_hist_ntuple(hpx);
                 
                 if (fillError) {
                     std::cerr << "\nAborting: Fill hist error!\n";
@@ -2021,14 +1887,6 @@ std::optional<TCanvas*> create_canvas() {
     if (!canvas) {
         std::cerr << "\nError (create_canvas()): Couldnt create canvas!\n";
         return std::nullopt;
-        
-        // NOTE: Both ASCII and ROOT files (and objects) should already be cleaned
-        // by this point, the only thing that may be floating around in memory is
-        // the histogram
-        
-        // TODO: Maybe:
-        // delete hpx;
-        // hpx = nullptr;
     }
     
     std::cout << "\nCanvas created.\n";
@@ -2103,19 +1961,7 @@ int render_hist(TH1* hpx, TCanvas* canvas, bool hideDefaultStats = true) {
  * NOTE: But also, eventually this may be compiled, so will want a methodology that can
  * work in both ROOT terminal and via executable ...
  */
-int plot_x(
-    std::string const userPath,
-    std::string const objectName = "",
-    std::string const branchName = "",
-    int const nbins = -1,
-    double const xmin = -1.,
-    double const xmax = -1.,
-    bool const useCached = false,
-    bool const doPostProcessing = false
-) {
-    // ...
-    // std::cout << "\nHIST PARAMS:\nX Min: " << xmin << " X Max: " << xmax << " Num Bins: " << nbins << "\n";
-    
+int plot(std::string const userPath) {
     // Active file type flag
     FileType fileType = FileType::NULLFILE;
     
@@ -2144,16 +1990,17 @@ int plot_x(
     
     // ...
     if (fileType == FileType::ASCII) {
-        auto handler = new ASCIIHandler();
-        result = handler->plot_ascii(path);
+        ASCIIHandler handler;
+        result = handler.plot_ascii(path);
     }
     else if (fileType == FileType::ROOT) {
-        auto handler = new ROOTHandler();
-        result = handler->plot_root(path, objectName, branchName, nbins, xmin, xmax, useCached, doPostProcessing);
+        ROOTHandler handler;
+        result = handler.plot_root(path);
     }
     else {
         std::cerr << "\nError: Unsupported file type.\n";
     }
+    // TODO: This logic could be achieved via previous if block, fileType is redundant currently
     
     if (!result.has_value()) {
         std::cerr << "\nAborting: Plotting error!\n";
@@ -2172,18 +2019,6 @@ int plot_x(
     
     TCanvas* canvas = canvasError.value();
     
-    // Enclose create canvas, so that it doesnt get deleted when calling plot() multiple times in a row
-    // NOTE: This doesnt work as intended unless calling canvas.clear(), otherwise render_hist bugs out
-//     if (!canvas) {
-//         // Attempt to create canvas and paint the histogram
-//         int const canvasError = create_canvas();
-//         
-//         if (canvasError) {
-//             std::cerr << "\nAborting: Create canvas error!\n";
-//             return 1;
-//         }
-//     }
-    
     // Attempt to draw the histogram to the canvas
     int const renderError = render_hist(hpx, canvas);
     
@@ -2193,36 +2028,4 @@ int plot_x(
     }
     
     return 0;
-}
-
-/*
- * Overload 1) ROOT object selection CLI and automated histogramming
- */
-int plot(std::string const userPath) {
-    int const success = plot_x(userPath);
-    return success;
-};
-
-/*
- * Overload 2) Manual ROOT object name specification and automated histogramming
- */
-int plot(std::string const userPath, std::string const objectName, std::string const branchName) {
-    int const success = plot_x(userPath, objectName, branchName);
-    return success;
-};
-
-/*
- * Overload 3) ROOT object selection CLI and pre-defined histogramming parameters
- */
-int plot(std::string const userPath, int const nbins, double const xmin, double const xmax) {
-    int const success = plot_x(userPath, "", "", nbins, xmin, xmax);
-    return success;
-};
-
-/*
- * Overload 4) Manual ROOT object name specification, and pre-defined histogramming parameters
- */
-int plot(std::string const userPath, std::string const objectName, std::string const branchName, int const nbins, double const xmin, double const xmax) {
-    int const success = plot_x(userPath, objectName, branchName, nbins, xmin, xmax);
-    return success;
 }

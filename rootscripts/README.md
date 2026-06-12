@@ -315,13 +315,26 @@ Introduces:
 - ...
 - ...
 
+25) oop_plot.cc (alt: oop.cc, object_oriented.cc)
+
+Rewriting core plotting code without the use of globals, instead using a couple of dedicated classes in this case.
+
+> NOTE: Extension of replot.cc
+
 ## TODOS
+
+25) oop_replot.cc
+
+Rewriting core plotting code without the use of globals, instead using a couple dedicated classes in this case.
+
+> NOTE: Extension of oop_plot.cc
 
 25) oop_plot.cc (alt: oop.cc, object_oriented.cc)
 
 Rewriting core plotting code without the use of globals, instead using a couple dedicated classes in this case.
 
 > NOTE: Extension of replot.cc
+
 
 25) residuals.cc
 
@@ -720,4 +733,34 @@ fit("double_exp_decay")
 
 ```c++
 // plot("../final/build/output0.root", "TrackDataAbsorb")
+```
+
+### oop_plot.cc
+
+Plot from ASCII:
+
+```c++
+plot("~/geant4/geant4-v11.3.2/project/data/21_hist.root")
+```
+
+Brings up ROOT explorer CLI:
+
+```c++
+plot("../final/build/output0.root")
+```
+
+### oop_replot.cc
+
+Brings up ROOT explorer CLI, but uses predefined histogram args (bit janky defining hist params before selection tbh):
+
+```c++
+plot("../final/build/output0.root", 2048, 0, 5000)
+// path, nbins, xmin, xmax
+```
+
+Brings up ROOT explorer CLI, but uses predefined histogram args, and applies gaussian smearing:
+
+```c++
+plot("../final/build/output0.root", 2048, 0, 5000, true)
+// path, nbins, xmin, xmax, smear
 ```
