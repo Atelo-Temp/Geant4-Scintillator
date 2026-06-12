@@ -321,20 +321,23 @@ Rewriting core plotting code without the use of globals, instead using a couple 
 
 > NOTE: Extension of replot.cc
 
-## TODOS
+26) oop_replot.cc
 
-25) oop_replot.cc
-
-Rewriting core plotting code without the use of globals, instead using a couple dedicated classes in this case.
+Re-introduces:
+- Replotting functionality of replot_hist.cc
+- Post-processing smearing via replotting
+- Passing object name directly to top level plot method instead of bringing up explorer CLI
 
 > NOTE: Extension of oop_plot.cc
 
-25) oop_plot.cc (alt: oop.cc, object_oriented.cc)
+## TODOS
 
-Rewriting core plotting code without the use of globals, instead using a couple dedicated classes in this case.
+25) oop_save.cc
 
-> NOTE: Extension of replot.cc
+Re-introduces:
+- Save hist methodology
 
+> NOTE: Extension of oop_replot.cc
 
 25) residuals.cc
 
@@ -342,7 +345,7 @@ Rewriting core plotting code without the use of globals, instead using a couple 
 
 Either uses ROOT builtin residual plotter, or calculates residuals and plots them manually
 
-...
+> NOTE: Extension of exponential_fit.cc (most likely)
 
 26) dataframe.cc
 
@@ -751,6 +754,18 @@ plot("../final/build/output0.root")
 
 ### oop_replot.cc
 
+Plot from ASCII:
+
+```c++
+plot("~/geant4/geant4-v11.3.2/project/data/21_hist.root")
+```
+
+Brings up ROOT explorer CLI:
+
+```c++
+plot("../final/build/output0.root")
+```
+
 Brings up ROOT explorer CLI, but uses predefined histogram args (bit janky defining hist params before selection tbh):
 
 ```c++
@@ -763,4 +778,38 @@ Brings up ROOT explorer CLI, but uses predefined histogram args, and applies gau
 ```c++
 plot("../final/build/output0.root", 2048, 0, 5000, true)
 // path, nbins, xmin, xmax, smear
+```
+
+Plots the tree and branch directly:
+
+```c++
+plot("../final/build/output0.root", "TrackData", "DetectionDistance")
+// path, tree name, branch name
+```
+
+Plots the tree and branch directly, using specified histogram args:
+
+```c++
+plot("../final/build/output0.root", "TrackData", "DetectionDistance", 4096, 0, 2500)
+```
+
+Plots the TH1 directly:
+
+```c++
+plot("../final/build/output0.root", "PhotonsSpectrum")
+// path, hist name
+```
+
+Replot last used ROOT Ntuple with specified histogram args:
+
+```c++
+plot("../final/build/output0.root")
+replot(1024,0,5000) // nbins, xmin, xmax
+```
+
+Replot last used ROOT Ntuple, and add gaussian smearing:
+
+```c++
+plot("../final/build/output0.root")
+replot(1024,0,5000,true) // nbins, xmin, xmax
 ```
