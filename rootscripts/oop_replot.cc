@@ -1080,7 +1080,7 @@ class ROOTHandler {
         * 
         * NOTE: If there is only one object, that name is selected by default, skipping user prompt
         */
-        std::optional<SelectionReturnType> select_root_type(std::unordered_map<int, std::string>& objectMap) {
+        std::optional<SelectionReturnType> select_root_type(std::unordered_map<int, std::string> const& objectMap) {
             // ...
             int selectedTypeIdx = -1;
             
@@ -1154,7 +1154,7 @@ class ROOTHandler {
         * const auto& [selectedTypeIdx, selectedObjectType, categoryMap] = *params; 
         * dereference pointer, bind by reference to avoid copies
         */
-        std::string select_root_object(SelectionReturnType const& selectionParams, std::unordered_map<std::string, std::vector<std::string>>& categoryMap) {
+        std::string select_root_object(SelectionReturnType const& selectionParams, std::unordered_map<std::string, std::vector<std::string>> const& categoryMap) {
             // Destructure the param object
             auto const& [selectedTypeIdx, selectedObjectType] = selectionParams;
             // NOTE: Zero copies, no pointer syntax
@@ -1358,7 +1358,7 @@ class ROOTHandler {
             
             // Handle invalid branch name
             if (!branch) {
-                std::cerr << "\nError: TTree branch: " << branchName << " not found. Closing root file and deconstructing Ntuple.\n";
+                std::cerr << "\nError: TTree branch \"" << branchName << "\" not found. Closing root file and deconstructing Ntuple.\n";
                 root_cleanup();
                 return 1;
             }
@@ -1416,11 +1416,10 @@ class ROOTHandler {
         /*
         * Load Ntuple object (TTree) from ROOT input file and cache pointers
         * 
-        * TODO: @branchName arg
-        * if (!branchName.empty()) do cli (select_branch())
-        * else: skip select_branch()
+        * NOTE: if @branchName arg is passed -> skip select branch CLI
+        * else -> use CLI to select
         */
-        int load_root_tree(std::string const& treeName, std::string const& branchName) {
+        int load_root_tree(std::string const& treeName, std::string const& branchName = "") {
             // Cache TTree pointer
             int const loadTreeError = cache_tree(treeName);
             
@@ -1504,7 +1503,7 @@ class ROOTHandler {
         * Attempts to load the chosen ROOT object into memory, routing to dedicated helper
         * functions for the various object types
         */
-        int load_root_object(std::string const& objectName, std::string const& branchName) {
+        int load_root_object(std::string const& objectName, std::string const& branchName = "") {
             // Convert std::string to c string pointer
             char const* name = objectName.c_str();
             
@@ -1558,14 +1557,13 @@ class ROOTHandler {
         * 
         * NOTE: #2 seems more scalable
         * 
-        * TODO: @objectName arg
-        * if (!objectName.empty()) do cli
-        * else go straight to load_root_object(objectName)
+        * NOTE: if @objectName arg is not passed -> bring up root explorer CLI
+        * else -> go straight to load_root_object(), skipping CLI
         * 
         * TODO: root_explorer() method
         * ^ but is this unnecessary abstraction?
         */
-        int load_root(std::string const& path, std::string const& objectName, std::string const& branchName) {
+        int load_root(std::string const& path, std::string const& objectName = "", std::string const& branchName = "") {
             // Attempt to open the ROOT file
             int const loadError = load_root_file(path);
             
@@ -1577,17 +1575,20 @@ class ROOTHandler {
             // ...
             std::string workingName = objectName;
             
-            // TODO: root_explorer() method \/\/\/\/\/\/\/\/\/\/\/
+            
+            // TODO: root_explorer() method? \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
+            
+            // If no object name is passed
             if (workingName.empty()) {            
                 // Query the ROOT object to get a list of object types, and create key-value maps
-                std::optional<QueryReturnType> querySuccess = get_root_types();
+                std::optional<QueryReturnType> const querySuccess = get_root_types();
                 
                 if (!querySuccess.has_value()) {
                     std::cerr << "\nError: Failed to query ROOT file.\n";
                     return 1;
                 }
                 
-                QueryReturnType query = querySuccess.value();
+                QueryReturnType const query = querySuccess.value();
                 
                 // Prompt user for ROOT object type
                 std::optional<SelectionReturnType> const selectionSuccess = select_root_type(query.objectMap); // choose TTree (Ntuple), TH1D (1D Hist), etc
@@ -1801,7 +1802,7 @@ class ROOTHandler {
             double doubleEntry;
             // NOTE: Variable used changes based on Ntuple type (int, double, etc)
             
-            std::cout << "\nSetting branch address for: " << branchName << "\n";
+            std::cout << "\nSetting branch address for: \"" << branchName << "\"\n";
             
             // Switch on int or double branch type
             if (dataType == intType) {
@@ -1817,7 +1818,7 @@ class ROOTHandler {
             // will update all variables to the current index
             
             // ...
-            std::cout << "\nBranch address set to: " << branchName << "\n";
+            std::cout << "\nBranch address set to: \"" << branchName << "\"\n";
 
             // Get the number of entries in the branch (i.e., length for iteration limit)
             long long const numEntries = branch->GetEntries();
@@ -1898,9 +1899,6 @@ class ROOTHandler {
         * TODO: Is it worth calling both load_root_file() and load_root_object() from this
         * top level method? I.e., omit the load_root() method ?
         * 
-        * TODO: Have load_root() take objectName & branchName (but use default params = ""),
-        * then if they arent empty, skip root explorer CLI methods
-        * 
         * TODO: Maybe get the TH1 from load_root_hist
         * 
         * NOTE: ^ Returning hist from create_hist_root() is easy enough, but trying to get hist
@@ -1910,6 +1908,12 @@ class ROOTHandler {
         * 
         * TODO: If just objectName is passed, it could be a TH1, or it could be a TTree,
         * need to check which -> if its TH1, open it, if its TTree, open branch select CLI
+        * 
+        * TODO: When passing objectName / branchName, maybe a "did you mean ..." prompt if slighly wrong?
+        * 
+        * TODO: THIS ABBREVIATED TREE LOADING PIPELINE IS USED BELOW TOO FOR USE CACHED
+        * MAYBE MAKE SEPARATE METHODS FOR LOAD TREE w/ BRANCH SELECT CLI & LOAD TREE
+        * BY PASSED NAME (or just rely on if statement around branch select CLI in load_root_tree)
         */
         std::optional<TH1*> plot_root(
             std::string const& path,
@@ -1941,22 +1945,27 @@ class ROOTHandler {
             // NOTE: These cases should never really flag true now (closed after loading 
             // TH1D or Ntuple, respectively, or on error while trying to load them)
             
-            // TODO: THIS IF ELSE STATEMENT CAN BE REPLACED VIA: load_root(path, objectName, branchName)
-            // objectName = "", branchName = "", by default
-            // NOTE: WAIT NO IT CANT, THAT WOULD JUST ENABLE PASSING TREE/BRANCH NAME TO plot(...), NOT ENABLE REPLOT(...), still need useCached flag
+            // Incase plot will be called multiple times in succession, ensure histo cleared each time
+            if (hpx) {
+                std::cout << "\nFound existing histogram, clearing...\n";
+                delete hpx;
+                hpx = nullptr;
+            }
+            
+            // ^^^^^^^ TODO: Probably best to make a dedicated "clean()" method,
+            // which checks other pointers are clear etc
             
             // std::cout << "OBJECT NAME: " << objectName << " BRANCH NAME: " << branchName << "\n";
             
-            // TEST 
-            if (!objectName.empty() && !branchName.empty()) rootObjectType = RootObjectType::TTree;
-            // TEST
-            
-            // TODO: ^^^ If just objectName is passed, it could be a TH1, or it could be a TTree,
-            // need to check which -> if its TH1, open it, if its TTree, open branch select CLI
-            
-            // ....
-            if (!useCached) {
-                // Attempt to load ROOT file into memory
+            // TEST - If objectName and branchName are passed, we assume its a TTree, 
+            // if its not, it will error out due to not found / incorrect usage anyways
+            if (!useCached && !objectName.empty() && !branchName.empty()) {
+                // TODO: This logic is/should be the same as: if (!useCached && objectName.empty() && branchName.empty()) block
+                
+                // ...
+                rootObjectType = RootObjectType::TTree;
+                
+                // Attempt to load ROOT file and object into memory
                 int const fileError = load_root(path, objectName, branchName);
                 
                 if (fileError) {
@@ -1964,8 +1973,107 @@ class ROOTHandler {
                     return std::nullopt;
                 }
             }
-            // ...
-            else {
+            // TEST 
+            
+            // TODO: ^^^ If just objectName is passed, it could be a TH1, or it could be a TTree,
+            // need to check which -> if its TH1, open it, if its TTree, open branch select CLI
+            
+            // TEST - If only object name is passed (could be TTree or TH1 name)
+            else if (!useCached && !objectName.empty() && branchName.empty()) {
+                // Attempt to open the ROOT file
+                int const loadError = load_root_file(path);
+                
+                if (loadError) {
+                    std::cerr << "\nError: Failed to load ROOT file into memory.\n";
+                    return std::nullopt;
+                }
+                
+                // TODO: Get object type method ? \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
+                // ...
+                TObject* test = inROOT->Get(objectName.c_str());
+                // inROOT->GetObject(objectName.c_str());
+                
+                if (!test) {
+                    std::cerr << "\nError: Object not found.\n";
+                    return std::nullopt;
+                }
+                
+                // ...
+                std::string const foundType = test->ClassName();                
+                // std::cout << "CLASS NAME: " << foundType << "\n";
+                
+                // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                
+                // TODO: This could just be replaced with a call to load_root_object()
+                // (after setting rootObjectType)
+                
+                // Prompt user to select branch (since we only have tree name)
+                if (foundType == "TTree") {
+                    rootObjectType = RootObjectType::TTree;
+                    
+//                     // Cache TTree pointer
+//                     int const loadTreeError = load_root_tree(objectName);
+//                     
+//                     if (loadTreeError) {
+//                         std::cerr << "\nError: Failed to load ROOT TTree.\n";
+//                         return std::nullopt;
+//                     }
+                }
+                // Attempt to load the histogram
+                else if (foundType == "TH1D") {
+                    rootObjectType = RootObjectType::TH1D;
+                    
+//                     // Cache TTree pointer
+//                     int const loadHistError = load_root_hist(objectName.c_str());
+//                     
+//                     if (loadHistError) {
+//                         std::cerr << "\nError: Failed to load ROOT histogram.\n";
+//                         return std::nullopt;
+//                     }
+                }
+                // ...
+                else {
+                    std::cerr << "\nError: Unsuported object type.\n";
+                    return std::nullopt;
+                }
+                
+                // Cache pointers for chosen ROOT object
+                int const loadObjectError = load_root_object(objectName); // load root object with said name
+                
+                if (loadObjectError) {
+                    std::cerr << "\nError: Failed to access ROOT object.\n";
+                    return std::nullopt;
+                }
+            }
+            // TEST
+            
+            // TODO: ONE THING EACH OF THESE THREE APPROACHES HAVE IN COMMON IS THAT load_root_file() IS CALLED FIRST
+            // MAYBE EXTRACT THAT OUT TO THE TOP LEVEL HERE, SEPARATE FILE LOADING FROM OBJECT LOADING
+            // you always need to load the file, so dont abstract it away / couple it with other methods
+            // ^ only thing is clauses above and below uses path while else clause uses lastPath
+            
+            // TODO: THIS IF ELSE STATEMENT CAN BE REPLACED VIA: load_root(path, objectName, branchName)
+            // objectName = "", branchName = "", by default
+            // NOTE: WAIT NO IT CANT, THAT WOULD JUST ENABLE PASSING TREE/BRANCH NAME TO plot(...), NOT ENABLE REPLOT(...), still need useCached flag:
+            // if (useCached) load_root(path, lastObjectName, lastBranchName)
+            
+            // Default state
+            if (!useCached && objectName.empty() && branchName.empty()) {
+                // Attempt to load ROOT file into memory
+                // int const fileError = load_root(path, objectName, branchName);
+                int const fileError = load_root(path);
+                
+                if (fileError) {
+                    std::cerr << "\nAborting: Load file error!\n";
+                    return std::nullopt;
+                }
+            }
+            // Use last loaded TTree name and TBranch name
+            else if (useCached) {
+                // TODO: load_root_tree has logic check to see if branch name passed now, could just use that method...
+                // but need to consider whether to create separate method (cache tree -> cache branch -> cache leaf),
+                // i.e. just omits branch select CLI, or not
+                
                 // ...
                 rootObjectType = RootObjectType::TTree;
                 
@@ -1978,7 +2086,7 @@ class ROOTHandler {
                 }
                 
                 // Cache TTree pointer
-                int const loadTreeError = cache_tree(lastObjectName.c_str());
+                int const loadTreeError = cache_tree(lastObjectName);
                 
                 if (loadTreeError) {
                     std::cerr << "\nError: Failed to cache TTree pointer.\n";
@@ -2004,9 +2112,7 @@ class ROOTHandler {
             
             // Only call: create_hist() & fill_hist(); if its ROOT Ntuple
             // NOTE: If its ROOT Histogram, hpx pointer will already be populated
-            // TODO: This enlosure feels a bit dirty, likely a better way to do this
             if (rootObjectType == RootObjectType::TTree) {
-            
                 // Attempt to instantiate histogram object
                 int const histError = create_hist_root(nbins, xmin, doPostProcessing ? nbins : xmax);
                 
@@ -2023,6 +2129,8 @@ class ROOTHandler {
                     return std::nullopt;
                 }
             }
+            // TODO: ^^ This enlosure feels a bit dirty, likely a better way to do this ^^
+            // could just: if (... == TH1D) return hpx;
             
             // Cache last used path
             lastPath = path;

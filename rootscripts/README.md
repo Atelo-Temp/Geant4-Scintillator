@@ -295,12 +295,14 @@ Combines:
 
 23) replot_hist.cc (alt: replot.cc)
 
-Extension of plot_any.cc
+> NOTE: Extension of plot_any.cc
 
 Introduces:
 - Optional post-processing for ROOT Ntuples (smearing)
 - Quick replotting functionality (via caching last used filename and ROOT object name)
 - plot() function overloads
+
+NOTE: Doesnt actually handle "plot("../final/build/output0.root", "TrackData", "DetectionDistance")" overload (will address this in later macro)
 
 24) exponential_fit.cc (alt: ...)
 
@@ -312,8 +314,8 @@ NOTE: Purposefully uses a stripped back simpler ROOT object loading process, to 
 (requires manual implementation of tree name, branch name, nbins, xmin and xmax)
 
 Introduces:
-- ...
-- ...
+- Expanded fitting functions (single exponential decay, two phase exponential decay, exponential rise + exponential decay, ...)
+- Automated initial parameter estimation for each of those functions
 
 25) oop_plot.cc (alt: oop.cc, object_oriented.cc)
 
@@ -326,7 +328,8 @@ Rewriting core plotting code without the use of globals, instead using a couple 
 Re-introduces:
 - Replotting functionality of replot_hist.cc
 - Post-processing smearing via replotting
-- Passing object name directly to top level plot method instead of bringing up explorer CLI
+- Top level plot function overloads
+- Root class infrastructure to enable passing object name (and tree name) directly to top level plot method instead of bringing up explorer CLI (via overloads)
 
 > NOTE: Extension of oop_plot.cc
 
@@ -420,7 +423,7 @@ Rewriting core plotting code without the use of globals, instead using functiona
 
 > NOTE: Extension of replot.cc
 
-> NOTE: This may be the messiest of the possible options tbh, will have to have so many optional return types, args, etc - maybe im missing a blatant solution though idk
+> NOTE: This may be the messiest of the possible options tbh, will have to have so many optional return types, args, deep levels of abstraction to ensure individual function params stay compact, etc - maybe im missing a blatant solution though idk
 
 XX) downsampling.cc
 
@@ -780,6 +783,13 @@ plot("../final/build/output0.root", 2048, 0, 5000, true)
 // path, nbins, xmin, xmax, smear
 ```
 
+Skips ROOT explorer CLI as object name is pased, but still brings up the TTree branch explorer CLI (NOTE: Will check if its a TTree, if its a TH1, it will recognise and handle that)
+
+```c++
+plot("../final/build/output0.root", "TrackData")
+// path, tree name
+```
+
 Plots the tree and branch directly:
 
 ```c++
@@ -793,7 +803,7 @@ Plots the tree and branch directly, using specified histogram args:
 plot("../final/build/output0.root", "TrackData", "DetectionDistance", 4096, 0, 2500)
 ```
 
-Plots the TH1 directly:
+Plots the TH1 directly (NOTE: Will check if its a TH1, if its a TTree, it will recognise and handle that):
 
 ```c++
 plot("../final/build/output0.root", "PhotonsSpectrum")
