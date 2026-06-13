@@ -718,6 +718,8 @@ Replot ROOT Ntuple
 ```c++
 plot("../final/build/output0.root")
 replot(1024,0,5000) // nbins, xmin, xmax
+add_axis_title("")
+save("../data/21_hist.root")
 ```
 
 ### exponential_fit.cc
@@ -746,7 +748,7 @@ fit("double_exp_decay")
 Plot from ASCII:
 
 ```c++
-plot("~/geant4/geant4-v11.3.2/project/data/21_hist.root")
+plot("~/Maestro/LaBr/LaBr_300s_sources/137Cs_LaBr_750v_10coarse_3cm.Spe")
 ```
 
 Brings up ROOT explorer CLI:
@@ -760,7 +762,7 @@ plot("../final/build/output0.root")
 Plot from ASCII:
 
 ```c++
-plot("~/geant4/geant4-v11.3.2/project/data/21_hist.root")
+plot("~/Maestro/LaBr/LaBr_300s_sources/137Cs_LaBr_750v_10coarse_3cm.Spe")
 ```
 
 Brings up ROOT explorer CLI:
@@ -776,7 +778,7 @@ plot("../final/build/output0.root", 2048, 0, 5000)
 // path, nbins, xmin, xmax
 ```
 
-Brings up ROOT explorer CLI, but uses predefined histogram args, and applies gaussian smearing:
+TODO: Brings up ROOT explorer CLI, but uses predefined histogram args, and applies gaussian smearing:
 
 ```c++
 plot("../final/build/output0.root", 2048, 0, 5000, true)
@@ -814,12 +816,26 @@ Replot last used ROOT Ntuple with specified histogram args:
 
 ```c++
 plot("../final/build/output0.root")
-replot(1024,0,5000) // nbins, xmin, xmax
+replot(2048,0,4000) // nbins, xmin, xmax
 ```
+
+```c++
+plot("../final/build/output0.root", "EventData", "NumPhotons")
+replot(2048,0,4000) // nbins, xmin, xmax
+```
+
+NOTE: ^^ This replotting of manually specified tree/branch names only works with oop_save.cc, overlooked something in oop_replot.cc ^^
 
 Replot last used ROOT Ntuple, and add gaussian smearing:
 
 ```c++
 plot("../final/build/output0.root")
-replot(1024,0,5000,true) // nbins, xmin, xmax
+replot(2048,0,4000,true) // nbins, xmin, xmax
 ```
+
+```c++
+plot("../final/build/output0.root", "EventData", "NumPhotons")
+replot(2048,0,4000,true) // nbins, xmin, xmax
+```
+
+NOTE: ^^ This replotting of manually specified tree/branch names only works with oop_save.cc, overlooked something in oop_replot.cc ^^
