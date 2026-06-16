@@ -197,7 +197,7 @@ Introduces:
 
 Rewriting core plotting code without the use of globals, instead using a couple of dedicated classes in this case.
 
-> NOTE: Extension of replot.cc
+> NOTE: Extension of replot_hist.cc
 
 26) oop_replot.cc
 
@@ -222,11 +222,19 @@ Introduces:
 
 ## TODOS
 
+26) oop_spectrum.cc
+
+Re-introduces:
+- Peak fitting
+- Exponential, etc, fitting ? (maybe save this for a later macro tbh, as its far less developed than peak fitting, so an extension of exponential_fit.cc with simplified file loading etc likely best stepping stone first)
+
+> NOTE: Extension of oop_sav.cc & spectra_fit.cc
+
 25) residuals.cc
 
 ...
 
-Either uses ROOT builtin residual plotter, or calculates residuals and plots them manually
+Either uses ROOT builtin residual plotter, or calculates residuals and plots them manually (on the same canvas - via 2 pads)
 
 > NOTE: Extension of exponential_fit.cc (most likely)
 
@@ -304,6 +312,14 @@ Rewriting core plotting code without the use of globals, instead using functiona
 > NOTE: Extension of replot.cc
 
 > NOTE: This may be the messiest of the possible options tbh, will have to have so many optional return types, args, deep levels of abstraction to ensure individual function params stay compact, etc - maybe im missing a blatant solution though idk
+
+35) compiled_plot.cc
+
+Exploring alternative methodology which works with compiled code.
+
+Will likely require reading from stdin for commands like "plot", "replot", etc ...
+
+Maybe see if there is a methodology that works smoothly with both ROOT interactive terminal and compiled code
 
 XX) downsampling.cc
 
