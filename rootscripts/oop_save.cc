@@ -36,7 +36,6 @@ enum class FileType {
 };
 
 // TODO: Eventually move class definitions to headers
-// std::variant<std::monostate, ROOTHandler, ASCIIHandler> gSession;
 
 /*
  * Load in plotting and fitting functions
@@ -57,7 +56,9 @@ int oop_save() {
 }
 
 /*
- * Describe plot API parameters (available overloads), replot(...), add_axis_title(...), save(...)
+ * Describe plot(...) API parameters (available overloads), replot(...), add_axis_title(...), save(...)
+ * 
+ * TODO
  */
 int help() {
     std::cout << "\n-----------------------------------------------------------------------\n";
@@ -416,7 +417,7 @@ double post_processing(int const entry, int const nbins = 2048, double const xma
 class ASCIIHandler {
     // ...
     private:
-        // ...
+        // ASCII infile stream
         std::ifstream inASCII;
         
         // Metadata object type for ASCII (.Spe) files
@@ -430,7 +431,7 @@ class ASCIIHandler {
             int end = 0;
         } metaData;
         
-        // ...
+        // Instantiated histogram pointer (will be on the heap)
         TH1* hpx = nullptr;
     
     // ...
@@ -445,11 +446,17 @@ class ASCIIHandler {
         * 
         * NOTE: PlotSession handles deletion of TH1 from the heap, hence trying to delete here
         * will cause a segfault when using PlotSession::set_hpx()
+        * 
+        * DONT:
+        * 
+        * delete hpx;
+        * hpx = nullptr;
+        * 
+        * NOTE: Not sure ascii_cleanup() even necessary, as all paths should have infile etc clear
+        * by the time destructor gets called
         */
         ~ASCIIHandler() {
             ascii_cleanup();
-            // delete hpx;
-            // hpx = nullptr;
         };
     
     // ...
@@ -916,17 +923,21 @@ class ASCIIHandler {
  * TODO: Maybe just fully lean into class property usage, instead of args/return values
  * ^ but on the other hand, these methods are quite portable as is, dunno if its worth
  * overcommitting to this design too much
+ * 
+ * TODO: Add TH1I support
+ * ^ maybe just do "TH1" for root object type
+ * ^ and potentially another histogram type flag
  */
 class ROOTHandler {
     // ...
     private:
-        // ...
+        // ROOT infile and infile owned object pointers
         TFile* inROOT = nullptr;
         TTree* nTuple = nullptr;
         TBranch* branch = nullptr;
         TLeaf* leaf = nullptr;
         
-        // ...
+        // Histogram pointer
         TH1* hpx = nullptr;
 
         // Store last accessed path, object name, and optionally branch name (for ttrees), for replot functionality
@@ -975,13 +986,16 @@ class ROOTHandler {
         * NOTE: PlotSession handles deletion of TH1 from the heap, hence trying to delete here
         * will cause a segfault when using PlotSession::set_hpx()
         * 
+        * DONT:
+        * 
+        * delete hpx;
+        * hpx = nullptr;
+        * 
         * NOTE: Not sure root_cleanup() even necessary, as all paths should have infile etc clear
         * by the time destructor gets called
         */
         ~ROOTHandler() {
             root_cleanup();
-            // delete hpx;
-            // hpx = nullptr;
         };
     
     // ...
@@ -2732,6 +2746,8 @@ int plot(std::string const userPath, std::string const objectName, std::string c
  * due to cached "lastPath" and "lastObjectName"
  * 
  * NOTE: Reuses existing canvas as is, but may want new canvas
+ * 
+ * NOTE: See below regarding hpx lifetime (ROOTHandler->replot(...) && PlotSession->set_hpx(...))
  */
 int replot(int const nbins, double const xmin, double const xmax, bool const doPostProcessing = false) {    
     // Get the active handler
@@ -2745,9 +2761,9 @@ int replot(int const nbins, double const xmin, double const xmax, bool const doP
         std::cerr << "\nAborting: Replot only available for ROOT objects.\n";
         return 1;
     }
-    //
+    
+    // ...
     ROOTHandler* gROOTHandler = *isActive;
-    // TEST
     
     // Handle bad args
     if (nbins <= 0) {
@@ -2768,6 +2784,19 @@ int replot(int const nbins, double const xmin, double const xmax, bool const doP
     }
     
     TH1* hpx = result.value();
+    
+    // TODO: if (!hpx) ...
+    
+    // Update the PlotSession with the new histogram
+    gSession->set_hpx(hpx);
+    // NOTE: Since ROOTHandler->replot deletes the hpx, without updating the hpx stored in the
+    // plot session, add_axis_title() will cause a segfault when trying to write to that memory
+    // location via SetXTitle(...), also, attempting to call gSession->clear_hpx() after replot
+    // will do the same, or gSession->clear_hpx() before replot will cause segfault when 
+    // ROOTHandler attempts to delete... need to be careful with this partly shared ownership
+    
+    // TODO: Maybe dont delete the hpx in handler->replot, but also that would be kinda shitty
+    // incase an error occurs before plot session can delete it
     
 //     // Attempt to reuse existing canvas
 //     TObject* oldCanvas = gROOT->GetListOfCanvases()->FindObject("canvas");
@@ -2805,7 +2834,7 @@ int replot(int const nbins, double const xmin, double const xmax, bool const doP
  * 
  * TODO: Maybe store reference to both canvas & hpx on classes, and add getters
  */
-int add_axis_title(std::string const title, TCanvas* canvas, TH1* hpx) {
+int add_axis_title(std::string const& axis, std::string const& title, TH1* hpx, TCanvas* canvas) {
     // Handle error creating canvas
     if (!canvas) {
         std::cerr << "\nError (add_axis_title()): Couldnt find canvas!\n";
@@ -2819,14 +2848,61 @@ int add_axis_title(std::string const title, TCanvas* canvas, TH1* hpx) {
         return 1;
     }
     
-    // X-axis title
-    hpx->SetXTitle(title.c_str());
+    std::cout << "\nAdding " << axis << "-axis title \"" << title << "\"\n";
     
-    // Notify canvas of change, and refresh
+    // Assgn title to axis
+    if (axis == "x") {
+        // X-axis title
+        hpx->SetXTitle(title.c_str());
+    }
+    else if (axis == "y") {
+        // X-axis title
+        hpx->SetYTitle(title.c_str());
+    }
+    else {
+        std::cerr << "\nError: Invalid axis\n";
+        return 1;
+    }
+    
+    std::cout << "\nRefreshing canvas...\n";
+    
+    // Notify canvas of change to pad, and refresh
     gPad->Modified();
     canvas->Update();
     
+    std::cout << "\nAxis title has been updated.\n";
+    
     return 0;
+}
+
+/*
+ * Wrapper for add_axis_title(), enabling convinient ROOT interactive terminal usage
+ */
+int x_title(std::string const title) {
+    std::cout << "\nAttempting to retrieve histogram...\n";
+    
+    TH1* hpx = gSession->get_hpx();
+    
+    // NOTE: Debug
+    // if (hpx->IsOnHeap()) {
+    //     std::cout << "\nHPX IS ALIVE\n";
+    // }
+    // if (hpx->IsZombie()) {
+    //     std::cout << "\nHPX IS UNDEAD\n";
+    // }
+    // if (hpx->IsDestructed()) {
+    //     std::cout << "\nHPX IS DEAD\n";
+    // }
+    
+    std::cout << "\nAttempting to retrieve canvas...\n";
+    
+    TCanvas* canvas = gSession->get_canvas();
+    
+    std::cout << "\nAttempting to set axis title...\n";
+    
+    int success = add_axis_title("x", title, hpx, canvas);
+    
+    return success;
 }
 
 /*
@@ -2918,6 +2994,7 @@ int save_to(std::string const& path, TH1* hpx, std::string const& name) {
         std::cerr << "\nError (save()): Histogram not found!\n";
         return 1;
     }
+    // NOTE: Do this first else subsequent path/file checking is redundant on null hpx
     
     // Check that the provided filename has a ROOT extension
     std::string const extension = get_extension(path);

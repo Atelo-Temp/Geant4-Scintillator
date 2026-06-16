@@ -209,14 +209,18 @@ Re-introduces:
 
 > NOTE: Extension of oop_plot.cc
 
-## TODOS
-
 25) oop_save.cc
 
 Re-introduces:
+- Axis title addition
 - Save hist methodology
 
+Introduces:
+- Plot session object (manages handler/hpx/canvas lifetimes, to ensure ASCII/ROOT handlers dont start mixing responsibilities)
+
 > NOTE: Extension of oop_replot.cc
+
+## TODOS
 
 25) residuals.cc
 
@@ -706,12 +710,12 @@ Replot last used ROOT Ntuple, and add gaussian smearing:
 
 ```c++
 plot("../final/build/output0.root")
-replot(2048,0,4000,true) // nbins, xmin, xmax
+replot(2048,0,4000,true) // nbins, xmin, xmax, add gaussian smearing
 ```
 
 ```c++
 plot("../final/build/output0.root", "EventData", "NumPhotons")
-replot(2048,0,4000,true) // nbins, xmin, xmax
+replot(2048,0,4000,true) // nbins, xmin, xmax, add gaussian smearing
 ```
 
 NOTE: ^^ This replotting of manually specified tree/branch names only works with oop_save.cc, overlooked something in oop_replot.cc ^^
@@ -721,6 +725,7 @@ NOTE: ^^ This replotting of manually specified tree/branch names only works with
 ```c++
 plot("../final/build/output0.root", "EventData", "NumPhotons")
 replot(2048,0,4000,true)
+x_title("Channels")
 save("./test.root")
 plot("./test.root")
 ```
@@ -728,15 +733,19 @@ plot("./test.root")
 ```c++
 plot("../final/build/output0.root", "TrackData", "DetectionDistance")
 replot(4096,0,2500)
+x_title("Distance (mm)")
 save("./test.root")
 plot("./test.root")
 ```
 
 ```c++
 plot("~/Maestro/LaBr/LaBr_300s_sources/137Cs_LaBr_750v_10coarse_3cm.Spe")
+x_title("Channels")
 save("./test.root")
 plot("./test.root")
 ```
+
+NOTE: Plotting TH1I isnt supported, so if its saved as TH1I, plot("./test.root") will error out, will implement soon (already added a lot to this macro as is)
 
 ## ASCII (.Spe) Format
 
