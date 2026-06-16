@@ -2441,6 +2441,8 @@ PlotSession* gSession = nullptr;
  * calling delete on an already deleted canvas, which will cause a segfault
  * 
  * TODO: Could also consider a clear all canvases in list approach
+ * 
+ * TODO: Currently unused
  */
 int clear_canvas(std::string const& name = "canvas") {
     // ...
@@ -2876,6 +2878,9 @@ int prompt_user_char(std::string const &question = "Do you wish to overwrite exi
  * 
  * NOTE: Try/catch not needed here, open doesnt appear to throw, just prints error
  * to stdout and sets temp = nullptr
+ * 
+ * TODO: Probably worth doing a gDirectory check before TFile::Open to avoid the
+ * error still though
  */
 int check_file(char const* path) {
     // Attempt to open file with provided filename
@@ -2907,7 +2912,13 @@ int check_file(char const* path) {
  * 
  * NOTE: This only accepts a ".root" outfile extension
  */
-int save_to(std::string const& path, TH1* hpx, std::string const& name) {
+int save_to(std::string const& path, TH1* hpx, std::string const& name) {    
+    // Handle missing histogram
+    if (!hpx) {
+        std::cerr << "\nError (save()): Histogram not found!\n";
+        return 1;
+    }
+    
     // Check that the provided filename has a ROOT extension
     std::string const extension = get_extension(path);
     
@@ -2944,12 +2955,6 @@ int save_to(std::string const& path, TH1* hpx, std::string const& name) {
         return 1;
     }
     
-    // Handle missing histogram
-    if (!hpx) {
-        std::cerr << "\nError (save()): Histogram not found!\n";
-        return 1;
-    }
-    
     // Write the histogram object to the root file
     outfile->WriteObject(hpx, name.c_str());
     
@@ -2965,19 +2970,26 @@ int save_to(std::string const& path, TH1* hpx, std::string const& name) {
 }
 
 /*
- * ...
+ * Wrapper for save_to(), enabling convinient ROOT interactive terminal usage
+ * 
+ * TODO: Take optional force overwrite param (if omitted, will still ask on naming conflict)
  */
-// int save(std::string const path, std::string const name = "Spectrum") {
-//     // ...
-//     auto handler = gSESSION->get_active<>();
-//     TH1* hpx = handler->GetHpx();
-//     
-//     // ...
-//     int const success = save_to(path, hpx, name);
-//     
-//     if (!success) {
-//         return 1;
-//     }
-//     
-//     return 0;
-// }
+int save(std::string const path) {
+    std::cout << "\nAttempting to retrieve histogram...\n";
+    
+    // Get the active histogram for this plotting session
+    TH1* hpx = gSession->get_hpx();
+    
+    std::cout << "\nExtracting histogram name...\n";
+    
+    // Use the name assigned to the histogram
+    std::string const name = hpx->GetName();
+    // NOTE: Will be same as ntuple name, or "EnergySpectrum" for ASCII histos
+    
+    std::cout << "\nAttempting to save histogram \"" << name << "\" to \"" << path << "\"\n";
+    
+    // Attempt to save it in a root file at the given path location
+    int const success = save_to(path, hpx, name);
+    
+    return success;
+}

@@ -716,6 +716,28 @@ replot(2048,0,4000,true) // nbins, xmin, xmax
 
 NOTE: ^^ This replotting of manually specified tree/branch names only works with oop_save.cc, overlooked something in oop_replot.cc ^^
 
+### oop_save.cc
+
+```c++
+plot("../final/build/output0.root", "EventData", "NumPhotons")
+replot(2048,0,4000,true)
+save("./test.root")
+plot("./test.root")
+```
+
+```c++
+plot("../final/build/output0.root", "TrackData", "DetectionDistance")
+replot(4096,0,2500)
+save("./test.root")
+plot("./test.root")
+```
+
+```c++
+plot("~/Maestro/LaBr/LaBr_300s_sources/137Cs_LaBr_750v_10coarse_3cm.Spe")
+save("./test.root")
+plot("./test.root")
+```
+
 ## ASCII (.Spe) Format
 
 SPE files are Block Structured ASCII (BSA) files that can be viewed or modified with any available text editor.
