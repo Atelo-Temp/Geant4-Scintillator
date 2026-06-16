@@ -4,130 +4,6 @@ NOTE: Code in many of the earlier macros (and even some of the later macros) is 
 intentionally rough, poorly designed, non-refactored, etc, for reference. The final versions
 will be where i clean up the code significantly.
 
-## ASCII (.Spe) Format
-
-SPE files are Block Structured ASCII (BSA) files that can be viewed or modified with any available text editor.
-
-A BSA-file is divided into blocks. Each block is identified by a string that starts with a dollar sign ($) and ends with a colon (:).
-
-Thus, $BLOCK_NAME:.
-
-The structure of the data in each block is uniquely defined; the order in which blocks may appear in the file is, however, not always defined.
-
-These ROOT macros are designed to handle BSA-files exported from Maestro spectroscopy software, and follow the format:
-
-- Spectrum ID
-
-```text
-$SPEC_ID:
-<description>
-```
-
-- Spectrum Remarks
-
-```text
-$SPEC_REM:
-<remark1>
-<remark2>
-...
-<remarkN>
-```
-
-- Measurement Date
-
-```text
-$DATE_MEA: (start date of measurement)
-<month/day/year> <hour:min:sec>
-```
-
-- Measurement time
-
-```text
-$MEAS_TIM: (spectrum measurement time in seconds)
-<livetime> <truetime>
-```
-
-- Data
-
-```text
-$DATA: (spectral data)
-<lower channel number> <upper channel number>
-<data line 1>
-...
-<data line n>
-```
-
-- ROI
-
-```text
-$ROI: (regions of interest)
-num_roi
-lower_chan_no(1) upper_chan_no(1)
-lower_chan_no(n) upper_chan_no(n)
-```
-
-- Presets
-
-```text
-$PRESETS:
-...
-```
-
-- ...
-
-```text
-$ENER_FIT:
-offset slope quadratic
-```
-
-- ...
-
-```text
-$MCA_CAL:
-num_coefficients
-```
-
-- ...
-
-```text
-$SHAPE_CAL:
-```
-
-- Example format
-
-NOTE: Channel data condensed to ellipsis for brevity.
-
-```text
-$SPEC_ID:
-DeT_2
-$SPEC_REM:
-DET# 1
-DETDESC# PHY-R11-02 Easy-MCA-2k SN 12319717
-AP# Maestro Version 7.01
-$DATE_MEA:
-11/01/2024 16:27:06
-$MEAS_TIM:
-600 600
-$DATA:
-0 2047
-...
-$ROI:
-1
-1550 1773
-$PRESETS:
-Live Time
-600
-0
-$ENER_FIT:
-0.000000 0.000000
-$MCA_CAL:
-3
-0.000000E+000 0.000000E+000 0.000000E+000 
-$SHAPE_CAL:
-3
-0.000000E+000 0.000000E+000 0.000000E+000
-```
-
 ## Project Ordering
 
 NOTE: ascii_to_root.cc is pulled from root.cern tutorials, hence not listed here
@@ -839,3 +715,136 @@ replot(2048,0,4000,true) // nbins, xmin, xmax
 ```
 
 NOTE: ^^ This replotting of manually specified tree/branch names only works with oop_save.cc, overlooked something in oop_replot.cc ^^
+
+## ASCII (.Spe) Format
+
+SPE files are Block Structured ASCII (BSA) files that can be viewed or modified with any available text editor.
+
+A BSA-file is divided into blocks. Each block is identified by a string that starts with a dollar sign ($) and ends with a colon (:).
+
+Thus, $BLOCK_NAME:.
+
+The structure of the data in each block is uniquely defined; the order in which blocks may appear in the file is, however, not always defined.
+
+These ROOT macros are designed to handle BSA-files exported from Maestro spectroscopy software, and follow the format:
+
+- Spectrum ID
+
+```text
+$SPEC_ID:
+<description>
+```
+
+- Spectrum Remarks
+
+```text
+$SPEC_REM:
+<remark 1>
+<remark 2>
+...
+<remark n>
+```
+
+- Measurement Date
+
+```text
+$DATE_MEA: (start date of measurement)
+<month/day/year> <hour:min:sec>
+```
+
+- Measurement time
+
+```text
+$MEAS_TIM: (spectrum measurement time in seconds)
+<livetime> <truetime>
+```
+
+- Data
+
+```text
+$DATA: (spectral data)
+<lower channel number> <upper channel number>
+<data line 1>
+...
+<data line n>
+```
+
+- ROI
+
+```text
+$ROI: (regions of interest)
+<num roi>
+<lower_chan_no(1)> <upper_chan_no(1)>
+<lower_chan_no(n)> <upper_chan_no(n)>
+```
+
+- Presets
+
+```text
+$PRESETS:
+<parameter 1>
+<value 1>
+...
+<value n>
+...
+<parameter n>
+...
+```
+
+- ...
+
+```text
+$ENER_FIT:
+<offset> <slope> <quadratic>
+```
+
+- ...
+
+```text
+$MCA_CAL:
+<num coefficients>
+<coefficient 1> ... <coefficient n>
+```
+
+- ...
+
+```text
+$SHAPE_CAL:
+<num coefficients>
+<coefficient 1> ... <coefficient n>
+```
+
+- Example format
+
+NOTE: Channel data condensed to ellipsis for brevity.
+
+```text
+$SPEC_ID:
+DeT_2
+$SPEC_REM:
+DET# 1
+DETDESC# PHY-R11-02 Easy-MCA-2k SN 12319717
+AP# Maestro Version 7.01
+$DATE_MEA:
+11/01/2024 16:27:06
+$MEAS_TIM:
+600 600
+$DATA:
+0 2047
+...
+$ROI:
+1
+1550 1773
+$PRESETS:
+Live Time
+600
+0
+$ENER_FIT:
+0.000000 0.000000
+$MCA_CAL:
+3
+0.000000E+000 0.000000E+000 0.000000E+000 
+$SHAPE_CAL:
+3
+0.000000E+000 0.000000E+000 0.000000E+000
+```

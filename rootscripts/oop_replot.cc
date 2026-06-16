@@ -51,7 +51,6 @@ int oop_replot() {
     std::cout << "\n-----------------------------------------------------------------------\n";
     std::cout << "\nConvert ASCII & ROOT Ntuples to Root Histogram.\n";
     std::cout << "\nTo get started, call: plot(\"path.ext\"), passing path to ASCII (.Spe) or ROOT (.root) file as param.\n";
-    std::cout << "\nTo save the plotted histogram, call save(\"dir/out.root\").\n";
     std::cout << "\n-----------------------------------------------------------------------\n";
     
     // fin

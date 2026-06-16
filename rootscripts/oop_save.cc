@@ -1,17 +1,17 @@
 // ...
 
 // ROOT lib
-#include <TDirectory.h>
+// #include <TDirectory.h> // NOTE: Unused
 #include <TFile.h>
 #include <TKey.h>
 #include <TTree.h>
 #include <TLeaf.h> // Incomplete type without explicit import
 #include <TH1.h>
 #include <TCanvas.h>
-#include <TROOT.h> // TODO: I think this is unused ?
+#include <TROOT.h> // gROOT
 #include <TStyle.h> // gStyle
 #include <TRandom.h> // gRandom
-#include <TVirtualPad.h>
+#include <TVirtualPad.h> // gPad
 
 // C lib
 #include <iostream> // cerr, cin, cout
@@ -35,9 +35,7 @@ enum class FileType {
     NULLFILE
 };
 
-// class ROOTHandler;
-// class ASCIIHandler;
-
+// TODO: Eventually move class definitions to headers
 // std::variant<std::monostate, ROOTHandler, ASCIIHandler> gSession;
 
 /*
@@ -59,7 +57,20 @@ int oop_save() {
 }
 
 /*
- * Get file extension
+ * Describe plot API parameters (available overloads), replot(...), add_axis_title(...), save(...)
+ */
+int help() {
+    std::cout << "\n-----------------------------------------------------------------------\n";
+    std::cout << "\n ... \n";
+    std::cout << "\n-----------------------------------------------------------------------\n";
+    
+    return 0;
+}
+
+/*
+ * Get file extension from passed path
+ * 
+ * NOTE: Returns empty string on error, or if no file extension found
  */
 std::string get_extension(std::string const& path) {
     // Check if string is empty (returns true if string is empty)
@@ -390,8 +401,17 @@ double post_processing(int const entry, int const nbins = 2048, double const xma
     return channel;
 }
 
+
 /*
  * Handle ASCII (.Spe) file format
+ * 
+ * Loads file -> Parses data -> Spits out a histogram
+ * 
+ * NOTE: Avoid adding responsibilities beyond this
+ * 
+ * TODO: Maybe just fully lean into class property usage, instead of args/return values
+ * ^ but on the other hand, these methods are quite portable as is, dunno if its worth
+ * overcommitting to this design too much
  */
 class ASCIIHandler {
     // ...
@@ -416,16 +436,20 @@ class ASCIIHandler {
     // ...
     public:
         /*
-        * ...
+        * Constructor
         */
         ASCIIHandler() = default;
         
         /*
-        * ...
+        * Destructor
+        * 
+        * NOTE: PlotSession handles deletion of TH1 from the heap, hence trying to delete here
+        * will cause a segfault when using PlotSession::set_hpx()
         */
         ~ASCIIHandler() {
             ascii_cleanup();
-            delete hpx;
+            // delete hpx;
+            // hpx = nullptr;
         };
     
     // ...
@@ -883,7 +907,11 @@ class ASCIIHandler {
 
 
 /*
- * ...
+ * Handle ROOT (.root) file format
+ * 
+ * Loads file -> Parses data -> Spits out a histogram
+ * 
+ * NOTE: Avoid adding responsibilities beyond this
  * 
  * TODO: Maybe just fully lean into class property usage, instead of args/return values
  * ^ but on the other hand, these methods are quite portable as is, dunno if its worth
@@ -943,10 +971,17 @@ class ROOTHandler {
         
         /*
         * Destructor
+        * 
+        * NOTE: PlotSession handles deletion of TH1 from the heap, hence trying to delete here
+        * will cause a segfault when using PlotSession::set_hpx()
+        * 
+        * NOTE: Not sure root_cleanup() even necessary, as all paths should have infile etc clear
+        * by the time destructor gets called
         */
         ~ROOTHandler() {
             root_cleanup();
-            delete hpx;
+            // delete hpx;
+            // hpx = nullptr;
         };
     
     // ...
@@ -2045,7 +2080,7 @@ class ROOTHandler {
             // Incase plot will be called multiple times in succession, ensure histo cleared each time
             if (hpx) {
                 std::cout << "\nFound existing histogram, clearing...\n";
-                delete hpx;
+                delete hpx; // <<<<<<<<<<<<<<<<<
                 hpx = nullptr;
             }
             
@@ -2145,6 +2180,8 @@ class ROOTHandler {
             // Cache last used path
             lastPath = path;
             
+            std::cout << "\nROOT plotting complete.\n";
+            
             // ...
             return hpx;
         }
@@ -2223,9 +2260,221 @@ class ROOTHandler {
 
 
 /*
- * Instantiates a canvas object, populating the global variable
+ * ...
+ * 
+ * Handles hpx and canvas lifetimes for the current plot
  */
-std::optional<TCanvas*> create_canvas() {
+class PlotSession {
+    // ...
+    private:
+        // ...
+        std::variant<std::monostate, ROOTHandler*, ASCIIHandler*> m_handler;
+        // NOTE: Initialises itself with first type listed in template args (monostate)
+        
+        // ...
+        TH1* m_hpx = nullptr; // microsoft style class member (m_name)
+        // TH1* hpx_ = nullptr; // google style class member (name_)
+        
+        // ...
+        TCanvas* m_canvas = nullptr;
+    
+    // ...
+    public:
+        /*
+         * Constructor
+         */
+        PlotSession() = default;
+        /*
+         * Destructor
+         */
+        ~PlotSession() {
+            // ...
+            clear_handler();
+            
+            delete m_hpx;
+            m_hpx = nullptr;
+            
+            delete m_canvas;
+            m_canvas = nullptr;
+        };
+        /*
+         * Check which handler is active, and remove it from the heap
+         */
+        int clear_handler() {
+            // Check which handler is active, and clear it
+            if (auto** activeHandler = std::get_if<ASCIIHandler*>(&m_handler)) {
+                std::cout << "\nFound existing ASCII handler, clearing...\n";
+                delete *activeHandler;
+            }
+            else if (auto** activeHandler = std::get_if<ROOTHandler*>(&m_handler)) {
+                std::cout << "\nFound existing ROOT handler, clearing...\n";
+                delete *activeHandler;
+            }
+            
+            return 0;
+        }
+        /*
+         * ...
+         * 
+         * NOTE: Using std::holds_alternative for type checking here means when accessing 
+         * the variant via std::get, another check is performed by get, whereas using
+         * get_if to achieve both the check and variable assignment causes less overhead
+         */
+        int set_handler(std::variant<std::monostate, ROOTHandler*, ASCIIHandler*> handler) {
+            // Attempt to clear the active handler before updating
+            clear_handler();
+            
+            // ...
+            m_handler = handler;
+            
+            return 0;
+        }
+        /*
+         * ...
+         */
+        std::variant<std::monostate, ROOTHandler*, ASCIIHandler*> get_handler() {
+            // ...
+            return m_handler;
+        }
+        /*
+         * ...
+         * 
+         * NOTE: Need to be careful when calling this after hpx has already been deleted elsewhere,
+         * i.e., in the destructor of the handler class or such, as it will cause a segfault, when
+         * calling delete on freed memory
+         */
+        int clear_hpx() {
+            // ...
+            if (m_hpx) {
+                std::cout << "\nFound existing histogram, clearing...\n";
+                
+                delete m_hpx;
+                m_hpx = nullptr;
+                
+                std::cout << "\nHistogram cleared.\n";
+            }
+            
+            return 0;
+        }
+        /*
+         * ...
+         */
+        int set_hpx(TH1* hpx) {
+            // ...
+            // std::cout <<"\nUpdating histogram pointer...\n";
+            m_hpx = hpx;
+            // std::cout <<"\nUpdated histogram pointer.\n";
+            
+            return 0;
+        }
+        /*
+         * Getter function for active histogram pointer
+         */
+        TH1* get_hpx() {
+            // ...
+            if (!m_hpx) {
+                std::cerr << "\nError: Histogram null.\n";
+                return nullptr;
+            }
+            
+            // ...
+            return m_hpx;
+        }
+        /*
+         * ...
+         * 
+         * NOTE: Need to be careful when calling this after canvas has already been deleted elsewhere,
+         * i.e., in the plot() function, as it will cause a segfault, when calling delete on freed memory
+         */
+        int clear_canvas() {
+            // ...
+            if (m_canvas) {
+                std::cout << "\nFound existing canvas, closing...\n";
+                
+                m_canvas->Close();
+                delete m_canvas;
+                m_canvas = nullptr;
+                
+                std::cout << "\nCanvas cleared.\n";
+            }
+            
+            return 0;
+        }
+        /*
+         * Set the active canvas for this plotting session
+         * 
+         * NOTE: If an error occurs after creating canvas and before canvas is set here,
+         * there will be a canvas left floating, 
+         */
+        int set_canvas(TCanvas* canvas) {
+            // ...
+            m_canvas = canvas;
+            
+            // ...
+            return 0;
+        }
+        /*
+         * Getter function for active canvas pointer
+         */
+        TCanvas* get_canvas() {
+            // ...
+            return m_canvas;
+        }
+};
+
+
+// Global session pointer
+PlotSession* gSession = nullptr;
+// NOTE: Temporarily declaring this down here as i think its still a tad too early for header files etc
+
+
+/*
+ * Check if canvas already exists, close it if so
+ * 
+ * NOTE: While PlotSession manages its active canvas, if an error occurs before set_canvas()
+ * is called, the canvas will remain floating in the global list of canvases, causing a
+ * warning message when attempting to call create_canvas():
+ * 
+ * "Warning in <TCanvas::Constructor>: Deleting canvas with same name: canvas"
+ * 
+ * TODO: Likely want to implement some sort of check for both, but gotta be careful with
+ * calling delete on an already deleted canvas, which will cause a segfault
+ * 
+ * TODO: Could also consider a clear all canvases in list approach
+ */
+int clear_canvas(std::string const& name = "canvas") {
+    // ...
+    TSeqCollection* canvasList = gROOT->GetListOfCanvases();
+    
+    // ...
+    if (canvasList->IsEmpty()) {
+        std::cout << "\nNo active canvases.\n";
+        return 0;
+    }
+    
+    // ...
+    TObject* oldCanvas = canvasList->FindObject(name.c_str());
+    
+    // ...
+    if (oldCanvas) {
+        std::cout << "\nFound existing canvas, closing...\n";
+        
+        auto existingCanvas = static_cast<TCanvas*>(oldCanvas);    
+        existingCanvas->Close();
+        delete existingCanvas;
+        
+        std::cout << "\nCanvas closed.\n";
+    }
+    
+    return 0;
+}
+
+/*
+ * Instantiates a canvas object, populating the global variable
+ * 
+ * NOTE: WinX and WinY denote the screen coordinates of the top left of the created canvas
+ */
+std::optional<TCanvas*> create_canvas(std::string const& name = "canvas") {
     std::cout << "\nCreating canvas...\n";
     
     // Canvas args
@@ -2235,7 +2484,7 @@ std::optional<TCanvas*> create_canvas() {
     Int_t const height = 800;
     
     // Create a canvas display
-    auto canvas = new TCanvas("canvas", "Histogram Viewer", winX, winY, width, height);
+    auto canvas = new TCanvas(name.c_str(), "Histogram Viewer", winX, winY, width, height);
     
     // Handle error creating canvas
     if (!canvas) {
@@ -2294,59 +2543,6 @@ int render_hist(TH1* hpx, TCanvas* canvas, bool const hideDefaultStats = true) {
     return 0;
 }
 
-// NOTE: Temporarily declaring these down here as i think its still a tad too early for header files etc
-// std::unique_ptr<ROOTHandler> gROOTHandler;
-// std::unique_ptr<ASCIIHandler> gASCIIHandler;
-ROOTHandler* gROOTHandler = nullptr;
-ASCIIHandler* gASCIIHandler = nullptr;
-// std::variant<std::monostate, ROOTHandler*, ASCIIHandler*>* gSession;
-
-struct GlobalSession {
-    ROOTHandler* gROOTHandler = nullptr;
-    ASCIIHandler* gASCIIHandler = nullptr;
-    
-    // template<typename T>
-    
-    // template <ROOTHandler* T>
-    // template <ASCIIHandler* T>
-    
-    // T get_active() {
-    //     if (gROOTHandler) return gROOTHandler;
-    //     else if (gASCIIHandler) return gASCIIHandler;
-    //     else return nullptr;
-    // }
-    
-    std::variant<std::monostate, ROOTHandler*, ASCIIHandler*> get_active() {
-        if (gROOTHandler) return gROOTHandler;
-        else if (gASCIIHandler) return gASCIIHandler;
-        else return std::monostate{};
-    }
-    
-//     T set_active(std::string const& handler) {
-//         if (handler == "ROOT") {
-//             
-//         }
-//         else if (handler == "ASCII") {
-//             
-//         }
-//     }
-    
-    int set_active(ROOTHandler* handler) {
-        gROOTHandler = handler;
-        return 0;
-    }
-    
-    int set_active(ASCIIHandler* handler) {
-        gASCIIHandler = handler;
-        return 0;
-    }
-    
-    // static_assert(std::is_same_v<T, ROOTHandler*> || std::is_same_v<T, ASCIIHandler*>, "");
-};
-
-
-// auto gSESSION = new GlobalSession();
-
 /*
  * Validate file path, load file into memory, instantiate histogram, fill histogram,
  * instantiate canvas, render histogram
@@ -2381,28 +2577,11 @@ int plot_x(
     double const xmax = -1.,
     bool const doPostProcessing = false
 ) {
+    // Instantiate only once in a given plotting session
+    if (!gSession) gSession = new PlotSession();
+    
     // ...
     // std::cout << "\nHIST PARAMS:\nX Min: " << xmin << ", X Max: " << xmax << ", Num Bins: " << nbins << "\n";
-    
-    // auto x = gSession->get_active<ROOTHandler*>();
-    // auto x = gSESSION->get_active<ROOTHandler*>();
-    // x.
-    
-    // auto active_handler = gSESSION->get_active();
-    
-    // if (std::holds_alternative<ROOTHandler*>(active_handler)) {
-    //     auto x = std::get<ROOTHandler*>(active_handler);
-    // }
-    
-    // ...
-    if (gASCIIHandler) {
-        delete gASCIIHandler;
-        gASCIIHandler = nullptr;
-    }
-    if (gROOTHandler) {
-        delete gROOTHandler;
-        gROOTHandler = nullptr;
-    }
     
     // Active file type flag
     FileType fileType = FileType::NULLFILE;
@@ -2428,18 +2607,17 @@ int plot_x(
 
     // ...
     std::optional<TH1*> result;
-    TH1* hpx = nullptr;
     
-    // ...
+    // Instantiate appropriate file type handler on the heap, call plot method, store handler in plot session object
     if (fileType == FileType::ASCII) {
-        // ...
-        gASCIIHandler = new ASCIIHandler();
-        result = gASCIIHandler->plot_ascii(path);
+        auto handler = new ASCIIHandler();
+        result = handler->plot_ascii(path);
+        gSession->set_handler(handler);
     }
     else if (fileType == FileType::ROOT) {
-        // ...
-        gROOTHandler = new ROOTHandler();
-        result = gROOTHandler->plot_root(path, objectName, branchName, nbins, xmin, xmax, doPostProcessing);
+        auto handler = new ROOTHandler();
+        result = handler->plot_root(path, objectName, branchName, nbins, xmin, xmax, doPostProcessing);
+        gSession->set_handler(handler);
     }
     else {
         std::cerr << "\nAborting: Unsupported file type.\n";
@@ -2453,17 +2631,18 @@ int plot_x(
         return 1;
     }
     
-    hpx = result.value();
+    TH1* hpx = result.value();
+    
+    // TODO: if (!hpx) ...
+    
+    // Set the histogram for the current plotting session
+    gSession->set_hpx(hpx);
     
     // Check if canvas already exists, close it if so
-    TObject* oldCanvas = gROOT->GetListOfCanvases()->FindObject("canvas");
-    
-    if (oldCanvas) {
-        std::cout << "\nFound existing canvas, closing...\n";
-        auto existingCanvas = static_cast<TCanvas*>(oldCanvas);    
-        existingCanvas->Close();
-        delete existingCanvas;
-    }
+    gSession->clear_canvas();
+    // TODO: clear_canvas() function (not class method) is arguably more robust,
+    // ensuring canvas is closed even if prior call to plot() errored out before
+    // canvas was set to PlotSession... however its potentially less scalable
     
     // Attempt to create canvas
     std::optional<TCanvas*> canvasError = create_canvas();
@@ -2475,17 +2654,13 @@ int plot_x(
     
     TCanvas* canvas = canvasError.value();
     
-    // Enclose create canvas, so that it doesnt get deleted when calling plot() multiple times in a row
-    // NOTE: This doesnt work as intended unless calling canvas.clear(), otherwise render_hist bugs out
-//     if (!canvas) {
-//         // Attempt to create canvas and paint the histogram
-//         int const canvasError = create_canvas();
-//         
-//         if (canvasError) {
-//             std::cerr << "\nAborting: Create canvas error!\n";
-//             return 1;
-//         }
-//     }
+    // TODO: if (!canvas) ....
+    
+    // TODO: Consider reusing existing canvas on subsequent calls to plot(), instead of
+    // creating a new one each time (maybe not though)
+    
+    // Set the canvas for the current plotting session
+    gSession->set_canvas(canvas);
     
     // Attempt to draw the histogram to the canvas
     int const renderError = render_hist(hpx, canvas);
@@ -2556,12 +2731,21 @@ int plot(std::string const userPath, std::string const objectName, std::string c
  * 
  * NOTE: Reuses existing canvas as is, but may want new canvas
  */
-int replot(int const nbins, double const xmin, double const xmax, bool const doPostProcessing = false) {
-    // ...
-    if (!gROOTHandler) {
-        std::cerr << "Replot only available for ROOT objects.\n";
+int replot(int const nbins, double const xmin, double const xmax, bool const doPostProcessing = false) {    
+    // Get the active handler
+    auto activeHandler = gSession->get_handler();
+    
+    // Check and fetch pointer
+    auto** isActive = std::get_if<ROOTHandler*>(&activeHandler);
+    
+    // If root handler is not the active handler, abort
+    if (!isActive) {
+        std::cerr << "\nAborting: Replot only available for ROOT objects.\n";
         return 1;
     }
+    //
+    ROOTHandler* gROOTHandler = *isActive;
+    // TEST
     
     // Handle bad args
     if (nbins <= 0) {
@@ -2573,7 +2757,7 @@ int replot(int const nbins, double const xmin, double const xmax, bool const doP
         return 1;
     }
     
-    // ...
+    // Replot the last accessed TBranch with the specified args
     std::optional<TH1*> result = gROOTHandler->replot(nbins, xmin, xmax, doPostProcessing);
     
     if (!result.has_value()) {
@@ -2583,15 +2767,23 @@ int replot(int const nbins, double const xmin, double const xmax, bool const doP
     
     TH1* hpx = result.value();
     
-    // Attempt to reuse existing canvas
-    TObject* oldCanvas = gROOT->GetListOfCanvases()->FindObject("canvas");
+//     // Attempt to reuse existing canvas
+//     TObject* oldCanvas = gROOT->GetListOfCanvases()->FindObject("canvas");
+//     
+//     if (!oldCanvas) {
+//         std::cerr << "\nAborting: Failed to find canvas.\n";
+//         return 1;
+//     }
+//     
+//     auto canvas = static_cast<TCanvas*>(oldCanvas);
     
-    if (!oldCanvas) {
+    // Attempt to reuse existing canvas
+    TCanvas* canvas = gSession->get_canvas();
+    
+    if (!canvas) {
         std::cerr << "\nAborting: Failed to find canvas.\n";
         return 1;
     }
-    
-    auto canvas = static_cast<TCanvas*>(oldCanvas);
     
     // Attempt to draw the histogram to the canvas
     int const renderError = render_hist(hpx, canvas);
