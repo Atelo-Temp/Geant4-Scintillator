@@ -1,25 +1,36 @@
 // User classes
 #include "SteppingAction.hh"
-#include "AnalysisManager.hh"
-#include "DetectorConstruction.hh"
+// #include "AnalysisManager.hh"
+// #include "DetectorConstruction.hh"
 
 // G4 Lib
 #include "G4OpBoundaryProcess.hh"
 #include "G4ProcessVector.hh"
 #include "G4StepStatus.hh"
 #include "G4VProcess.hh"
-#include "G4ios.hh"
-#include "G4LogicalVolume.hh"
-#include "G4RunManager.hh"
+// #include "G4ios.hh"
+// #include "G4LogicalVolume.hh"
+// #include "G4RunManager.hh"
+#include "G4ProcessManager.hh"
 #include "G4OpticalPhoton.hh"
 #include "G4Step.hh"
 #include "G4AnalysisManager.hh"
-#include <G4TrackStatus.hh>
+// #include "G4TrackStatus.hh"
+// #include "G4RandomTools.hh" // Random seeding
 
-// Random seeding
-#include "G4RandomTools.hh"
+/*
+ * Constructor
+ * 
+ * TODO: May want to use initialiser list here
+ */
+SteppingAction::SteppingAction(EventAction* eventAction) {
+    fEventAction = eventAction; 
+}
+// SteppingAction::SteppingAction(EventAction* eventAction) : fEventAction(eventAction) {}
 
-// Step handler, will excute on each step
+/*
+ * Step handler, will execute on each step a particle takes
+ */
 void SteppingAction::UserSteppingAction(const G4Step* step) {    
     // Get the track object for the current step
     G4Track* track = step->GetTrack();
@@ -90,10 +101,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     // if ((track->GetTrackStatus() == fStopAndKill) && (endPoint->GetStepStatus() != fGeomBoundary)) {
     // if (process && (process->GetProcessName() == "OpAbsorption") && (endPoint->GetStepStatus() != fGeomBoundary)) {
     if ((process->GetProcessName() == "OpAbsorption") && (endPoint->GetStepStatus() != fGeomBoundary)) { // NOTE: not sure the double check for boundary is needed, it would be "OpBoundary" otherwise
-        // fEventAction->CountKill();
         fEventAction->CountBulkAbsorption();
-//         // TODO: ^ This is essentially a duplicate method, useful for debugging,
-//         // but just use one or the other if this code is included in actual runs
     
         // TEST TEST TEST
         // Get distance travelled by photon before bulk absorption
@@ -114,7 +122,6 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     // can just let this next clause do so ....
     
     // NOTE: OpRayleigh, OpAbsorption, OpBoundary, OpScintillation (relevant process names)
-    
     
     // If post step point not at a defined geometric boundary, break
     if (endPoint->GetStepStatus() != fGeomBoundary) return;
@@ -156,10 +163,10 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         auto analysisManager = G4AnalysisManager::Instance();
         
         // Get (x, y, z) coordinates at point where optical photon detected by photocathode
-        G4ThreeVector detectionPosition = endPoint->GetPosition();
-        double x = detectionPosition[0];
-        double y = detectionPosition[1];
-        double z = detectionPosition[2];
+        G4ThreeVector const detectionPosition = endPoint->GetPosition();
+        double const x = detectionPosition[0];
+        double const y = detectionPosition[1];
+        double const z = detectionPosition[2];
         
         // Store this data in the nTuples (create a few rows) (IColumn = int, DColumn = double)
         analysisManager->FillNtupleDColumn(0, 0, x); // NtupleID = 0, 0th column, x
@@ -186,7 +193,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         
         // TEST TEST TEST
         // Get distance travelled by photon before detection (from creation to absorption in PC)
-        G4double distance = track->GetTrackLength();
+        G4double const distance = track->GetTrackLength();
         analysisManager->FillNtupleDColumn(3, 0, distance); // NtupleID = 3, column = 0, val = distance
         // analysisManager->AddNtupleRow(3); // finish row for NtupleID = 3 // NOTE: OMIT THIS IF USING SAME NTUPLE FOR ALL TRACK DATA
         // G4cout << "Distance Travelled Before Detection: " << distance << " mm" << G4endl;
@@ -194,7 +201,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         
         // TEST TEST TEST
         // Get time of flight information (local time gives time since photon birth until now, i.e. birth to detection)
-        G4double time = track->GetLocalTime(); 
+        G4double const time = track->GetLocalTime(); 
         analysisManager->FillNtupleDColumn(3, 1, time); // NtupleID = 3, column = 1, val = time
         analysisManager->AddNtupleRow(3); // Finish row for NtupleID = 3 // NOTE: NOW THAT ALL TRACK DATA WRITTEN, ADD THE ROW
         // NOTE: This method loses relative timing between different photons if they 
@@ -219,10 +226,10 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         auto analysisManager = G4AnalysisManager::Instance();
         
         // Get (x, y, z) coordinates at point where optical photon absorbed by reflector or photocathode
-        G4ThreeVector absorptionPosition = endPoint->GetPosition();
-        double x = absorptionPosition[0];
-        double y = absorptionPosition[1];
-        double z = absorptionPosition[2];
+        G4ThreeVector const absorptionPosition = endPoint->GetPosition();
+        double const x = absorptionPosition[0];
+        double const y = absorptionPosition[1];
+        double const z = absorptionPosition[2];
         
         // Store this data in the nTuples (create a few rows) (IColumn = int, DColumn = double)
         analysisManager->FillNtupleDColumn(1, 0, x); // NtupleID = 1, 3rd column, x
@@ -264,8 +271,11 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     // TODO: Maybe switch case here ^
 }
 
-// Find the boundary process and assign it to the class property "fBoundary"
-// NOTE: Is there a cleaner way to do this?
+/*
+ * Find the boundary process and assign it to the class property "fBoundary"
+ * 
+ * NOTE: Is there a cleaner way to do this?
+ */
 void SteppingAction::FindBoundary(G4Track* track) {
     // Get pointer to the process list (for optical photons)
     G4ProcessVector* pv = track->GetDefinition()->GetProcessManager()->GetProcessList();

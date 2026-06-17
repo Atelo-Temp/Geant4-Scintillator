@@ -8,27 +8,27 @@
  * - The particles to be used in the simulation
  * - All the physics processes to be simulated
  * - The range cut-off parameter
- *
- * Simplest example of PhysicsList() required to build a simulation program:
 */
 
+// User classes
 #include "PhysicsList.hh" // Header file containing class interface
 
+// G4 lib
 // #include "G4EmStandardPhysics.hh" // Standard physics list for electromagnetic interactions
 #include "G4EmStandardPhysics_option4.hh" // TODO: See below
-
-#include "G4OpticalPhysics.hh"
-
+#include "G4OpticalPhysics.hh" // scintillation
 #include "G4RadioactiveDecayPhysics.hh" // physics list
 #include "G4DecayPhysics.hh" // handling different decay models
-
 // TEST ... PIXE, cuts
 #include "G4EmParameters.hh"
 #include "G4RegionStore.hh"
 #include "G4SystemOfUnits.hh"
-//  ...
 
-// Define the class constructor
+/*
+ * Constructor
+ * 
+ * Registers chosen physics
+ */
 PhysicsList::PhysicsList() {
     // Register EM Physics
     // RegisterPhysics(new G4EmStandardPhysics());
@@ -50,10 +50,9 @@ PhysicsList::PhysicsList() {
     RegisterPhysics(new G4DecayPhysics());
 }
 
-// Define the destructor (optional given default setting in header file)
-// PhysicsList::~PhysicsList() {}
-
-// TEST ...
+/*
+ * ...
+ */
 void PhysicsList::SetCuts() {
     // Default production thresholds for world volume
     SetCutsWithDefault();
@@ -65,4 +64,3 @@ void PhysicsList::SetCuts() {
     cuts->SetProductionCut(100 * um);
     region->SetProductionCuts(cuts);
 }
-// ...

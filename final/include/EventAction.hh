@@ -34,7 +34,9 @@ class RunAction;
 //     int frequency;
 // };
 
-// ...
+/*
+ * Handles the event object with begin/end of event actions
+ */
 class EventAction : public G4UserEventAction {
     public:
         // Constructor takes pointer to run object
@@ -44,7 +46,7 @@ class EventAction : public G4UserEventAction {
         ~EventAction() override = default;
         
         // Start of event handler
-        void BeginOfEventAction(G4Event const *event) override;
+        void BeginOfEventAction(G4Event const* event) override;
         
         // End of event handler
         void EndOfEventAction(G4Event const* event) override;
@@ -58,18 +60,19 @@ class EventAction : public G4UserEventAction {
         // Photons detected by the photocathode
         void CountDetectedPhoton();
         
-        // Photons absorbed without detection
+        // Photons absorbed at a boundary without detection
         void CountAbsorbedPhoton();
         
-        // TEST: Photons lost due to NoRINDEX
-        void CountLostPhoton();
+        // Photons lost due to bulk absorption
         void CountBulkAbsorption();
-        void CountKill();
+        
+        // Photons lost due to NoRINDEX
+        void CountLostPhoton();
         
         // Print particle information (not for use with batch mode, but handy for single runs via visualiser)
         void Debug();
         
-    protected:
+    private:
         // Pointer to current run
         RunAction* fRunAction = nullptr;
         
@@ -79,13 +82,14 @@ class EventAction : public G4UserEventAction {
         // Detected photon tally
         G4int fDetectedPhotons = 0;
         
-        // Absorbed photon tally
+        // Boundary absorbed photon tally
         G4int fAbsorbedPhotons = 0;
         
-        // TEST: Lost photon tally
-        int fLostPhotons = 0;
-        int fBulkAbsorb = 0;
-        int fKilled = 0;
+        // Bulk absorbed photon tally
+        G4int fBulkAbsorb = 0;
+        
+        // Lost photon tally
+        G4int fLostPhotons = 0;
 };
 
 #endif

@@ -1,29 +1,34 @@
 #ifndef MySteppingAction_HH
 #define MySteppingAction_HH
 
+// User classes
 #include "EventAction.hh"
 
+// G4 Lib
 #include "G4UserSteppingAction.hh"
 #include "G4Step.hh"
-#include "G4LogicalVolume.hh"
+// #include "G4LogicalVolume.hh"
 #include "G4OpBoundaryProcess.hh"
 
-// Defined in "EventAction.hh"
+// Forward declarations
 // class EventAction;
+// TODO: Consider forward declaration
 
-// TODO: Should i delete fEventAction && fBoundary in custom destructor ??
-
-// Step handler
+/*
+ * Particle step handler
+ * 
+ * TODO: Should i delete fEventAction && fBoundary in custom destructor ??
+ */
 class SteppingAction : public G4UserSteppingAction {
     public:
         // Constructor (takes pointer to event object)
-        SteppingAction(EventAction* eventAction) { fEventAction = eventAction; };
+        SteppingAction(EventAction* eventAction);
         
         // Destructor
         ~SteppingAction() override = default;
         
         // Intra-event step handler (takes pointer to step object)
-        void UserSteppingAction(const G4Step*) override;
+        void UserSteppingAction(G4Step const* step) override;
         
         // Find optical photon boundary process
         void FindBoundary(G4Track* track);

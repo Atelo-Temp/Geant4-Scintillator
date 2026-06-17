@@ -9,8 +9,6 @@
  * - The materials used in its construction
  * - A definition of its sensitive regions
  * - The readout schemes of the sensitive regions
- *
- * Simplest example of DetectorConstruction() required to build a simulation program:
 */
 
 /*
@@ -30,10 +28,12 @@
  * NOTE: The coordinate system of the mother volume is used to specify where the daughter volume is placed
 */
 
+// User classes
 // #include "DetectorConstruction.hh" // When leaving it as named here, causes errors (only in vscode), in scintillator/ no errors ...
 #include "DetectorConstruction.hh"
 #include "MaterialDefinitions.hh"
 
+// G4 lib
 #include "G4NistManager.hh"
 #include "G4Element.hh"
 #include "G4Material.hh"
@@ -62,12 +62,7 @@
 
 #include "G4Types.hh"
 
-
 // NOTE: Uses consistent units throughout (cm probably easiest to adhere to)
-
-// TODO: Add tiny bit of Tl doping to the crystal material ?
-
-// TODO: 
 
 // TODO: There is overhang of the encapsulation at the back of the crystal 
 // (of thickness = encapsulation thickness, as that was added to front for beta shield)
@@ -104,12 +99,12 @@
  * interacting with it (from outer rad of window)
  */
 
-
-// namespace GEOMETRY {
-
-// Define the geometry to be created when run manager intialises
+/*
+ * Define the geometry to be created when run manager intialises
+ * 
+ * NOTE: Construct() will be called via run manager
+ */
 G4VPhysicalVolume* DetectorConstruction::Construct() {
-
     // Flag for checking geometry overlap
     G4bool checkOverlaps = true;
 
@@ -232,7 +227,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     // Cesium-137 (137Cs) source, 50% barium (137Ba) daughter product
     auto sourceHandler = new MaterialDefinitions();
-    auto sourceMat = sourceHandler->Create137Cs();
+    G4Material* sourceMat = sourceHandler->Create137Cs();
     
     // Source Casing
     G4Material* PVC = nist->FindOrBuildMaterial("G4_POLYVINYL_CHLORIDE"); // density = 1.3 g/cm^3
@@ -252,7 +247,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Energy range of NaI:Tl emission spectrum
     // NOTE: Visible light ranges from ~400 nm (violet) to ~700 nm (red)
     // TODO: See EMI notes
-    std::vector<G4double> energy = {2.25425 * eV, 2.98756 * eV, 3.81488 * eV}; // (550 nm, 415 nm, 325 nm) // TODO: Add an intermediary wavelength between 550->415, and 415->325
+    std::vector<G4double> const energy = {2.25425 * eV, 2.98756 * eV, 3.81488 * eV}; // (550 nm, 415 nm, 325 nm) // TODO: Add an intermediary wavelength between 550->415, and 415->325
     // NOTE: (green, violet, long wavelength ultraviolet) (hence most of the spectrum in blue-violet range)
     //
     // One says:
@@ -269,7 +264,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Refractive index (n) - The ratio of speed of light in air/vaccum (c) to SOL in medium (v) (NOTE: n = (c / v))
     // std::vector<G4double> rindex = {1.7779, 1.8043, 1.8391}; // A function of wavelength (~436nm - 633nm)
     // NOTE: Added a central curve value to show non-linear trend
-    std::vector<G4double> rindexNaI = {1.85, 1.85, 1.85}; // 1.85 @ emission max (415 nm)
+    std::vector<G4double> const rindexNaI = {1.85, 1.85, 1.85}; // 1.85 @ emission max (415 nm)
 
     // Properties that depend on energy
     // NOTE: Vector lengths must be the same, 1st vector is energy, 2nd is property value at that energy
@@ -281,7 +276,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // NOTE: This is essential to generate the correct number of photons (25156 for 662 keV, instead of 5-10)
     // std::vector<G4double> emission = {1., 1., 1.}; // same amount of photons for each wavelength
     // std::vector<G4double> emission = {0.1, 1., 0.1}; // emission max @ 415 nm (NOTE: No different to 0. upper/lower)
-    std::vector<G4double> emission = {0., 1., 0.}; // emission max @ 415 nm (NOTE: No different to 0.1 upper/lower)
+    std::vector<G4double> const emission = {0., 1., 0.}; // emission max @ 415 nm (NOTE: No different to 0.1 upper/lower)
     MPTCrystal->AddProperty("SCINTILLATIONCOMPONENT1", energy, emission); // "Fast component"
     // NOTE: Tells Geant4 how many photons for each wavelength (or energy)
     // The scintillation photons will have a spectrum, depending on wavelength,
@@ -294,7 +289,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // std::vector<G4double> absorptionLengthNaI = {30.*cm, 30.*cm, 30.*cm};
     // std::vector<G4double> absorptionLengthNaI = {50.*cm, 50.*cm, 50.*cm}; // increased collection at the photocathode
     // std::vector<G4double> absorptionLengthNaI = {56.234 * cm, 31.623 * cm, 0.794 * cm}; // Brown (2021) (corrigendum) & Miller et al (2024)
-    std::vector<G4double> absorptionLengthNaI = {56.234 * cm, 100 * cm, 0.794 * cm}; // TEST: Establish mean distance travelled before detection at PC
+    std::vector<G4double> const absorptionLengthNaI = {56.234 * cm, 100 * cm, 0.794 * cm}; // TEST: Establish mean distance travelled before detection at PC
     // ..
     MPTCrystal->AddProperty("ABSLENGTH", energy, absorptionLengthNaI); // NOTE: Trivial in that the process merely kills the particle
     // NOTE: This has effect on air too (WITHOUT SPECIFYING THIS, SIM WILL HANG INDEFINITELY, WHEN AIR RINDEX SPECIFIED)
@@ -616,7 +611,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // std::vector<G4double> reflectivityReflector = {0.9, 0.9, 0.9}; // Rough est val
     // std::vector<G4double> reflectivityReflector = {0.94, 0.94, 0.94}; // 96% alumina -> 94% reflectance
     // std::vector<G4double> reflectivityReflector = {0.96, 0.96, 0.96}; // 99.7% alumina -> 96% reflectance @500-2000nm
-    std::vector<G4double> reflectivityReflector = {0.98, 0.98, 0.98};
+    std::vector<G4double> const reflectivityReflector = {0.98, 0.98, 0.98};
     // std::vector<G4double> reflectivityReflector = {0.99, 0.99, 0.99};
     // std::vector<G4double> reflectivityReflector = {1., 1., 1.};
     // std::vector<G4double> reflectivityReflector = {0.1, 0.1, 0.1};
@@ -627,7 +622,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     // Refractive index (back painted)
     // std::vector<G4double> rindexReflectorSurface = {1.78, 1.78, 1.78}; // Al2O3
-    std::vector<G4double> rindexReflectorSurface = {1., 1., 1.}; // Air (dry packed causes layer of air)
+    std::vector<G4double> const rindexReflectorSurface = {1., 1., 1.}; // Air (dry packed causes layer of air)
     // std::vector<G4double> rindexReflectorSurface = {1.46, 1.46, 1.46}; // Silicone optical grease
     // NOTE: Levin 1996 (UNIFIED) says r = 1 when tape like coating (i.e. for powders) due to air gap,
     // and r = optical expoxy (i.e. silicone gel) for Al/Ti/Mg oxide powders mixed with epoxy
@@ -671,7 +666,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // TEST: 4OpBoundaryProcessStatus::NoRINDEX is being flagged at "Reflector" volume
     auto MPTReflector = new G4MaterialPropertiesTable();
     
-    std::vector<G4double> rindexAlumina = {1.78, 1.78, 1.78}; // Al2O3
+    std::vector<G4double> const rindexAlumina = {1.78, 1.78, 1.78}; // Al2O3
     MPTReflector->AddProperty("RINDEX", energy, rindexAlumina); // NOTE: THIS DOES CHANGE SPECTRA EVER SO SLIGHTLY
     
     // NOTE: Dont add reflectivity to the material, just the surface
@@ -771,7 +766,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     auto MPTAlSurface = new G4MaterialPropertiesTable();
     auto aluminiumSurface = new G4OpticalSurface("Aluminium", unified, polished, dielectric_metal);
-    std::vector<G4double> reflectivityAl = {0.9, 0.9, 0.9};
+    std::vector<G4double> const reflectivityAl = {0.9, 0.9, 0.9};
     MPTAlSurface->AddProperty("REFLECTIVITY", energy, reflectivityAl);
     aluminiumSurface->SetMaterialPropertiesTable(MPTAlSurface);
     
@@ -814,11 +809,11 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     auto greaseSurface = new G4OpticalSurface("GreaseSurface", unified, polished, dielectric_dielectric);
     
     // Refractive index of optical grease (1.46 @ 589.3 nm)
-    std::vector<G4double> rindexGrease = {1.46, 1.46, 1.46}; // TODO: Refractive index matching ...
+    std::vector<G4double> const rindexGrease = {1.46, 1.46, 1.46}; // TODO: Refractive index matching ...
     // TODO: Refine this across 300-550 nm emission range
     
     // High absorption length in the medium
-    std::vector<G4double> abslengthGrease = {420. * cm, 420. * cm, 420. * cm};
+    std::vector<G4double> const abslengthGrease = {420. * cm, 420. * cm, 420. * cm};
     
     // Assign the values to the MPT
     MPTGrease->AddProperty("RINDEX", energy, rindexGrease);
@@ -838,13 +833,13 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     auto windowSurface = new G4OpticalSurface("WindowSurface", unified, polished, dielectric_dielectric);
     
     // Refractive index of borosilicate glass (1.53024 @ 404.7 nm - SCHOTT BK7 Datasheet)
-    // std::vector<G4double> rindexBorosilicate = {1.53, 1.53, 1.53};
+    // std::vector<G4double> const rindexBorosilicate = {1.53, 1.53, 1.53};
     // TODO: Refine this across 300-550 nm emission range
-    std::vector<G4double> rindexBorosilicate = {1.51872, 1.53024, 1.54272}; // NOTE: From SCOTT BK7 datasheet
+    std::vector<G4double> const rindexBorosilicate = {1.51872, 1.53024, 1.54272}; // NOTE: From SCOTT BK7 datasheet
     // NOTE: Closest indices for (550 nm, 415 nm, 325 nm) => (546.1 nm, 404.7 nm, 334.1 nm)
     
     // High absorption length in the medium
-    std::vector<G4double> abslengthBorosilicate = {420. * cm, 420. * cm, 420. * cm};
+    std::vector<G4double> const abslengthBorosilicate = {420. * cm, 420. * cm, 420. * cm};
     
     // Assign the values to the MPT
     MPTWindow->AddProperty("RINDEX", energy, rindexBorosilicate);
@@ -922,7 +917,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
      // std::vector<G4double> reflectivityScoring = {1., 1., 1.}; // TODO: TEST
     
     // std::vector<G4double> reflectivityScoring = {0.25, 0.18, 0.13}; // Optical properties of bialkali photocathodes - Motta (2004)
-    std::vector<G4double> efficiencyScoring = {0.08, 0.27, 0.26}; // QE: 0.08 @550nm, ~0.27 @415nm, ~0.26 @325nm (KNOLL)
+    std::vector<G4double> const efficiencyScoring = {0.08, 0.27, 0.26}; // QE: 0.08 @550nm, ~0.27 @415nm, ~0.26 @325nm (KNOLL)
     // TODO: PC polished w/ just new R, QE
     
     // TODO: Real/imaginary rindices instead of reflectivity? Takes into account incident angle.
@@ -937,8 +932,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     
     // TEST TEST TEST TEST Motta (2004) - Optical properties of bialkali photocathodes
-    std::vector<G4double> realRindexScoring = {3.20, 2.38, 1.92}; // n (@550nm, @415nm, @325nm)
-    std::vector<G4double> imaginaryRinexScoring = {0.63, 1.71, 1.69}; // k
+    std::vector<G4double> const realRindexScoring = {3.20, 2.38, 1.92}; // n (@550nm, @415nm, @325nm)
+    std::vector<G4double> const imaginaryRinexScoring = {0.63, 1.71, 1.69}; // k
     // (@545nm, @410nm, @380nm) <- closest available datapoints (NOTE: 325 pretty far off 380, but bulk absorption high here)
     // maybe see if there is another dateset for confluence, or interpolate for a val closer to 325nm
     MPTPhotocathode->AddProperty("REALRINDEX", energy, realRindexScoring);
@@ -962,7 +957,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     // Assign a refractive index to air, using the same energy vector as above
     auto MPTAir = new G4MaterialPropertiesTable();
-    std::vector<G4double> rindexAir = {1., 1., 1.}; // MPT2->AddProperty("RINDEX", "Air") NOTE: Default available
+    std::vector<G4double> const rindexAir = {1., 1., 1.}; // MPT2->AddProperty("RINDEX", "Air") NOTE: Default available
     MPTAir->AddProperty("RINDEX", energy, rindexAir);
     // air->SetMaterialPropertiesTable(MPTAir);
     
@@ -978,9 +973,9 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // NOTE: A box is the most simple (and efficient) shape to describe the world
 
     // Define the world box dimensions (x, y, z)
-    G4double world_hx = 100 * cm;
-    G4double world_hy = 100 * cm;
-    G4double world_hz = 100 * cm;
+    G4double const world_hx = 100 * cm;
+    G4double const world_hy = 100 * cm;
+    G4double const world_hz = 100 * cm;
 
     // Create a box named "World" with the specified dimensions, using the G4Box class
     auto worldBox = new G4Box("World", 0.5 * world_hx, 0.5 * world_hy, 0.5 * world_hz);
@@ -1027,11 +1022,11 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     ////////////////////////
     
     // Dimensions for cylindrical scintillator crystal (radii, height, span)
-    G4double crystalInnerRad = 0. * cm; // No centre hole
-    G4double crystalOuterRad = (7.62 * 0.5) * cm; // 3 inch = 7.62 cm diameter => (diameter / 2) = 3.81 cm outer radius
-    G4double crystalHeight = 7.62 * cm; // 3 inch height (this arg will be doubled, so will need to * 0.5)
-    G4double startAngle = 0. * deg;
-    G4double endAngle = 360. * deg; // Full circumference cylinder
+    G4double const crystalInnerRad = 0. * cm; // No centre hole
+    G4double const crystalOuterRad = (7.62 * 0.5) * cm; // 3 inch = 7.62 cm diameter => (diameter / 2) = 3.81 cm outer radius
+    G4double const crystalHeight = 7.62 * cm; // 3 inch height (this arg will be doubled, so will need to * 0.5)
+    G4double const startAngle = 0. * deg;
+    G4double const endAngle = 360. * deg; // Full circumference cylinder
 
     // Create the scintillator crystal solid (the detector)
     auto scintillator = new G4Tubs(
@@ -1048,12 +1043,12 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     auto scintillatorLog = new G4LogicalVolume(scintillator, NaI, "Scintillator");
     
     // Define coordinates for scintillator crystal (offset from mother origin)
-    G4double crystalX = 0. * cm;
-    G4double crystalY = 0. * cm;
-    G4double crystalZ = 10. * cm; // 10cm (maybe 3cm as i have a lot of data for that distance)
+    G4double const crystalX = 0. * cm;
+    G4double const crystalY = 0. * cm;
+    G4double const crystalZ = 10. * cm; // 10cm (maybe 3cm as i have a lot of data for that distance)
     
     // Define translation vector (relative to mother origin)
-    auto crystalTrans = G4ThreeVector(crystalX, crystalY, crystalZ);
+    auto const crystalTrans = G4ThreeVector(crystalX, crystalY, crystalZ);
 
     // Place the sodium iodide scintillator crystal (inside of the world)
     G4VPhysicalVolume* crystalPhys = new G4PVPlacement(
@@ -1083,9 +1078,9 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // to increase the amount of photons reaching the the photocathode
     
     // Inner rad can (4.04495 cm) - outer rad crystal (3.81 cm) => 0.23495 cm reflector thickness
-    G4double reflectorThickness = 0.23495 * cm;
-    G4double reflectorOuterRad = crystalOuterRad + reflectorThickness;
-    G4double reflectorHeight = crystalHeight + (reflectorThickness * 2);
+    G4double const reflectorThickness = 0.23495 * cm;
+    G4double const reflectorOuterRad = crystalOuterRad + reflectorThickness;
+    G4double const reflectorHeight = crystalHeight + (reflectorThickness * 2);
     // NOTE: Same as crystal height, with reflector thickness added to both ends
     
     // Base volume which will be cut
@@ -1155,8 +1150,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // NOTE: OST Photonics 2" NaI schematic states 2mm gel thickness
         
     // ... the optical grease will then be pressed against the PMT window
-    // G4double greaseThickness = reflectorThickness; // Same thickness as reflector (2.3495 mm)
-    G4double greaseThickness = 25 * um; // TEST
+    // G4double const greaseThickness = reflectorThickness; // Same thickness as reflector (2.3495 mm)
+    G4double const greaseThickness = 25 * um; // TEST
     
     // Optical grease (transmitting incident optical photons to the PMT window)
     auto grease = new G4Tubs(
@@ -1172,7 +1167,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     auto greaseLog = new G4LogicalVolume(grease, PDMS, "OpticalGrease");
     
     // Translation along Z axis (relative to crystal origin)
-    G4double greaseZ = crystalZ + (crystalHeight * 0.5) + (greaseThickness * 0.5); // TEST
+    G4double const greaseZ = crystalZ + (crystalHeight * 0.5) + (greaseThickness * 0.5); // TEST
     // NOTE: Places it on crystal Z (centre of the crystal), 
     // translates it by half the crystal height (to account for it being centre of crystal),
     // due to 0.5 reflector thickness being placed either side of its origin,
@@ -1197,7 +1192,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
 
     // NOTE: Just modelling the PMT window (OPTICAL WINDOW)
     
-    G4double windowThick = 0.2 * cm; // 2mm according to hamamatsu handbook
+    G4double const windowThick = 0.2 * cm; // 2mm according to hamamatsu handbook
     
     // Optical window (transmitting incident optical photons to the PMT window)
     auto window = new G4Tubs(
@@ -1213,7 +1208,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     auto windowLog = new G4LogicalVolume(window, borosilicate, "OpticalWindow");
     
     // Translation along Z axis (relative to optical grease origin)
-    G4double windowZ = greaseZ + (greaseThickness * 0.5) + (windowThick * 0.5); // TEST
+    G4double const windowZ = greaseZ + (greaseThickness * 0.5) + (windowThick * 0.5); // TEST
     // NOTE: Places it on grease Z (centre of the grease),
     // translates it by half the grease height (to account for it being centre of grease),
     // due to 0.5 window thickness being placed either side of window origin,
@@ -1239,8 +1234,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Coating inside of PMT optical window
     
     // ...
-    // G4double photocathodeThick = 0.1 * cm; // 1mm
-    G4double photocathodeThick = 20 * nm; // 20nm
+    // G4double const photocathodeThick = 0.1 * cm; // 1mm
+    G4double const photocathodeThick = 20 * nm; // 20nm
     
     // Photocathode (absorbing or detecting incident optical photons)
     auto photocathode = new G4Tubs(
@@ -1256,7 +1251,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     auto photocathodeLog = new G4LogicalVolume(photocathode, Li, "Photocathode");
     
     // Translation along Z axis (relative to optical window origin)
-    G4double photocathodeZ = windowZ + (windowThick * 0.5) + (photocathodeThick * 0.5);
+    G4double const photocathodeZ = windowZ + (windowThick * 0.5) + (photocathodeThick * 0.5);
     // NOTE: Places it on window Z (centre of the window),
     // translates it by half the window height (to account for it being centre of window),
     // due to 0.5 window thickness being placed either side of window origin,
@@ -1280,10 +1275,10 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     ///////////////////////
         
     // Enclosure is 3.225' outer diameter according to ortec spec, and 0.2' thickness (0.508mm)
-    // G4double inchToCM = 2.54;
-    G4double enclosureThick = 0.0508 * cm; // NOTE: 0.02' => 0.508 mm (added to both sides in Z direction)
-    G4double enclosureOuterRad = ((3.225 * 2.54) / 2) * cm; // NOTE: 3.225' dia => 8.1915cm dia => 4.09575 cm outer rad
-    G4double enclosureLength = reflectorHeight + (enclosureThick * 2); // NOTE: Same height as reflector, with thickness added to both end
+    // G4double const inchToCM = 2.54;
+    G4double const enclosureThick = 0.0508 * cm; // NOTE: 0.02' => 0.508 mm (added to both sides in Z direction)
+    G4double const enclosureOuterRad = ((3.225 * 2.54) / 2) * cm; // NOTE: 3.225' dia => 8.1915cm dia => 4.09575 cm outer rad
+    G4double const enclosureLength = reflectorHeight + (enclosureThick * 2); // NOTE: Same height as reflector, with thickness added to both end
     // NOTE: 4.04495 cm inner rad
     
     // Base volume which will be cut
@@ -1350,8 +1345,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // The seal could be something that is screwed in or welded to the enclosure
     
     // ...
-    G4double sealLength = windowThick;
-    G4double sealOuterRad = reflectorOuterRad;
+    G4double const sealLength = windowThick;
+    G4double const sealOuterRad = reflectorOuterRad;
     
     // Base volume which will be cut
     auto seal = new G4Tubs(
@@ -1371,8 +1366,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     );
     
     // Translation along Z axis (relative to optical window origin)
-    // G4double sealZ = windowZ;
-    G4double sealZ = crystalZ + (crystalHeight * 0.5) + reflectorThickness + (sealLength * 0.5); // TEST
+    // G4double const sealZ = windowZ;
+    G4double const sealZ = crystalZ + (crystalHeight * 0.5) + reflectorThickness + (sealLength * 0.5); // TEST
     
     // Place the seal
     G4VPhysicalVolume* sealPhys = new G4PVPlacement(
@@ -1392,7 +1387,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     //////////
     
     // Source geometry specification
-    G4double sourceRadius = 0.1 * cm; // 1mm
+    G4double const sourceRadius = 0.1 * cm; // 1mm
     
     // Source geometry definition (modelled as sphere in "decay", but apparently is cylinder)
     auto solidSource = new G4Sphere(
@@ -1416,11 +1411,11 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // so, source had been 6.90425 cm from face of detector in all prior sims
     
     // 3cm source-detector (face) distance, as it was in lab work (and my recorded spectra)
-    G4double sourceDetectorDist = 3. * cm;
-    G4double sourceZ = crystalZ - ((crystalHeight * 0.5) + reflectorThickness + enclosureThick) - sourceDetectorDist;
+    G4double const sourceDetectorDist = 3. * cm;
+    G4double const sourceZ = crystalZ - ((crystalHeight * 0.5) + reflectorThickness + enclosureThick) - sourceDetectorDist;
 
     // ...
-    auto sourceTrans = G4ThreeVector(crystalX, crystalY, sourceZ);
+    auto const sourceTrans = G4ThreeVector(crystalX, crystalY, sourceZ);
     // NOTE: Source is placed exactly in line with crystal in (x, y) plane, and specified distance in z
     
     // TODO: I NEED THIS IN PRIMARY GENERATOR ACTION TOO ...
@@ -1450,9 +1445,9 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // likely slightly different in reality but itll do
     
     // Source encapsulation dimensions
-    G4double casingSizeX = 3. * cm;
-    G4double casingSizeY = enclosureOuterRad * 2; // Same height as diameter of detector enclosure
-    G4double casingSizeZ = 0.5 * cm;
+    G4double const casingSizeX = 3. * cm;
+    G4double const casingSizeY = enclosureOuterRad * 2; // Same height as diameter of detector enclosure
+    G4double const casingSizeZ = 0.5 * cm;
     
     // Base geometry which will be cut
     auto casingBase = new G4Box("CasingBase", casingSizeX * 0.5, casingSizeY * 0.5, casingSizeZ * 0.5);
@@ -1506,8 +1501,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // MDF style wood proxy, ~1' -> 2' thick
     
     // Table geometry parameters
-    G4double tableSize = 50. * cm; // 1m probably better but dont wanna make world massive (also is rectangle not square)
-    G4double tableHeight = 5. * cm; // 5cm ? TODO: spitballing, need to refine this
+    G4double const tableSize = 50. * cm; // 1m probably better but dont wanna make world massive (also is rectangle not square)
+    G4double const tableHeight = 5. * cm; // 5cm ? TODO: spitballing, need to refine this
     
     // ...
     auto table = new G4Box("Table", tableSize * 0.5, tableSize * 0.5, tableHeight * 0.5);
@@ -1521,7 +1516,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // NOTE: Could just change xyz lengths, but leaving this here as example of rotation matrix
     
     // Translate in -y direction by radius of can + half thickness of table
-    G4double tableTransY = -1. * (enclosureOuterRad + (tableHeight * 0.5));
+    G4double const tableTransY = -1. * (enclosureOuterRad + (tableHeight * 0.5));
     // NOTE: So that bottom of enclosure rests on table
     
     // Place the table below the detector
@@ -1660,5 +1655,3 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Always return world
     return worldPhys;
 }
-
-// }

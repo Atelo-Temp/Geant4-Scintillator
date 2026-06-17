@@ -1,6 +1,7 @@
 /*
  * Mandatory user initialisation class (no default behaviour provided)
- * NOTE: G4RunManager will check for existance of mondatory classes when Initialize() and BeamOn() are invoked
+ * 
+ * NOTE: G4RunManager will check for existance of mandatory classes when Initialize() and BeamOn() are invoked
  *
  * Derived from abstract base class: G4VUserActionInitialization
  *
@@ -9,22 +10,15 @@
  *
  * Which includes one mandatory user action to define the primary particles
  *
- * Simplest example of ActionInitialization() required to build a simulation program:
+ * The particle generation defined will be handled by the "build" method
 */
 
+// User classes
 #include "ActionInitialization.hh"
-
-// The particle generation defined will be handled by the "build" method
-
 #include "PrimaryGenerator.hh"
-// NOTE: PrimaryGenerator is derived from G4VUserPrimaryGeneratorAction
-// In this class the initial state of the primary event must be described
-
 #include "RunAction.hh"
 #include "EventAction.hh"
 #include "SteppingAction.hh"
-
-// Class implementation - handles the primary generator (particle gun)
 
 // When specifying default in header file, dont need to define these
 // ActionInitialization::ActionInitialization() {}
@@ -32,6 +26,7 @@
 
 /*
  * Multithreaded ...
+ * 
  * Because the histogram is created in the master thread (output0.root),
  * whereas thread wise the output will be output0_TO.root, output0_T1.root, etc,
  * where the nTuples will be stored

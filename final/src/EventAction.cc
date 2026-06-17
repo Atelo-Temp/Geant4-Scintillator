@@ -6,26 +6,34 @@
 #include "G4ios.hh" // for G4cout
 #include "G4AnalysisManager.hh" // histogramming
 
-// Define the constructor
-EventAction::EventAction(RunAction* runAction) { fRunAction = runAction; }
-// EventAction::EventAction(RunAction* runAction) : fRunAction(runAction) {} 
-// NOTE: ^^ I think: "fRunAction(runAction)", does same thing as: "fRunAction = runAction"
+/*
+ * Constructor
+ * 
+ * Takes pointer to the RunAction class and caches it in class property
+ * 
+ * NOTE: Member initialiser list:
+ * ": fRunAction(runAction) {}"
+ * 
+ * Does same thing as:
+ * "{ fRunAction = runAction; }"
+ */
+EventAction::EventAction(RunAction* runAction) { 
+    fRunAction = runAction;
+}
+// EventAction::EventAction(RunAction* runAction) : fRunAction(runAction) {}
 
 /*
  * Execute at the start of each event
  * 
  * NOTE: Event object param unused
  */
-void EventAction::BeginOfEventAction(G4Event const*) {
+void EventAction::BeginOfEventAction(G4Event const* /*event*/) {
     // Reset counters between events
     fTotalPhotons = 0;
     fDetectedPhotons = 0;
     fAbsorbedPhotons = 0;
-    
-    // TEST:
-    fLostPhotons = 0; // NoRINDEX
     fBulkAbsorb = 0;
-    fKilled = 0;
+    fLostPhotons = 0; // NoRINDEX
 }
 
 /*
@@ -33,7 +41,7 @@ void EventAction::BeginOfEventAction(G4Event const*) {
  * 
  * NOTE: Event object param unused
  */
-void EventAction::EndOfEventAction(G4Event const*) {
+void EventAction::EndOfEventAction(G4Event const* /*event*/) {
     // Log particle information
     // Debug();
     // NOTE: Disable this if running in batch mode
@@ -85,28 +93,37 @@ void EventAction::EndOfEventAction(G4Event const*) {
     // NOTE: While this could likely be merged with prior if clause, the explicit disambiguation is worthwhile imo
 }
 
-// ..
+/*
+ * Increment optical photons generated
+ */
 void EventAction::CountPhoton() { fTotalPhotons += 1; }
 
-// ..
+/*
+ * Increment optical photons detected (at photocathode)
+ */
 void EventAction::CountDetectedPhoton() { fDetectedPhotons += 1; }
 
-// ..
+/*
+ * Increment optical photons absorbed (at a boundary)
+ */
 void EventAction::CountAbsorbedPhoton() { fAbsorbedPhotons += 1; }
 
-// TEST: ..
+/*
+ * Increment optical photons lost (due to no RINDEX etc)
+ */
 void EventAction::CountLostPhoton() { fLostPhotons += 1; }
 // void EventAction::CountLostPhoton(std::string medium) { fLostPhotons += 1; } // TODO: Add medium where each of these things occured (same for absorption, etc)
 
-// ...
+/*
+ * Increment optical photons absorbed (in medium)
+ */
 void EventAction::CountBulkAbsorption() { fBulkAbsorb += 1; }
 
-// TODO: THIS IS A REDUNDANT METHOD / PROPERTY (does same thing as fLostPhotons)
-void EventAction::CountKill() { fKilled += 1; }
-
-// ...
+/*
+ * Inspect event state
+ */
 void EventAction::Debug() {
-        // Print to stdout
+    // Print to stdout
     G4cout << G4endl << "Optical Photons Generated: " << fTotalPhotons << G4endl;
     
     G4cout << G4endl << "Optical Photons Detected: " << fDetectedPhotons << G4endl;
@@ -129,8 +146,6 @@ void EventAction::Debug() {
     
     G4cout << G4endl << "Optical Photons Detected OR Boundary Absorbed OR Lost OR Bulk Absorbed: " << fDetectedPhotons + fAbsorbedPhotons + fLostPhotons + fBulkAbsorb << G4endl;
     G4cout << G4endl << "Percent Detected OR Boundary Absorbed OR Lost OR Bulk Absorbed: " << ((1. * fDetectedPhotons + fAbsorbedPhotons + fLostPhotons + fBulkAbsorb) / fTotalPhotons) * 100 << G4endl;
-    
-    G4cout << G4endl << "Killed: " << fKilled << " Vs Bulk Absorb: " << fBulkAbsorb << G4endl;
     
     // NOTE: ^ Removed to save time during batch processing, may want an logic statement that 
     // checks whether in visualisation or batch, as this nice for vis

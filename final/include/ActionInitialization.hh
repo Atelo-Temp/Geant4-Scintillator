@@ -1,10 +1,14 @@
 #ifndef MyActionInitialisation_HH
 #define MyActionInitialisation_HH
 
-// Base class to inherit from
+// G4 lib
 #include "G4VUserActionInitialization.hh"
 
-// Define the class, inheriting from the base class
+/*
+ * Mandatory user initialisation class (no default behaviour provided)
+ * 
+ * NOTE: Inherits from the abstract base class "G4VUserActionInitialization"
+ */
 class ActionInitialization : public G4VUserActionInitialization {
     public:
         // Constructor

@@ -1,11 +1,17 @@
+// User classes
 #include "MaterialDefinitions.hh"
 
+// G4 lib
 #include "G4Material.hh"
 #include "G4Element.hh"
 #include "G4SystemOfUnits.hh"
 #include "G4Isotope.hh"
 
 /*
+ * Create and return a cesium 137 material
+ * 
+ * NOTE: With 50% barium 137 content due to 137Cs decay
+ * 
  * TODO: This could likely be extracted out to private member "CreateSource",
  * taking all params from dedicated CreateXYZ public methods
  */

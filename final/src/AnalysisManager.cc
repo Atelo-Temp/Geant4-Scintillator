@@ -1,16 +1,24 @@
-// Class interface
+// User class interfaces
 #include "AnalysisManager.hh"
 
 // G4 lib
 #include "G4AnalysisManager.hh"
 
-// Define the constructor
+/*
+ * Constructor
+ * 
+ * Calls private method
+ */
 AnalysisManager::AnalysisManager() {
-   CreateHistogram(); 
+   InitialiseDataStructures(); 
 }
 
-// Private method to initialise histogram, call internally at construction
-void AnalysisManager::CreateHistogram() {
+/*
+ * Private method to initialise histogram and ntuples
+ * 
+ * NOTE: Called internally at construction
+ */
+void AnalysisManager::InitialiseDataStructures() {
     // Get a pointer to the singleton analysis manager via the static method
     auto analysisManager = G4AnalysisManager::Instance();
     
@@ -167,8 +175,6 @@ void AnalysisManager::CreateHistogram() {
     // Monitor mean reflections before bulk absorption between geometry/material property changes
     
     // TODO: Maybe reflections before surface absorption too, but imo less pressing
-    
- 
 }
 
 // TODO: Extract file handling logic from RunAction

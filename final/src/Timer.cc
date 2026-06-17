@@ -7,7 +7,9 @@
 // G4 lib
 #include "G4ios.hh"
 
-// Get a millisecond based timestamp for runtime tracking and random seeding
+/*
+ * Get a millisecond based timestamp for runtime tracking and random seeding
+ */
 long Timer::GetTimestamp() {
     // Capture the current system date/time (for generating a unique seed)
     std::chrono::time_point time = std::chrono::system_clock::now();
@@ -24,9 +26,11 @@ long Timer::GetTimestamp() {
     return timestamp;
 }
 
-// Grabs current timestamp and stores it as a class property
+/*
+ * Grabs current timestamp and stores it as a class property
+ */
 long Timer::StartTimer() {
-    // ...
+    // Set start time as current timestamp
     fStartTime = GetTimestamp();
     
     // TODO: May do this here rather than in RunAction
@@ -35,7 +39,11 @@ long Timer::StartTimer() {
     return fStartTime;
 }
 
-// Get timestamp at end of run, subtract start from end, convert stamp to hrs/mins/seconds
+/*
+ * Get timestamp at end of run, subtract start from end, convert stamp to hrs/mins/seconds
+ * 
+ * TODO: maybe return vals
+ */
 void Timer::EndTimer() {
     long const endTime = GetTimestamp(); // get millisecond timestamp
     
@@ -57,7 +65,5 @@ void Timer::EndTimer() {
     
     G4cout << "Run Duration (mins): " << runDurationM << "m " << G4endl;
     
-    // TODO: This prints 3h 215m 45s (not subtracting hours from run duration mins)
-    
-    return; // TODO: maybe return vals
+    return;
 }

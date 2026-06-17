@@ -1,7 +1,9 @@
 #ifndef MyTimer_HH
 #define MyTimer_HH
 
-// ...
+/*
+ * Simple run timer
+ */
 class Timer {
     public:
         // Constructor
@@ -18,6 +20,7 @@ class Timer {
         
         // To be called at the end of a run, for runtime calculation
         void EndTimer();
+        
     private:
         // Stores millisecond timestamp corresponding to start of the run
         long fStartTime = -1;
