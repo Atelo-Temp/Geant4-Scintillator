@@ -76,7 +76,7 @@ void AnalysisManager::CreateHistogram() {
     ////////////////
     
     // Store per-event photon detection data in an Ntuple
-    analysisManager->CreateNtuple("EventData", "Photon Counts Per Event"); // Create Ntuple ID = 2
+    analysisManager->CreateNtuple("EventData", "Detected Photons"); // Create Ntuple ID = 2
     analysisManager->CreateNtupleIColumn("NumPhotons"); // Column 0: integer count
     analysisManager->FinishNtuple(); // Finishes ID = 2
     
@@ -117,6 +117,43 @@ void AnalysisManager::CreateHistogram() {
     analysisManager->FinishNtuple(); // ID = 4
     // NOTE: Could just add this to Ntuple(0), as its still step based data, just do another column
     
+    ///////////////////////
+    // DETECTION EFFICIENCY
+    ///////////////////////
+    
+    // Fraction of photons detected in an event compared to total generated in that event
+    
+    // TEST TEST TEST
+    // analysisManager->CreateNtuple("EventInfo", "Detection Efficiency");
+    analysisManager->CreateNtuple("EventDataOptical", "Detection Efficiency");
+    analysisManager->CreateNtupleDColumn("DetectionEfficiency"); // Column = 0
+    // analysisManager->FinishNtuple(); // ID = 5
+    // TEST TEST TEST
+    
+    /////////////////////////
+    // BULK ABSORPTION LOSSES
+    /////////////////////////
+    
+    // Fraction of photons lost via bulk absorption in an event compared to total generated
+    
+    // TEST TEST TEST
+    // analysisManager->CreateNtuple("EventInfo", "Bulk Absorption Losses");
+    analysisManager->CreateNtupleDColumn("BulkAbsorptionLosses"); // Column = 1
+    // analysisManager->FinishNtuple(); // ID = 5
+    // TEST TEST TEST
+    
+    ////////////////////////////
+    // SURFACE ABSORPTION LOSSES
+    ////////////////////////////
+    
+    // Fraction of photons lost via surface absorption in an event compared to total generated
+    
+    // TEST TEST TEST
+    // analysisManager->CreateNtuple("EventInfo", "Bulk Absorption Losses");
+    analysisManager->CreateNtupleDColumn("SurfaceAbsorptionLosses"); // Column = 2
+    analysisManager->FinishNtuple(); // ID = 5
+    // TEST TEST TEST
+    
     ///////////////////////////////////
     // NO. REFLECTIONS BEFORE DETECTION
     ///////////////////////////////////
@@ -131,13 +168,7 @@ void AnalysisManager::CreateHistogram() {
     
     // TODO: Maybe reflections before surface absorption too, but imo less pressing
     
-    ///////////////////////
-    // DETECTION EFFICIENCY
-    ///////////////////////
-    
-    // Number of photons detected in an event compared to total generated in that event
-    
-    // ...
+ 
 }
 
 // TODO: Extract file handling logic from RunAction

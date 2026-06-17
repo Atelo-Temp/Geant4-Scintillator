@@ -2,6 +2,10 @@
 
 Simple projects acting as precursors to provided examples such as B1, and beyond.
 
+Centred around developing a simulated scintillator detector.
+
+> NOTE: Some of the earlier projects are left in an intentionally underdeveloped state to act as a development progression log
+
 ## Project Ordering
 
 - 1) Visualise
@@ -38,7 +42,7 @@ Implements histogramming and nTuples, building on the sensitive detector functio
 
 Features updates to main() function, to allow command line swap between batch processing and interactive mode.
 
-- 6) Decay      (RENAME: Radioactivity ?)
+- 6) Decay      (alt: Radioactivity)
 
 Implements radioactive decay for a chosen isotope, replacing the monoenergetic particle shot by the particle gun in previous projects.
 
@@ -48,29 +52,33 @@ Features addition to main() function, to allow longer lived (>1y) isotopes to de
 
 > NOTE: May also wish to model the particle as a volume source, assigned to the spherical geometry.
 
-- 7) Scintillator       (RENAME: -> Scintillation ? -> Optics ? -> Optical)
+- 7) Scintillator       (alt: Scintillation)
 
 Implements scintillation light (optical photons), in response to energy deposition in a scintillator crystal medium, also defines reflective and detection (absorption) surfaces.
 
 > NOTE: Reverts back to a simple 662 keV gamma shot from the particle gun, to keep the focus on the scintillation process, also no radioactive decay or histogramming.
 
-- 8) Optics     (RENAME: -> Scintilllator ? SPECTROSCOPY ?)
+- 8) Optics
 
-Same as scintillator, but reintroduces histogramming (and optical photon detection/absorption positions)
+Same as "Scintillator", but reintroduces histogramming (and optical photon detection/absorption positions)
 
 TODO: Count edep from gammas, compare with how many optical photons generated (as well as detected, absorbed, etc - SEE: LXeHistoManager.cc)
 
 - 9) Radioactivity      (PREVIOUSLY NAMED: Spectroscopy)
 
-Same as optics, but reintroduces radioactive decay and source geometry
+Same as "Optics", but reintroduces radioactive decay and source geometry
 
 - 10) Spectroscopy
 
-Same as spectroscopy, but models full detector geometry
+Same as "Radioactivity", but models full detector geometry
+
+Brings all of the former concepts together to simulate gamma-ray spectroscopy using a scintillator detector (TODO: May leave this as a more comprehensive version of decay, with no optical photon generation)
+^may rename as just "detector"
 
 - 11) Deposition        (PREVIOUSLY NAMED: Spectroscopy) (TECHNICALLY THE FIRST DRAFTING OF THIS CAME AFTER DECAY SO THIS IS MORE LIKE 6.5, BUT MAY WORK ON IT IN FUTURE AS EDEP RATHER THAN OPTICAL PHOTON)
 
-Same as decay, but introduces complete detector geometry beyond just the crstal. 
+Same as "Decay", but introduces complete detector geometry beyond just the crstal.
+Same as "Radioactivity", but no scintillation light (may do it, may not).
 
 (TODO: Also swaps sensitive detector for stepping action and event action ? Or do this in a subsequent one)
 
@@ -80,7 +88,9 @@ TODO: Also use subtraction solids
 
 - 12) GPS
 
-Uses general particle source (GPS) with isotope assigned to volume, instead of particle gun point source
+Uses general particle source (GPS) for volumetric source with isotope assigned to volume, instead of particle gun point source
+
+> NOTE: Extension of "Spectroscopy"
 
 - 13) FINAL
 
@@ -92,11 +102,8 @@ Uses general particle source (GPS) with isotope assigned to volume, instead of p
 
 - Dose: Is just example B1 with slightly altered geometry (intending to explore dosimetry more at a later date)
 
-## Final Project
+## ROOT Scripts
 
-- Spectroscopy: Brings all of the former concepts together to simulate gamma-ray spectroscopy using a scintillator detector (TODO: May leave this as a more comprehensive version of decay, with no optical photon generation)
-^may rename as just "detector"
+A variety of ROOT macros, following a similar progression from beginner to more comprehensive, for use with lab and simulated data
 
-- Deposition: Same as spectroscopy, but no scintillation light (may do it, may not)
-
-- GPS: Same as spectroscopy, but uses GPS for volumetric source
+> NOTE: See README in rootscripts directory

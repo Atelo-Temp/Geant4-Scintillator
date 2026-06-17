@@ -97,7 +97,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     
         // TEST TEST TEST
         // Get distance travelled by photon before bulk absorption
-        G4double distance = track->GetTrackLength();
+        G4double const distance = track->GetTrackLength();
         auto analysisManager = G4AnalysisManager::Instance();
         analysisManager->FillNtupleDColumn(4, 0, distance); // id = 4, column = 0, value = distance travelled
         analysisManager->AddNtupleRow(4); // finish row for Ntuple id = 4
@@ -122,7 +122,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     // if (process->GetProcessName() != "OpBoundary") return; // TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST
     
     // If at a boundary ...
-    G4OpBoundaryProcessStatus boundaryStatus = fBoundary->GetStatus();
+    G4OpBoundaryProcessStatus const boundaryStatus = fBoundary->GetStatus();
     
     // TODO: Timing window
     // if (!initialPEtime) initialPEtime == ...

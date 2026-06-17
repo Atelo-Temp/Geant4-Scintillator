@@ -6,22 +6,17 @@
 #include "G4ios.hh" // for G4cout
 #include "G4AnalysisManager.hh" // histogramming
 
-// Electronics smearing (simulating the PMT)
-#include <Randomize.hh>
-
-// TODO: If needed
-// struct LostPhotonMap {
-//     std::string location;
-//     int frequency;
-// };
-
 // Define the constructor
 EventAction::EventAction(RunAction* runAction) { fRunAction = runAction; }
 // EventAction::EventAction(RunAction* runAction) : fRunAction(runAction) {} 
 // NOTE: ^^ I think: "fRunAction(runAction)", does same thing as: "fRunAction = runAction"
 
-// ...
-void EventAction::BeginOfEventAction(const G4Event*) {
+/*
+ * Execute at the start of each event
+ * 
+ * NOTE: Event object param unused
+ */
+void EventAction::BeginOfEventAction(G4Event const*) {
     // Reset counters between events
     fTotalPhotons = 0;
     fDetectedPhotons = 0;
@@ -33,8 +28,12 @@ void EventAction::BeginOfEventAction(const G4Event*) {
     fKilled = 0;
 }
 
-// ...
-void EventAction::EndOfEventAction(const G4Event*) {
+/*
+ * Execute at the end of each event
+ * 
+ * NOTE: Event object param unused
+ */
+void EventAction::EndOfEventAction(G4Event const*) {
     // Log particle information
     // Debug();
     // NOTE: Disable this if running in batch mode
@@ -57,33 +56,34 @@ void EventAction::EndOfEventAction(const G4Event*) {
         analysisManager->FillNtupleIColumn(2, 0, fDetectedPhotons); // ntuple ID, column ID, fill value
         // NOTE: Only 1 column, hence column ID = 0
         analysisManager->AddNtupleRow(2); // Save the row for Ntuple ID = 2
-        // ...
         
         // TEST: DEBUGGING THE HIGH COUNTS OF NEAR-ZERO DETECTIONS SINCE ADDING Al2O3 RINDEX
         // if (fDetectedPhotons < 10) {
         //     G4cout << "LOW PHOTON COUNT: " << fDetectedPhotons << G4endl;
         // }
     }
-    // NOTE: If using multiple histograms for any reason (i.e. two detectors)
-    // make sure to mark appropriate ID
+    // NOTE: If using multiple histograms for any reason (i.e. two detectors) make sure to mark appropriate ID
+    
+    // Only write to ntuple when optical photons are generated via energy deposition
+    if (fTotalPhotons > 0) {
+        // Calculate fractional detection efficiency and write to respective column
+        double const detectionEfficiency = (1. * fDetectedPhotons) / fTotalPhotons;
+        analysisManager->FillNtupleDColumn(5, 0, detectionEfficiency); // ntuple ID = 5, column ID = 0
+        // NOTE: Converting to double (via 1. *)
+        
+        // Calculate fractional bulk absorption losses and write to respective column
+        double const bulkAbsoptionLosses = (1. * fBulkAbsorb) / fTotalPhotons;
+        analysisManager->FillNtupleDColumn(5, 1, bulkAbsoptionLosses); // ntuple ID = 5, column ID = 1
+        
+        // Calculate fractional bulk absorption losses and write to respective column
+        double const surfaceAbsoptionLosses = (1. * fAbsorbedPhotons) / fTotalPhotons;
+        analysisManager->FillNtupleDColumn(5, 2, surfaceAbsoptionLosses); // ntuple ID = 5, column ID = 2
+        
+        // Row complete
+        analysisManager->AddNtupleRow(5); // Save the row for Ntuple ID = 5
+    }
+    // NOTE: While this could likely be merged with prior if clause, the explicit disambiguation is worthwhile imo
 }
-
-// NOTE: Probably not gonna do this \/\/\/\/\/\/\/\/ per-event data + post-processing is just more flexible
-// NOTE: fDetectedPhotons should be an int (likewise with fTotal, and fAbsorbed)...
-// void EventAction::ConvertToChannel(G4double detectedPhotons) {
-//     /* NOTE: Can either convert directly from fDetectedPhotons to channel number (0-1024),
-//      * or convert fDetectedPhotons to an initial voltage (will be small), then apply
-//      * PMT gain (which may fluctuate by n=4 to n=5 electrons per stage, for example),
-//      * and finally 
-//     */
-//     
-//     // NOTE: Converting fDetectedPhotons to voltage, then introducing a gain that fluctuates
-//     
-//     // Apply electronic noise
-//     // G4double smearedPhotons = G4RandGauss::shoot(fDetectedPhotons, sigma);
-//     
-//     int channel;
-// }
 
 // ..
 void EventAction::CountPhoton() { fTotalPhotons += 1; }
@@ -97,7 +97,11 @@ void EventAction::CountAbsorbedPhoton() { fAbsorbedPhotons += 1; }
 // TEST: ..
 void EventAction::CountLostPhoton() { fLostPhotons += 1; }
 // void EventAction::CountLostPhoton(std::string medium) { fLostPhotons += 1; } // TODO: Add medium where each of these things occured (same for absorption, etc)
+
+// ...
 void EventAction::CountBulkAbsorption() { fBulkAbsorb += 1; }
+
+// TODO: THIS IS A REDUNDANT METHOD / PROPERTY (does same thing as fLostPhotons)
 void EventAction::CountKill() { fKilled += 1; }
 
 // ...

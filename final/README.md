@@ -1,29 +1,49 @@
 # About
 
-Basic gamma spectroscopy scintillator detector, with output spectrum, and simulated radioactive decay
+Basic gamma spectroscopy scintillator detector, with simulated radioactive decay, scintillation photon generation/transport, and output spectrum/ntuples
 
 Note, this version uses the GPS volume source instead of a point source
 
 This version also features improvements to the C++ code (such as extracting code blocks out to helper methods, etc)
 
 New features include:
-- implementation of proper 1024 channel binning (converting photons detected to a channel number) (NOTE: May actually leave this to postprocessing, just output per-event data)
 - ability to randomise simulations via seeds (G4 defaults to a repeatable seed for development purposes)
 - automated run time tracking
 - 2048 channel binning (via per-event optical photons detected Ntuple output)
-- integration window for optical photon detection at the photocathode ?? (may reduce the photopeaks slight exponential tail, where sometimes, without it, many photons are eventually reaching photocathode and being detected)
-- potentially introducing PMT statistics ?? (NOTE: May actually leave this to postprocessing, just output raw per-event data)
 - expanded statistics (distance travelled by detected photons, distance travelled by bulk absorbed photons, time of flight for optical photons, number of reflections before detection, etc)
+- ability to merge ntuples generated for each thread (although perhaps better to use hadd)
+
+Potential features:
+- implementation of proper 1024 channel binning (converting photons detected to a channel number) (NOTE: May actually leave this to postprocessing, just output per-event data)
+- potentially introducing PMT statistics ?? (NOTE: May actually leave this to postprocessing, just output raw per-event data)
+- integration window for optical photon detection at the photocathode ?? (may reduce the photopeaks slight exponential tail, where sometimes, without it, many photons are eventually reaching photocathode and being detected)
+
+## Geometry
+
+- A world volume filled with air
+- A wooden tabletop
+
+Detector:
+
+- A 3' thallium doped sodium iodide (NaI:Tl) scintillator crystal
+- An alumina reflector surrounding the crystal (on all faces except the photodetector output)
+- An aluminium enclosure
+- A thin layer of silicone optical grease for (crystal->window coupling)
+- A borosillicate glass optical window (representing PMT interface)
+- A K-Cs-Sb photocathode on the inside of the optical window
+
+Source:
+
+- A PVC source casing
+- A cylindrical source
 
 ## Features
-
-- An world volume filled with air, a 3' sodium iodide scintillator crystal, an alumina reflector covering the crystal, and a lithium photocathode attached to the back of the crystal
 
 - Electromagnetic physics
 
 - Basic visualisation macro
 
-- Run action for creating histogram
+- Run action for creating histogram/nutples
 
 - Basic batch processing run macro
 
@@ -56,7 +76,7 @@ which expresses 'n' as a function of wavelength (λ).
 
 Utilising the connection between photon energy and wavelength:
 
-E = (hc)/λ
+E = (hc) / λ
 
 Where:
 

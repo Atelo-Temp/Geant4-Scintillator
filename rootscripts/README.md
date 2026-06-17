@@ -1,8 +1,8 @@
 # About
 
 NOTE: Code in many of the earlier macros (and even some of the later macros) is being left 
-intentionally rough, poorly designed, non-refactored, etc, for reference. The final versions
-will be where i clean up the code significantly.
+intentionally rough, poorly designed, non-refactored, etc, for future reference as a development
+log. The final versions will be where i clean up the code.
 
 ## Project Ordering
 

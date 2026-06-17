@@ -1,8 +1,8 @@
 #ifndef MyEventAction_HH
 #define MyEventAction_HH
 
+// G4 Lib
 #include "G4UserEventAction.hh"
-
 #include "G4Types.hh"
 
 // Forward declaration
@@ -28,6 +28,12 @@ class RunAction;
 // - Calling methods or accessing members of XYZ (i.e., when you need to know 
 // what is inside of the class)
 
+// TODO: If needed
+// struct LostPhotonMap {
+//     std::string location;
+//     int frequency;
+// };
+
 // ...
 class EventAction : public G4UserEventAction {
     public:
@@ -41,7 +47,7 @@ class EventAction : public G4UserEventAction {
         void BeginOfEventAction(G4Event const *event) override;
         
         // End of event handler
-        void EndOfEventAction(const G4Event* event) override;
+        void EndOfEventAction(G4Event const* event) override;
         
         // Optical photon tracker
         void CountPhoton();

@@ -28,7 +28,7 @@
 # due to decay, and optical photons, sim time could fluctuate a lot for same amount of events
 #/run/beamOn 10000 # (~2m)
 # /run/beamOn 50000 # (~9m)
-/run/beamOn 100000 # (~17m)     (~21m) (~19m) (~18m)
+/run/beamOn 100000 # (~17m)     (~21m) (~19m) (~18m) (~22m)
 # /run/beamOn 200000 # (~38m)
 # /run/beamOn 300000 # (~56m)
 # /run/beamOn 400000 # (~1hr 14m)
