@@ -2,6 +2,7 @@
 #include "SteppingAction.hh"
 // #include "AnalysisManager.hh"
 // #include "DetectorConstruction.hh"
+#include "UserTrackInformation.hh"
 
 // G4 Lib
 #include "G4OpBoundaryProcess.hh"
@@ -15,6 +16,7 @@
 #include "G4OpticalPhoton.hh"
 #include "G4Step.hh"
 #include "G4AnalysisManager.hh"
+#include "G4VUserTrackInformation.hh"
 // #include "G4TrackStatus.hh"
 // #include "G4RandomTools.hh" // Random seeding
 
@@ -208,6 +210,22 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         // were created at different points along the primary particles track
         // TEST TEST TEST
         
+        // TEST
+        // Get custom track info object
+        G4VUserTrackInformation* trackInfo = track->GetUserInformation();
+        auto userTrackInfo = static_cast<UserTrackInformation*>(trackInfo);
+        // Retrieve number of reflections
+        G4int const numReflections = userTrackInfo->GetReflections();
+        // TEST
+        
+        // TEST
+        // Calculate angle of incidence for detected photon
+        // endPoint->GetTouchable()->GetVolume()->GetObjectRotation();
+        // G4ThreeVector const trans = endPoint->GetTouchable()->GetVolume()->GetObjectTranslation();
+        // trans.angle();
+        // trans.
+        // TEST
+        
         // For every photon that enters the detector and interacts, each interaction will call "ProcessHits()",
         // producing a new row (linked to the event ID) for each interaction,
         // i.e. multiple compton scatters inside the detector, for a given photon, will produce rows pertaining to each energy deposit
@@ -260,6 +278,26 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         // TODO:
         // std::string volume = endPoint->GetTouchable()->GetVolume()->GetName();
         // fEventAction->CountLostPhoton(volume);
+    }
+    // Handle all types of reflection
+    else if (
+        boundaryStatus == G4OpBoundaryProcessStatus::FresnelReflection ||
+        boundaryStatus == G4OpBoundaryProcessStatus::TotalInternalReflection ||
+        boundaryStatus == G4OpBoundaryProcessStatus::LambertianReflection ||
+        boundaryStatus == G4OpBoundaryProcessStatus::LobeReflection ||
+        boundaryStatus == G4OpBoundaryProcessStatus::SpikeReflection ||
+        boundaryStatus == G4OpBoundaryProcessStatus::BackScattering
+    ) {
+        // Get custom track info object
+        G4VUserTrackInformation* trackInfo = track->GetUserInformation();
+        auto userTrackInfo = static_cast<UserTrackInformation*>(trackInfo);
+        
+        // Increment reflection counter
+        userTrackInfo->CountReflection();
+    }
+    // ...
+    else if (boundaryStatus == G4OpBoundaryProcessStatus::StepTooSmall) {
+        
     }
     
     // TODO: With lambertian reflection set to 1 at reflector surface,

@@ -168,6 +168,8 @@ void AnalysisManager::InitialiseDataStructures() {
     
     // Monitor mean reflections before detection between geometry/material property changes
     
+    // ...
+    
     /////////////////////////////////////////
     // NO. REFLECTIONS BEFORE BULK ABSORPTION
     /////////////////////////////////////////
@@ -175,6 +177,14 @@ void AnalysisManager::InitialiseDataStructures() {
     // Monitor mean reflections before bulk absorption between geometry/material property changes
     
     // TODO: Maybe reflections before surface absorption too, but imo less pressing
+    
+    // ...
+    
+    ///////////////////////////////
+    // DETECTION ANGLE OF INCIDENCE
+    ///////////////////////////////
+    
+    // Monitor incidence angle of optical photons when detected at the photocathode
 }
 
 // TODO: Extract file handling logic from RunAction

@@ -19,6 +19,7 @@
 #include "RunAction.hh"
 #include "EventAction.hh"
 #include "SteppingAction.hh"
+#include "TrackingAction.hh"
 
 // When specifying default in header file, dont need to define these
 // ActionInitialization::ActionInitialization() {}
@@ -54,6 +55,9 @@ void ActionInitialization::Build() const {
     // Event handler (start/end of event handlers for photon counting, and passing data to run handler)
     auto eventHandler = new EventAction(runHandler);
     SetUserAction(eventHandler);
+    
+    // Track handler (start/end of track handlers for custom user information object assignment to particles)
+    SetUserAction(new TrackingAction());
     
     // Step handler (pre/post step photon processing, passes intra event data up to event handler)
     SetUserAction(new SteppingAction(eventHandler));
