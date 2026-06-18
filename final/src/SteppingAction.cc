@@ -2,7 +2,7 @@
 #include "SteppingAction.hh"
 // #include "AnalysisManager.hh"
 // #include "DetectorConstruction.hh"
-#include "UserTrackInformation.hh"
+// #include "UserTrackInformation.hh" // NOTE: Removed for time being
 
 // G4 Lib
 #include "G4OpBoundaryProcess.hh"
@@ -16,7 +16,7 @@
 #include "G4OpticalPhoton.hh"
 #include "G4Step.hh"
 #include "G4AnalysisManager.hh"
-#include "G4VUserTrackInformation.hh"
+// #include "G4VUserTrackInformation.hh" // NOTE: Removed for time being
 // #include "G4TrackStatus.hh"
 // #include "G4RandomTools.hh" // Random seeding
 
@@ -67,36 +67,6 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     // Get the post step point object for the particle
     G4StepPoint* endPoint = step->GetPostStepPoint();
     
-    
-    // >>>>> TEST TEST TEST: #1 - find photons lost via bulk absorption
-//     if ((track->GetTrackStatus() == fStopAndKill) && (endPoint->GetStepStatus() != fGeomBoundary)) {
-//         fEventAction->CountBulkAbsorption();
-//         
-//         // G4String volume = endPoint->GetTouchable()->GetVolume()->GetName();
-//         // std::string volume = endPoint->GetTouchable()->GetVolume()->GetName();
-//         // fEventAction->CountBulkAbsorption(volume); // 
-//         
-//         // G4cout << "BULK ABSORPTION IN MEDIUM: " << endPoint->GetTouchable()->GetVolume()->GetName() << G4endl; // "Scintillator"
-//         
-//         // if (endPoint->GetTouchable()->GetVolume()->GetName() != "Scintillator") {
-//             // G4cout << "BULK ABSORPTION IN MEDIUM: " << endPoint->GetTouchable()->GetVolume()->GetName() << G4endl; // ....
-//         // }
-//         
-//         if (endPoint->GetTouchable()->GetVolume()->GetName() == "Scintillator") {
-//             // Get distance travelled by photon before bulk absorption
-//             G4double distance = track->GetTrackLength();
-//             
-//             // G4cout << "Distance Travelled Before Bulk Absorption: " << distance << " mm" << G4endl;
-//             // G4cout << "Distance Travelled Before Bulk Absorption: " << (distance / 10) << " cm" << G4endl;
-//             
-//             // TODO: Ntuples for bulk absorption distance
-//         }
-//         // No need to proceed, exit early
-//         // return;
-//     }
-    // TEST
-    
-    
     // ...
     G4VProcess const* process = endPoint->GetProcessDefinedStep();
     
@@ -106,38 +76,44 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     
     // TEST ...
     // Get track info object assigned to optical photon at start of its track
-    G4VUserTrackInformation* trackInfo = track->GetUserInformation();
-    auto userTrackInfo = static_cast<UserTrackInformation*>(trackInfo);
+    // G4VUserTrackInformation* trackInfo = track->GetUserInformation();
+    // auto userTrackInfo = static_cast<UserTrackInformation*>(trackInfo);
     // NOTE: Calling this here as bulk absorb needs it, detection needs it, and reflection needs it
     // TEST ....
     
     
-    // >>>>> TEST TEST TEST: #2 - Track photons lost via bulk absorption in the crystal (and window/grease to a far lesser extent)
+    // >>>>> TEST TEST TEST: Track photons lost via bulk absorption in the crystal (and window/grease to a far lesser extent)
     // If photon was absorbed in medium (not at a boundary)
     // if ((track->GetTrackStatus() == fStopAndKill) && (endPoint->GetStepStatus() != fGeomBoundary)) {
     // if (process && (process->GetProcessName() == "OpAbsorption") && (endPoint->GetStepStatus() != fGeomBoundary)) {
     if ((process->GetProcessName() == "OpAbsorption") && (endPoint->GetStepStatus() != fGeomBoundary)) { // NOTE: not sure the double check for boundary is needed, it would be "OpBoundary" otherwise
+        // ..
+        // std::string volume = endPoint->GetTouchable()->GetVolume()->GetName();
+        // G4cout << "BULK ABSORPTION IN MEDIUM: " << endPoint->GetTouchable()->GetVolume()->GetName() << G4endl; // "Scintillator"
+        
         // Increment bulk absorption counter
         fEventAction->CountBulkAbsorption();
     
         // TEST TEST TEST
         // Get distance travelled by photon before bulk absorption
         G4double const distance = track->GetTrackLength();
-        auto analysisManager = G4AnalysisManager::Instance(); // TODO: Maybe call this only once like track info above, most paths below use it
+        G4GenericAnalysisManager* analysisManager = G4AnalysisManager::Instance(); // TODO: Maybe call this only once like track info above, most paths below use it
         analysisManager->FillNtupleDColumn(4, 0, distance); // id = 4, column = 0, value = distance travelled
         analysisManager->AddNtupleRow(4); // finish row for Ntuple id = 4
         // G4cout << "Distance Travelled Before Bulk Absorption: " << distance << " mm" << G4endl;
         // TEST TEST TEST
-//         
-//         // No need to proceed, exit early
-//         return;
         
         // Retrieve number of reflections
-        G4int const numReflections = userTrackInfo->GetReflections();
+        // G4int const numReflections = userTrackInfo->GetReflections();
+        G4int const photonIdx = track->GetTrackID();
+        G4int const numReflections = fEventAction->GetReflections(photonIdx);
         analysisManager->FillNtupleIColumn(7, 0, numReflections); // ...
         analysisManager->AddNtupleRow(7); // ...
+        
+        // No need to proceed, exit early
+        // return;
     }
-    // TEST - NOTE: #2 AND #1 ARE FUNCTIONALLY EQUIVALENT
+    // TEST TEST TEST 
     
     
     // NOTE: Instead of returning inside one of those code blocks,
@@ -184,7 +160,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         // NOTE: Get fScoringVolume via public method on DetectorConstruction
         
         // Get pointer to analysis manager singleton
-        auto analysisManager = G4AnalysisManager::Instance();
+        G4GenericAnalysisManager* analysisManager = G4AnalysisManager::Instance();
         
         // Get (x, y, z) coordinates at point where optical photon detected by photocathode
         G4ThreeVector const detectionPosition = endPoint->GetPosition();
@@ -237,7 +213,9 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         // G4VUserTrackInformation* trackInfo = track->GetUserInformation();
         // auto userTrackInfo = static_cast<UserTrackInformation*>(trackInfo);
         // Retrieve number of reflections
-        G4int const numReflections = userTrackInfo->GetReflections();
+        // G4int const numReflections = userTrackInfo->GetReflections();
+        G4int const photonIdx = track->GetTrackID();
+        G4int const numReflections = fEventAction->GetReflections(photonIdx);
         analysisManager->FillNtupleIColumn(6, 0, numReflections); // TODO: Maybe clump all "detection" branches together in one ntuple
         analysisManager->AddNtupleRow(6);
         // TEST
@@ -265,7 +243,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         // counts absorptions in crystal vs reflector, vs photocathode
         
         // Get pointer to analysis manager singleton
-        auto analysisManager = G4AnalysisManager::Instance();
+        G4GenericAnalysisManager* analysisManager = G4AnalysisManager::Instance();
         
         // Get (x, y, z) coordinates at point where optical photon absorbed by reflector or photocathode
         G4ThreeVector const absorptionPosition = endPoint->GetPosition();
@@ -317,7 +295,11 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         // auto userTrackInfo = static_cast<UserTrackInformation*>(trackInfo);
         
         // Increment reflection counter
-        userTrackInfo->CountReflection();
+        // userTrackInfo->CountReflection();
+        
+        // Increment reflection counter
+        G4int photonIdx = track->GetTrackID();
+        fEventAction->CountReflection(photonIdx);
     }
     // ...
     else if (boundaryStatus == G4OpBoundaryProcessStatus::StepTooSmall) {

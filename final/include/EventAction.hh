@@ -4,6 +4,7 @@
 // G4 Lib
 #include "G4UserEventAction.hh"
 #include "G4Types.hh"
+#include <vector>
 
 // Forward declaration
 class RunAction;
@@ -51,23 +52,29 @@ class EventAction : public G4UserEventAction {
         // End of event handler
         void EndOfEventAction(G4Event const* event) override;
         
-        // Optical photon tracker
+        // Increment number of photons spawned in this event
         void CountPhoton();
         
-        // Photons incident upon the photocathode
+        // Increment number of photons incident upon the photocathode
         // ...
         
-        // Photons detected by the photocathode
+        // Increment number of photons detected by the photocathode
         void CountDetectedPhoton();
         
-        // Photons absorbed at a boundary without detection
+        // Increment number of photons absorbed at a boundary without detection
         void CountAbsorbedPhoton();
         
-        // Photons lost due to bulk absorption
+        // Increment number of photons lost due to bulk absorption
         void CountBulkAbsorption();
         
-        // Photons lost due to NoRINDEX
+        // Increment number of photons lost due to NoRINDEX
         void CountLostPhoton();
+        
+        // Increment number of reflections a photon has undergone
+        void CountReflection(G4int photonIdx);
+        
+        // Get nnumber of reflections a photon has undergone
+        G4int GetReflections(G4int photonIdx);
         
         // Print particle information (not for use with batch mode, but handy for single runs via visualiser)
         void Debug();
@@ -90,6 +97,9 @@ class EventAction : public G4UserEventAction {
         
         // Lost photon tally
         G4int fLostPhotons = 0;
+        
+        // Reflections a photon has undergone
+        std::vector<G4int> fReflectionMap = {};
 };
 
 #endif

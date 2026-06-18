@@ -11,6 +11,8 @@
  * Execute at the start of the track
  */
 void TrackingAction::PreUserTrackingAction(G4Track const* track) {
+    return; // NOTE: DISABLED
+    
     // Only for optical photons   
     if (track->GetDefinition() == G4OpticalPhoton::OpticalPhotonDefinition()) {
         // Assign custom track info object
