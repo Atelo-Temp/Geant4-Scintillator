@@ -346,7 +346,14 @@ of these caveats.
 If you want/need to keep thread files separate, the following command can be used for post-processing, via ROOT's build-in "hadd" utility:
 
 ```bash
-hadd merged.root output0_t*.root
+hadd merged.root output0_t*.root # just ntuples
+# hadd merged.root output0.root output0_t*.root # histogram and ntuples
+```
+
+Or with multi--threading:
+
+```bash
+hadd -j 3 merged.root output0_t*.root
 ```
 
 Which can then be accessed via:

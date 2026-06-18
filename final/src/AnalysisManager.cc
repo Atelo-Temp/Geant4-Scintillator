@@ -53,7 +53,7 @@ void AnalysisManager::InitialiseDataStructures() {
     // NOTE: D = double (float maybe fine, but double gives increased precision)
     
     // Mark the definition of the tuple columns as completed
-    analysisManager->FinishNtuple(); // NOTE: === FinishNtuple(0);
+    analysisManager->FinishNtuple(0); // NOTE: === FinishNtuple(0);
     // NOTE: Dont need to pass 0 here, automatically finishes ID = 0
     
     // analysisManager->CreateNtupleDColumn("fGlobalTime"); // store the global time at the start of each event
@@ -77,7 +77,9 @@ void AnalysisManager::InitialiseDataStructures() {
     analysisManager->CreateNtupleDColumn("aZ"); // y position of the photon
     
     // Mark the definition of the tuple columns as completed
-    analysisManager->FinishNtuple(); // automatically finishes ID = 1
+    analysisManager->FinishNtuple(1); // automatically finishes ID = 1
+    
+    // TODO: X, Y, Z coords of bulk absorption? See where its accumulating ?
     
     ////////////////
     // PHOTON COUNTS
@@ -86,7 +88,7 @@ void AnalysisManager::InitialiseDataStructures() {
     // Store per-event photon detection data in an Ntuple
     analysisManager->CreateNtuple("EventData", "Detected Photons"); // Create Ntuple ID = 2
     analysisManager->CreateNtupleIColumn("NumPhotons"); // Column 0: integer count
-    analysisManager->FinishNtuple(); // Finishes ID = 2
+    analysisManager->FinishNtuple(2); // Finishes ID = 2
     
     ////////////////////////////////
     // DETECTED PHOTON TRACK LENGTHS
@@ -110,7 +112,7 @@ void AnalysisManager::InitialiseDataStructures() {
     // TEST TEST TEST
     // analysisManager->CreateNtuple("TrackData", "Detected Photon Lifetime");
     analysisManager->CreateNtupleDColumn("TimeOfFlight"); // Column = 1
-    analysisManager->FinishNtuple(); // ID = 3
+    analysisManager->FinishNtuple(3); // ID = 3
     // NOTE: Could just add this to Ntuple(0), as its still step based data, just do another column
     
     ////////////////////////////////
@@ -122,8 +124,10 @@ void AnalysisManager::InitialiseDataStructures() {
     // TEST TEST TEST
     analysisManager->CreateNtuple("TrackDataAbsorb", "Bulk Absorbed Photon Track Length");
     analysisManager->CreateNtupleDColumn("AbsorptionDistance"); // Column = 0
-    analysisManager->FinishNtuple(); // ID = 4
+    analysisManager->FinishNtuple(4); // ID = 4
     // NOTE: Could just add this to Ntuple(0), as its still step based data, just do another column
+    
+    // TODO: Time of flight for bulk absorbed photons ?
     
     ///////////////////////
     // DETECTION EFFICIENCY
@@ -159,7 +163,7 @@ void AnalysisManager::InitialiseDataStructures() {
     // TEST TEST TEST
     // analysisManager->CreateNtuple("EventInfo", "Bulk Absorption Losses");
     analysisManager->CreateNtupleDColumn("SurfaceAbsorptionLosses"); // Column = 2
-    analysisManager->FinishNtuple(); // ID = 5
+    analysisManager->FinishNtuple(5); // ID = 5
     // TEST TEST TEST
     
     ///////////////////////////////////
@@ -168,7 +172,12 @@ void AnalysisManager::InitialiseDataStructures() {
     
     // Monitor mean reflections before detection between geometry/material property changes
     
-    // ...
+    analysisManager->CreateNtuple("ReflectionInfoDetection", "Reflections Before Detection");
+    analysisManager->CreateNtupleIColumn("ReflectionsDetect"); // Column = 0
+    analysisManager->FinishNtuple(6); // ID = 6
+    
+    // TODO: Could group xyz detection, track length detection, time of flight detection, and reflections before detection
+    // into one ntuple "DetectionInfo" or such
     
     /////////////////////////////////////////
     // NO. REFLECTIONS BEFORE BULK ABSORPTION
@@ -178,7 +187,12 @@ void AnalysisManager::InitialiseDataStructures() {
     
     // TODO: Maybe reflections before surface absorption too, but imo less pressing
     
-    // ...
+    analysisManager->CreateNtuple("ReflectionInfoBulkAbsorption", "Reflections Before Bulk Absorption");
+    analysisManager->CreateNtupleIColumn("ReflectionsBulkAbsorb"); // Column = 0
+    analysisManager->FinishNtuple(7); // ID = 7
+    
+    // TODO: Could group xyz detection, track length detection, time of flight detection, and reflections before detection
+    // into one ntuple "DetectionInfo" or such
     
     ///////////////////////////////
     // DETECTION ANGLE OF INCIDENCE

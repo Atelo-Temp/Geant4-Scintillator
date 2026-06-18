@@ -60,7 +60,9 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     // Count one optical photon (for total generated, not absorbed, detected, etc)
     // NOTE: Without if clause, when a photon reflects it will be counted twice,
     // could subtract interactions from this value, but this probably a cleaner way
-    if (track->GetCurrentStepNumber() == 1) fEventAction->CountPhoton();
+    if (track->GetCurrentStepNumber() == 1) {
+        fEventAction->CountPhoton();
+    }
     
     // Get the post step point object for the particle
     G4StepPoint* endPoint = step->GetPostStepPoint();
@@ -94,21 +96,34 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
 //     }
     // TEST
     
-    // >>>>> TEST TEST TEST: #2 - Track photons lost via bulk absorption in the crystal (and window/grease to a far lesser extent)
+    
     // ...
     G4VProcess const* process = endPoint->GetProcessDefinedStep();
+    
     // ...
     if (!process) return; // NOTE: Not sure about this return
     
+    
+    // TEST ...
+    // Get track info object assigned to optical photon at start of its track
+    G4VUserTrackInformation* trackInfo = track->GetUserInformation();
+    auto userTrackInfo = static_cast<UserTrackInformation*>(trackInfo);
+    // NOTE: Calling this here as bulk absorb needs it, detection needs it, and reflection needs it
+    // TEST ....
+    
+    
+    // >>>>> TEST TEST TEST: #2 - Track photons lost via bulk absorption in the crystal (and window/grease to a far lesser extent)
+    // If photon was absorbed in medium (not at a boundary)
     // if ((track->GetTrackStatus() == fStopAndKill) && (endPoint->GetStepStatus() != fGeomBoundary)) {
     // if (process && (process->GetProcessName() == "OpAbsorption") && (endPoint->GetStepStatus() != fGeomBoundary)) {
     if ((process->GetProcessName() == "OpAbsorption") && (endPoint->GetStepStatus() != fGeomBoundary)) { // NOTE: not sure the double check for boundary is needed, it would be "OpBoundary" otherwise
+        // Increment bulk absorption counter
         fEventAction->CountBulkAbsorption();
     
         // TEST TEST TEST
         // Get distance travelled by photon before bulk absorption
         G4double const distance = track->GetTrackLength();
-        auto analysisManager = G4AnalysisManager::Instance();
+        auto analysisManager = G4AnalysisManager::Instance(); // TODO: Maybe call this only once like track info above, most paths below use it
         analysisManager->FillNtupleDColumn(4, 0, distance); // id = 4, column = 0, value = distance travelled
         analysisManager->AddNtupleRow(4); // finish row for Ntuple id = 4
         // G4cout << "Distance Travelled Before Bulk Absorption: " << distance << " mm" << G4endl;
@@ -116,6 +131,11 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
 //         
 //         // No need to proceed, exit early
 //         return;
+        
+        // Retrieve number of reflections
+        G4int const numReflections = userTrackInfo->GetReflections();
+        analysisManager->FillNtupleIColumn(7, 0, numReflections); // ...
+        analysisManager->AddNtupleRow(7); // ...
     }
     // TEST - NOTE: #2 AND #1 ARE FUNCTIONALLY EQUIVALENT
     
@@ -127,6 +147,8 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     
     // If post step point not at a defined geometric boundary, break
     if (endPoint->GetStepStatus() != fGeomBoundary) return;
+    
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////// HANDLE BOUNDARY INTERACTION METHOD \/\/\/\/\/ ???
     
     // if (process->GetProcessName() != "OpBoundary") return; // TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST TEST
     
@@ -212,10 +234,12 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         
         // TEST
         // Get custom track info object
-        G4VUserTrackInformation* trackInfo = track->GetUserInformation();
-        auto userTrackInfo = static_cast<UserTrackInformation*>(trackInfo);
+        // G4VUserTrackInformation* trackInfo = track->GetUserInformation();
+        // auto userTrackInfo = static_cast<UserTrackInformation*>(trackInfo);
         // Retrieve number of reflections
         G4int const numReflections = userTrackInfo->GetReflections();
+        analysisManager->FillNtupleIColumn(6, 0, numReflections); // TODO: Maybe clump all "detection" branches together in one ntuple
+        analysisManager->AddNtupleRow(6);
         // TEST
         
         // TEST
@@ -289,15 +313,15 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         boundaryStatus == G4OpBoundaryProcessStatus::BackScattering
     ) {
         // Get custom track info object
-        G4VUserTrackInformation* trackInfo = track->GetUserInformation();
-        auto userTrackInfo = static_cast<UserTrackInformation*>(trackInfo);
+        // G4VUserTrackInformation* trackInfo = track->GetUserInformation();
+        // auto userTrackInfo = static_cast<UserTrackInformation*>(trackInfo);
         
         // Increment reflection counter
         userTrackInfo->CountReflection();
     }
     // ...
     else if (boundaryStatus == G4OpBoundaryProcessStatus::StepTooSmall) {
-        
+        // TODO: ...
     }
     
     // TODO: With lambertian reflection set to 1 at reflector surface,

@@ -20,7 +20,7 @@ RunAction::RunAction() {
     
     // Enable merging of Ntuples which are spread across the threads into one outfile
     auto analysisManager = G4AnalysisManager::Instance();
-    analysisManager->SetNtupleMerging(true);
+    analysisManager->SetNtupleMerging(true); // <<<<<<<<<<<<<< Uncomment me
     // NOTE: See README.md for more info
 }
 
