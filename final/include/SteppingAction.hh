@@ -33,6 +33,15 @@ class SteppingAction : public G4UserSteppingAction {
         // Find optical photon boundary process
         void FindBoundary(G4Track* track);
         
+        // ...
+        void HandleBulkAbsorb(G4Track* track);
+        
+        // ...
+        void HandleDetection(G4StepPoint* endPoint, G4Track* track);
+        
+        // ...
+        void HandleBoundaryAbsorb(G4StepPoint* endPoint);
+        
     private:
         // Pointer to event object
         EventAction* fEventAction = nullptr;
