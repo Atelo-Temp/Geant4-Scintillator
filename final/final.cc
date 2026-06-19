@@ -15,7 +15,13 @@
 // #include "CLHEP/Random/Random.h" // random seeding
 
 /*
- * ...
+ * Main entry point
+ * 
+ * Instantiates UI (if in interactive mode)
+ * 
+ * Instantiates run manager
+ * 
+ * Registers mandatory initialisation classes
  */
 int main(int argc, char** argv) {
     // Detect interactive mode (if no arguments) and define UI session
@@ -76,7 +82,7 @@ int main(int argc, char** argv) {
     visManager->Initialize();
 
     // Get the pointer to the UI manager object (static method)
-    auto UImanager = G4UImanager::GetUIpointer();
+    G4UImanager* UImanager = G4UImanager::GetUIpointer();
 
     // Process supplied macro file, or start UI session (if pointer exists || null)
     if (!ui) {

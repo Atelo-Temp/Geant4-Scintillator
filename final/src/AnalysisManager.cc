@@ -17,6 +17,8 @@ AnalysisManager::AnalysisManager() {
  * Private method to initialise histogram and ntuples
  * 
  * NOTE: Called internally at construction
+ * 
+ * TODO: Maybe method for each ntuple
  */
 void AnalysisManager::InitialiseDataStructures() {
     // Get a pointer to the singleton analysis manager via the static method

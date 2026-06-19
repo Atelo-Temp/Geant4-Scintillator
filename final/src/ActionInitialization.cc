@@ -57,7 +57,7 @@ void ActionInitialization::Build() const {
     SetUserAction(eventHandler);
     
     // Track handler (start/end of track handlers for custom user information object assignment to particles)
-    // SetUserAction(new TrackingAction());
+    // SetUserAction(new TrackingAction()); // NOTE: DISABLED
     
     // Step handler (pre/post step photon processing, passes intra event data up to event handler)
     SetUserAction(new SteppingAction(eventHandler));

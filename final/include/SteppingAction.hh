@@ -3,15 +3,16 @@
 
 // User classes
 #include "EventAction.hh"
-#include <G4OpticalPhoton.hh>
+#include "EventAnalysis.hh"
+#include "StepAnalysis.hh"
 
 // G4 Lib
 #include "G4UserSteppingAction.hh"
 #include "G4Step.hh"
 // #include "G4LogicalVolume.hh"
 #include "G4OpBoundaryProcess.hh"
-#include "G4GenericAnalysisManager.hh"
 #include "G4OpAbsorption.hh"
+#include "G4OpticalPhoton.hh"
 
 // Forward declarations
 // class EventAction;
@@ -20,11 +21,13 @@
 /*
  * Particle step handler
  * 
+ * NOTE: Extends abstract base class "G4UserSteppingAction" (preserving access modifiers)
+ * 
  * TODO: Should i delete fEventAction && fBoundary in custom destructor ??
  */
 class SteppingAction : public G4UserSteppingAction {
     public:
-        // Constructor (takes pointer to event object)
+        // Constructor
         SteppingAction(EventAction* eventAction);
         
         // Destructor
@@ -33,26 +36,14 @@ class SteppingAction : public G4UserSteppingAction {
         // Intra-event step handler (takes pointer to step object)
         void UserSteppingAction(G4Step const* step) override;
         
-        // Find optical photon boundary process
-        void FindBoundary(G4Track* track);
-        
-        // ...
-        void HandleBulkAbsorb(G4Track* track);
-        
-        // ...
-        void HandleDetection(G4StepPoint* endPoint, G4Track* track);
-        
-        // ...
-        void HandleBoundaryAbsorb(G4StepPoint* endPoint);
+        // Find and cache optical photon absorption and boundary processes
+        void CacheProcesses(G4Track* track);
         
     private:
         // Pointer to event object
         EventAction* fEventAction = nullptr;
         
-        // ...
-        G4GenericAnalysisManager* fAnalysisManager = nullptr;
-        
-        // ..
+        // Pointer to optical photon particle definition
         G4OpticalPhoton* fOpticalPhotonDefinition = nullptr;
         
         // Pointer to scoring region
@@ -61,8 +52,16 @@ class SteppingAction : public G4UserSteppingAction {
         // Pointer to boundary process
         G4OpBoundaryProcess* fBoundary = nullptr;
         
-        // ...
+        // Pointer to absorption process
         G4OpAbsorption* fAbsorb = nullptr;
+        
+        // TODO: Maybe have pointer to event analysis here
+        // either pass event analysis into both the event action and stepping action constructors in action init
+        // or make a getter for pointer on event action class, and fetch it once at construction of stepping action
+        EventAnalysis* fEventAnalysis = nullptr;
+        
+        // ...
+        StepAnalysis* fStepAnalysis = nullptr;
 };
 
 #endif

@@ -56,17 +56,15 @@ void RunAction::BeginOfRunAction(const G4Run* run) {
     strRunID << runID; // Pipe the run id into the stream
     // NOTE: Must convert int to string in C++ (not always necessary in other languages)
     
+    // NOTE: Alternatively std lib may be used to convert to string
+    // std::string str = std::to_string(runID);
+    
     // Define the outfile name (converting string stream object into a string)
     G4String const fileName = "output" + strRunID.str() + ".root"; // append file type
     // NOTE: Could overwrite output.root on each run, but this is a better option
     
-    // NOTE: Alternatively std lib may be used to convert to string
-    // std::string str = std::to_string(runID);
-    
     // Create and open the file with the supplied name
     analysisManager->OpenFile(fileName);
-    
-    // TEST
     
     // This code wont execute on the master thread, only on worker threads
     // NOTE: if (isMaster) enclosed code would execute only on the master thread
@@ -87,7 +85,7 @@ void RunAction::BeginOfRunAction(const G4Run* run) {
  * Define the end of run event handler (Also takes run object)
  */
 void RunAction::EndOfRunAction(const G4Run* run) {
-    // TODO: Again this all seems suitable for a dedicated method in AnalysisManager \/
+    // TODO: Again this all seems suitable for a dedicated method in AnalysisManager \/\/\/
     // except the "finishing run" console log (and run ID grab for said log)
     
      // Get a pointer to the singleton analysis manager
@@ -108,7 +106,7 @@ void RunAction::EndOfRunAction(const G4Run* run) {
     // TEST
     
     // This code wont execute on the master thread, only on worker threads
-    if (!isMaster && fTimer != nullptr) {
+    if (!isMaster && (fTimer != nullptr)) {
         // End the run timer and calculate run time (prints to g4cout)
         fTimer->EndTimer();
         
