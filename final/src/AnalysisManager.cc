@@ -23,15 +23,15 @@ void AnalysisManager::InitialiseDataStructures() {
     auto analysisManager = G4AnalysisManager::Instance();
     
     // Create histogram (one dimension to store deposited energy)
-    analysisManager->CreateH1(
-        "PhotonsSpectrum", // Name
-        "Optical Photons", // Title
-        1024, // Number of bins
-        0., // Lower bounds (NOTE: EventAction now only writes to histo when photons > 0)
-        5000. // Upper bounds (TODO: This needs to be dynamic ... Different sources will produce different amount of optical photons)
-        // TODO: 1024. // Upper bounds (need to adjust EventAction to calculate channel instead of photons)
-        // G4String& unitName = "none"
-    );
+    // analysisManager->CreateH1(
+    //     "PhotonsSpectrum", // Name
+    //     "Optical Photons", // Title
+    //     1024, // Number of bins
+    //     0., // Lower bounds (NOTE: EventAction now only writes to histo when photons > 0)
+    //     5000. // Upper bounds (TODO: This needs to be dynamic ... Different sources will produce different amount of optical photons)
+    //     // TODO: 1024. // Upper bounds (need to adjust EventAction to calculate channel instead of photons)
+    //     // G4String& unitName = "none"
+    // );
     // NOTE: 100 bins from 0->1 MeV
     
     //////////////////////////

@@ -1,10 +1,8 @@
 // User classes
-// #include "MyDetectorConstruction.hh"
-#include "DetectorConstruction.hh"  // When leaving it as named here, causes errors (only in vscode), in scintillator/ no errors ...
-// Is it due to scintillator "using namespace xyz;"
+#include "DetectorConstruction.hh"
 #include "PhysicsList.hh"
 #include "ActionInitialization.hh"
-#include "Timer.hh"
+// #include "Timer.hh"
 
 // G4 lib
 // #include "G4MTRunManager.hh"
@@ -13,12 +11,12 @@
 #include "G4UIExecutive.hh"
 #include "G4UImanager.hh"
 #include "G4VisExecutive.hh"
+#include "G4HadronicParameters.hh" // decay time threshold
+// #include "CLHEP/Random/Random.h" // random seeding
 
-#include "G4HadronicParameters.hh"
-#include "CLHEP/Random/Random.h"
-
-// using namespace GEOMETRY;
-
+/*
+ * ...
+ */
 int main(int argc, char** argv) {
     // Detect interactive mode (if no arguments) and define UI session
     G4UIExecutive* ui = nullptr;

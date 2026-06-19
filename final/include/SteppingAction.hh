@@ -3,12 +3,15 @@
 
 // User classes
 #include "EventAction.hh"
+#include <G4OpticalPhoton.hh>
 
 // G4 Lib
 #include "G4UserSteppingAction.hh"
 #include "G4Step.hh"
 // #include "G4LogicalVolume.hh"
 #include "G4OpBoundaryProcess.hh"
+#include "G4GenericAnalysisManager.hh"
+#include "G4OpAbsorption.hh"
 
 // Forward declarations
 // class EventAction;
@@ -46,11 +49,20 @@ class SteppingAction : public G4UserSteppingAction {
         // Pointer to event object
         EventAction* fEventAction = nullptr;
         
+        // ...
+        G4GenericAnalysisManager* fAnalysisManager = nullptr;
+        
+        // ..
+        G4OpticalPhoton* fOpticalPhotonDefinition = nullptr;
+        
         // Pointer to scoring region
         // G4LogicalVolume* fScoringVolume = nullptr;
         
         // Pointer to boundary process
         G4OpBoundaryProcess* fBoundary = nullptr;
+        
+        // ...
+        G4OpAbsorption* fAbsorb = nullptr;
 };
 
 #endif

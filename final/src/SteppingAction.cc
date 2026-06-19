@@ -19,6 +19,7 @@
 // #include "G4VUserTrackInformation.hh" // NOTE: Removed for time being
 // #include "G4TrackStatus.hh"
 // #include "G4RandomTools.hh" // Random seeding
+#include "G4OpAbsorption.hh"
 
 /*
  * Constructor
@@ -26,7 +27,14 @@
  * TODO: May want to use initialiser list here
  */
 SteppingAction::SteppingAction(EventAction* eventAction) {
+    // ...
     fEventAction = eventAction; 
+    
+    // Cache pointer to analysis manager singleton
+    fAnalysisManager = G4AnalysisManager::Instance();
+    
+    // Cache optical photon definition
+    fOpticalPhotonDefinition = G4OpticalPhoton::OpticalPhotonDefinition();
 }
 // SteppingAction::SteppingAction(EventAction* eventAction) : fEventAction(eventAction) {}
 
@@ -50,7 +58,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     // set fStartTime to local time
     
     // If particle is not an optical photon, break
-    if (track->GetDefinition() != G4OpticalPhoton::OpticalPhotonDefinition()) {
+    if (track->GetDefinition() != fOpticalPhotonDefinition) {
         return;
     }
     
@@ -88,13 +96,19 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     // If photon was absorbed in medium (not at a boundary)
     // if ((track->GetTrackStatus() == fStopAndKill) && (endPoint->GetStepStatus() != fGeomBoundary)) {
     // if (process && (process->GetProcessName() == "OpAbsorption") && (endPoint->GetStepStatus() != fGeomBoundary)) {
-    if ((process->GetProcessName() == "OpAbsorption") && (endPoint->GetStepStatus() != fGeomBoundary)) {
+    // if ((process->GetProcessName() == "OpAbsorption") && (endPoint->GetStepStatus() != fGeomBoundary)) {
+    // if ((process == fAbsorb) && (endPoint->GetStepStatus() != fGeomBoundary)) {
+    if (process == fAbsorb) {
         // NOTE: not sure the double check for boundary is needed, it would be "OpBoundary" otherwise
         
         // Increment bulk absorption counter
         fEventAction->CountBulkAbsorption();
-    
+        
+        // Forward to the bulk absorption event handler
         HandleBulkAbsorb(track);
+        
+        // Save a step status request and comparison
+        return;
     }
     // TEST TEST TEST 
     
@@ -196,8 +210,10 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
  * Find the boundary process and assign it to the class property "fBoundary"
  * 
  * NOTE: Is there a cleaner way to do this?
+ * 
+ * NOTE: i.e. "Transportation", "OpAbsorption", "OpRayleigh", "OpMieHG", "OpBoundary"
  */
-void SteppingAction::FindBoundary(G4Track* track) {
+void SteppingAction::FindBoundary(G4Track* track) { // TODO: RENAME - CacheProcesses()
     // Get pointer to the process list (for optical photons)
     G4ProcessVector* pv = track->GetDefinition()->GetProcessManager()->GetProcessList();
     
@@ -219,8 +235,15 @@ void SteppingAction::FindBoundary(G4Track* track) {
             fBoundary = dynamic_cast<G4OpBoundaryProcess*>(process);
             
             // End iteration when found
-            break;
+            // break;
         }
+        
+        // TEST TEST TEST
+        if (process->GetProcessName() == "OpAbsorption") {
+            // ...
+            fAbsorb = dynamic_cast<G4OpAbsorption*>(process);
+        }
+        // TEST TEST TEST
     }
     // TODO: Error handling? Return 1/0 if fBoundary not set/set
 }
@@ -235,17 +258,16 @@ void SteppingAction::HandleBulkAbsorb(G4Track* track) {
     
     // Get distance travelled by photon before bulk absorption
     G4double const distance = track->GetTrackLength();
-    G4GenericAnalysisManager* analysisManager = G4AnalysisManager::Instance(); // TODO: Maybe call this only once like track info above, most paths below use it
-    analysisManager->FillNtupleDColumn(4, 0, distance); // id = 4, column = 0, value = distance travelled
-    analysisManager->AddNtupleRow(4); // finish row for Ntuple id = 4
+    fAnalysisManager->FillNtupleDColumn(4, 0, distance); // id = 4, column = 0, value = distance travelled
+    fAnalysisManager->AddNtupleRow(4); // finish row for Ntuple id = 4
     // G4cout << "Distance Travelled Before Bulk Absorption: " << distance << " mm" << G4endl;
     
     // Retrieve number of reflections
     // G4int const numReflections = userTrackInfo->GetReflections();
     G4int const photonIdx = track->GetTrackID();
     G4int const numReflections = fEventAction->GetReflections(photonIdx);
-    analysisManager->FillNtupleIColumn(7, 0, numReflections); // ...
-    analysisManager->AddNtupleRow(7); // ...
+    fAnalysisManager->FillNtupleIColumn(7, 0, numReflections); // ...
+    fAnalysisManager->AddNtupleRow(7); // ...
     
     return;
 }
@@ -264,9 +286,6 @@ void SteppingAction::HandleDetection(G4StepPoint* endPoint, G4Track* track) {
     // if (endPoint->GetTouchable()->GetVolume() == fScoringVolume)
     // NOTE: Get fScoringVolume via public method on DetectorConstruction
     
-    // Get pointer to analysis manager singleton
-    G4GenericAnalysisManager* analysisManager = G4AnalysisManager::Instance();
-    
     // Get (x, y, z) coordinates at point where optical photon detected by photocathode
     G4ThreeVector const detectionPosition = endPoint->GetPosition();
     double const x = detectionPosition[0];
@@ -274,13 +293,13 @@ void SteppingAction::HandleDetection(G4StepPoint* endPoint, G4Track* track) {
     double const z = detectionPosition[2];
     
     // Store this data in the nTuples (create a few rows) (IColumn = int, DColumn = double)
-    analysisManager->FillNtupleDColumn(0, 0, x); // NtupleID = 0, 0th column, x
-    analysisManager->FillNtupleDColumn(0, 1, y); // NtupleID = 0, 1st column, y
-    analysisManager->FillNtupleDColumn(0, 2, z); // NtupleID = 0, 2nd column, z
+    fAnalysisManager->FillNtupleDColumn(0, 0, x); // NtupleID = 0, 0th column, x
+    fAnalysisManager->FillNtupleDColumn(0, 1, y); // NtupleID = 0, 1st column, y
+    fAnalysisManager->FillNtupleDColumn(0, 2, z); // NtupleID = 0, 2nd column, z
     // NOTE: Takes tuple ID (0 as we only made one), column number in this row, and the entry
     
     // Mark this row as complete (for Ntuple with passed ID)
-    analysisManager->AddNtupleRow(0); // Ntuple ID = 0
+    fAnalysisManager->AddNtupleRow(0); // Ntuple ID = 0
     
     // TEST TEST TEST
     // Get the global time (TODO: For timing window)
@@ -299,7 +318,7 @@ void SteppingAction::HandleDetection(G4StepPoint* endPoint, G4Track* track) {
     // TEST TEST TEST
     // Get distance travelled by photon before detection (from creation to absorption in PC)
     G4double const distance = track->GetTrackLength();
-    analysisManager->FillNtupleDColumn(3, 0, distance); // NtupleID = 3, column = 0, val = distance
+    fAnalysisManager->FillNtupleDColumn(3, 0, distance); // NtupleID = 3, column = 0, val = distance
     // analysisManager->AddNtupleRow(3); // finish row for NtupleID = 3 // NOTE: OMIT THIS IF USING SAME NTUPLE FOR ALL TRACK DATA
     // G4cout << "Distance Travelled Before Detection: " << distance << " mm" << G4endl;
     // TEST TEST TEST
@@ -307,8 +326,8 @@ void SteppingAction::HandleDetection(G4StepPoint* endPoint, G4Track* track) {
     // TEST TEST TEST
     // Get time of flight information (local time gives time since photon birth until now, i.e. birth to detection)
     G4double const time = track->GetLocalTime(); 
-    analysisManager->FillNtupleDColumn(3, 1, time); // NtupleID = 3, column = 1, val = time
-    analysisManager->AddNtupleRow(3); // Finish row for NtupleID = 3 // NOTE: NOW THAT ALL TRACK DATA WRITTEN, ADD THE ROW
+    fAnalysisManager->FillNtupleDColumn(3, 1, time); // NtupleID = 3, column = 1, val = time
+    fAnalysisManager->AddNtupleRow(3); // Finish row for NtupleID = 3 // NOTE: NOW THAT ALL TRACK DATA WRITTEN, ADD THE ROW
     // NOTE: This method loses relative timing between different photons if they 
     // were created at different points along the primary particles track
     // TEST TEST TEST
@@ -321,8 +340,8 @@ void SteppingAction::HandleDetection(G4StepPoint* endPoint, G4Track* track) {
     // G4int const numReflections = userTrackInfo->GetReflections();
     G4int const photonIdx = track->GetTrackID();
     G4int const numReflections = fEventAction->GetReflections(photonIdx);
-    analysisManager->FillNtupleIColumn(6, 0, numReflections); // TODO: Maybe clump all "detection" branches together in one ntuple
-    analysisManager->AddNtupleRow(6);
+    fAnalysisManager->FillNtupleIColumn(6, 0, numReflections); // TODO: Maybe clump all "detection" branches together in one ntuple
+    fAnalysisManager->AddNtupleRow(6);
     // TEST
     
     // TEST
@@ -349,9 +368,6 @@ void SteppingAction::HandleBoundaryAbsorb(G4StepPoint* endPoint) {
     // TODO: Can get absorption volume via same process as above,
     // counts absorptions in crystal vs reflector, vs photocathode
     
-    // Get pointer to analysis manager singleton
-    G4GenericAnalysisManager* analysisManager = G4AnalysisManager::Instance();
-    
     // Get (x, y, z) coordinates at point where optical photon absorbed by reflector or photocathode
     G4ThreeVector const absorptionPosition = endPoint->GetPosition();
     double const x = absorptionPosition[0];
@@ -359,13 +375,13 @@ void SteppingAction::HandleBoundaryAbsorb(G4StepPoint* endPoint) {
     double const z = absorptionPosition[2];
     
     // Store this data in the nTuples (create a few rows) (IColumn = int, DColumn = double)
-    analysisManager->FillNtupleDColumn(1, 0, x); // NtupleID = 1, 3rd column, x
-    analysisManager->FillNtupleDColumn(1, 1, y); // NtupleID = 1, 4th column, y
-    analysisManager->FillNtupleDColumn(1, 2, z); // NtupleID = 1, 5th column, z
+    fAnalysisManager->FillNtupleDColumn(1, 0, x); // NtupleID = 1, 3rd column, x
+    fAnalysisManager->FillNtupleDColumn(1, 1, y); // NtupleID = 1, 4th column, y
+    fAnalysisManager->FillNtupleDColumn(1, 2, z); // NtupleID = 1, 5th column, z
     // NOTE: Takes tuple ID (0 as we only made one), column number in this row, and the entry
     
     // Mark this row as complete (for Ntuple with passed ID)
-    analysisManager->AddNtupleRow(1); // Ntuple ID = 1
+    fAnalysisManager->AddNtupleRow(1); // Ntuple ID = 1
     
     // For every photon that enters the detector and interacts, each interaction will call "ProcessHits()",
     // producing a new row (linked to the event ID) for each interaction,

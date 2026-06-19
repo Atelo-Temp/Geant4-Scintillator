@@ -65,7 +65,7 @@ void EventAction::EndOfEventAction(G4Event const* /*event*/) {
     // Only write to histo when non-zero optical photons detected at the photocathode
     if (fDetectedPhotons > 0) {
         // Fill the histogram (add a count to the appropriate energy bin)
-        analysisManager->FillH1(0, fDetectedPhotons); // (id, value) only one histo, so id = 0
+        // analysisManager->FillH1(0, fDetectedPhotons); // (id, value) only one histo, so id = 0 // NOTE: DISABLED (although seemingly no time savings from disabling this)
         // NOTE: On full 662 keV energy deposited will add to counts for that bin, etc
         
         // Fill the per-event total detected photons ntuple
