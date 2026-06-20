@@ -22,13 +22,16 @@
  * Instantiates run manager
  * 
  * Registers mandatory initialisation classes
+ * 
+ * NOTE: examples/advanced/CaTS/CaTS.cc has some good arg handling
  */
 int main(int argc, char** argv) {
     // Detect interactive mode (if no arguments) and define UI session
     G4UIExecutive* ui = nullptr;
 
     // For interactive mode "./myProgram" (no further args), in batch mode argc > 1
-    if (argc == 1) {
+    // if (argc == 1) {
+    if (argc == 1 || (argc == 3 && (G4String(argv[2]) == "-i"))) {
         // Instantiate the UI
         ui = new G4UIExecutive(argc, argv);
     }
@@ -56,10 +59,10 @@ int main(int argc, char** argv) {
         // std::cout << ">>>>>>>>>>>>>>>>>>>>>>>>>>> NO MULTITHREADING\n\n";
     // #endif
     
-    // Default time threshold for radioactive decay is 1 year, set it higher for longer lived isotopes
-    G4HadronicParameters::Instance()->SetTimeThresholdForRadioactiveDecay(1.E+60 * CLHEP::year);
-    // NOTE: nuclides with sampled lifetime longer than this threshold would otherwise be killed
     // Set a very high time threshold to allow all decays to happen
+    G4HadronicParameters::Instance()->SetTimeThresholdForRadioactiveDecay(1.E+60 * CLHEP::year);
+    // NOTE: Default time threshold for radioactive decay is 1 year, set it higher for longer lived isotopes, 
+    // nuclides with sampled lifetime longer than this threshold would otherwise be killed
     
     // Mandatory initialisation classes
     //
@@ -94,9 +97,21 @@ int main(int argc, char** argv) {
 
         // Execute the macro file
         UImanager->ApplyCommand(command + fileName);
-    } else {
+    }
+    else if (ui && (argc == 3) && (G4String(argv[2]) == "-i")) {
+        // ...
+        G4String command = "/control/execute ";
+        G4String fileName = argv[1];
+        UImanager->ApplyCommand(command + fileName);
+        
+        // Start UI mode (interactive session)
+        ui->SessionStart();
+
+        // Clean up
+        delete ui;
+    }
+    else {
         // Run in interactive mode (execute visualisation macro)
-        // UImanager->ApplyCommand("/control/execute init_vis.mac");
         UImanager->ApplyCommand("/control/execute vis.mac");
 
         // Start UI mode (interactive session)

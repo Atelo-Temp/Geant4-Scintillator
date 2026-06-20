@@ -53,7 +53,7 @@ void EventAction::BeginOfEventAction(G4Event const* /*event*/) {
  */
 void EventAction::EndOfEventAction(G4Event const* /*event*/) {
     // Log particle information
-    fEventAnalysis->LogEventData();
+    // fEventAnalysis->LogEventData();
     // NOTE: Disable this if running in batch mode
     
     // ...

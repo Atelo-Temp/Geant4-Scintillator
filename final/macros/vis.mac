@@ -1,3 +1,7 @@
+######
+# INIT
+######
+
 # Initialise Geant4 framework
 /run/initialize
 
@@ -41,10 +45,27 @@
 # Radioactive decay module verbose level (3 max)
 # /process/had/rdm/verbose 3
 
-# Snap to axis 
+# Snap to axis
+#
+# Face View 1
+# /vis/viewer/set/viewpointThetaPhi 0. 0.
+#
+# Side View 1
 # /vis/viewer/set/viewpointThetaPhi 90. 0.
 #
+# Face View 2
 # /vis/viewer/set/viewpointThetaPhi 180. 0.
+#
+# Side View 2
+# /vis/viewer/set/viewpointThetaPhi 270. 0.
+
+# Bottom up view
+# /vis/viewer/set/upVector 0 0 1
+# /vis/viewer/set/viewpointThetaPhi 270. 90.
+#
+# Top down view
+# /vis/viewer/set/upVector 0 0 1
+# /vis/viewer/set/viewpointThetaPhi 270. 270.
 
 # Check for overlaps (the overlap warning doesnt abort sim, and the normal warning is lost in stdout)
 /geometry/test/run
