@@ -24,18 +24,6 @@ void AnalysisManager::InitialiseDataStructures() {
     // Get a pointer to the singleton analysis manager via the static method
     auto analysisManager = G4AnalysisManager::Instance();
     
-    // Create histogram (one dimension to store deposited energy)
-    // analysisManager->CreateH1(
-    //     "PhotonsSpectrum", // Name
-    //     "Optical Photons", // Title
-    //     1024, // Number of bins
-    //     0., // Lower bounds (NOTE: EventAction now only writes to histo when photons > 0)
-    //     5000. // Upper bounds (TODO: This needs to be dynamic ... Different sources will produce different amount of optical photons)
-    //     // TODO: 1024. // Upper bounds (need to adjust EventAction to calculate channel instead of photons)
-    //     // G4String& unitName = "none"
-    // );
-    // NOTE: 100 bins from 0->1 MeV
-    
     //////////////////////////
     // PHOTON DETECTION COORDS
     //////////////////////////
@@ -81,7 +69,13 @@ void AnalysisManager::InitialiseDataStructures() {
     // Mark the definition of the tuple columns as completed
     analysisManager->FinishNtuple(1); // automatically finishes ID = 1
     
+    ////////////////////////////////
+    // PHOTON BULK ABSORPTION COORDS
+    ////////////////////////////////
+    
     // TODO: X, Y, Z coords of bulk absorption? See where its accumulating ?
+    
+    // ...
     
     ////////////////
     // PHOTON COUNTS
@@ -180,6 +174,12 @@ void AnalysisManager::InitialiseDataStructures() {
     
     // TODO: Could group xyz detection, track length detection, time of flight detection, and reflections before detection
     // into one ntuple "DetectionInfo" or such
+    
+    /////////////////////////////////////////////
+    // NO. REFLECTIONS BEFORE BOUNDARY ABSORPTION
+    /////////////////////////////////////////////
+    
+    // TODO: ...
     
     /////////////////////////////////////////
     // NO. REFLECTIONS BEFORE BULK ABSORPTION

@@ -8,12 +8,12 @@
 /*
  * Constructor
  */
-EventAnalysis::EventAnalysis() {
-    // Increase allocation for reflection vector map
-    fReflectionMap.resize(40960);
-    
+EventAnalysis::EventAnalysis() {    
     // Cache a pointer to the analysis manager instance
     fAnalysisManager = G4AnalysisManager::Instance();
+    
+    // Increase allocation for reflection vector map
+    fReflectionMap.resize(40960);
 }
 
 /*
@@ -40,10 +40,6 @@ void EventAnalysis::ResetCounters() {
 void EventAnalysis::WriteEventData() {
     // Only write to histo when non-zero optical photons detected at the photocathode
     if (fDetectedPhotons > 0) {
-        // Fill the histogram (add a count to the appropriate energy bin)
-        // analysisManager->FillH1(0, fDetectedPhotons); // (id, value) only one histo, so id = 0 // NOTE: DISABLED (although seemingly no time savings from disabling this)
-        // NOTE: On full 662 keV energy deposited will add to counts for that bin, etc
-        
         // Fill the per-event total detected photons ntuple
         fAnalysisManager->FillNtupleIColumn(2, 0, fDetectedPhotons); // ntuple ID, column ID, fill value
         // NOTE: Only 1 column, hence column ID = 0

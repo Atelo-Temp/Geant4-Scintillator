@@ -1,0 +1,69 @@
+#ifndef MyProgramState_HH
+#define MyProgramState_HH
+
+// C lib
+#include <mutex>
+
+/*
+ * Singleton class defines the "GetInstance" method that serves as an alternative
+ * to the constructor, and lets clients access the same instance of this class
+ * over and over again
+ * 
+ * NOTE: Thread safe singleton implementation with mutual exclusion lock
+ */
+class ProgramState {
+    public:
+        // Singletons should not be cloneable
+        ProgramState(ProgramState& other) = delete;
+        
+        // Singletons should not be assignable
+        void operator=(ProgramState const&) = delete;
+        
+        // Static method controls access to singleton instance (get instance if exists, else instantiate)
+        static ProgramState* GetInstance();
+        
+        // Business logic
+        struct StateFlags {
+            // Event flags
+            bool fDetectionNtuple = true; // Per-event detections
+            bool fDetectionFractionNtuple = true; // Per-event detections fraction
+            bool fBoundaryAbsorbFractionNtuple = true; // Per-event boundary absorptions fraction
+            bool fBulkAbsorbFractionNtuple = true; // Per-event bulk absorptions fraction
+            
+            // Step detection flags
+            bool fDetectionCoordsNtuple = true;
+            bool fDetectionDistanceNtuple = true;
+            bool fDetectionTimeOfFlightNtuple = true;
+            bool fDetectionReflectionsNtuple = true;
+            
+            // Step boundary absorption flags
+            // bool fBoundaryAbsorbNtuple = true; // NOTE: Not writing per-event boundary absorption counts
+            bool fBoundaryAbsorbCoordsNtuple = true;
+            // bool fBoundaryAbsorbDistanceNtuple = true; // NOTE: Not yet implemented
+            // bool fBoundaryAbsorbTimeOfFlightNtuple = true; // NOTE: Not yet implemented
+            // bool fBoundaryAbsorbReflectionsNtuple = true;  // NOTE: Not yet implemented
+            
+            // Step bulk absorption flags
+            // bool fBulkAbsorbNtuple = true; // NOTE: Not writing per-event bulk absorption counts
+            // bool fBulkAbsorbCoordsNtuple = true; // NOTE: Not yet implemented
+            bool fBulkAbsorbDistanceNtuple = true;
+            // bool fBulkAbsorbTimeOfFlightNtuple = true; // NOTE: Not yet implemented
+            // bool fBulkAbsorbReflectionsNtuple = true;
+        } stateFlags;
+    
+    private:
+        // Constructor, private to prevent direct construction via "new" operator, only self callable
+        ProgramState() = default;
+        
+        // Destructor, private to prevent direct destruction call via "delete" operator
+        ~ProgramState() = default;
+        
+        // Pointer to current instance
+        inline static ProgramState* fInstance = nullptr;
+        // NOTE: Inline keyword allows for nullptr assignment inside of class definition
+        
+        // Thread safety mutual exclusion locking
+        static std::mutex fMutex;
+};
+
+#endif
