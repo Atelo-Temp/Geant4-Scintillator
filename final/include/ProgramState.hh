@@ -40,7 +40,7 @@ struct StateFlags {
     // bool fBulkAbsorbCoordsNtuple = true; // NOTE: Not yet implemented
     bool fBulkAbsorbDistanceNtuple = true;
     // bool fBulkAbsorbTimeOfFlightNtuple = true; // NOTE: Not yet implemented
-    // bool fBulkAbsorbReflectionsNtuple = true;
+    bool fBulkAbsorbReflectionsNtuple = true;
 };
 
 /*

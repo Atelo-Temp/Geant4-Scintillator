@@ -111,9 +111,9 @@ void AnalysisManager::InitialiseDataStructures() {
     analysisManager->FinishNtuple(3); // ID = 3
     // NOTE: Could just add this to Ntuple(0), as its still step based data, just do another column
     
-    ////////////////////////////////
-    // ABSORBED PHOTON TRACK LENGTHS
-    ////////////////////////////////
+    /////////////////////////////////////
+    // BULK ABSORBED PHOTON TRACK LENGTHS
+    /////////////////////////////////////
     
     // Distance travelled by photons lost to bulk absorption in the crystal (or grease/pmt window)
     
