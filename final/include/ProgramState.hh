@@ -3,7 +3,7 @@
 
 // Forward declarations
 class ProgramStateMessenger;
-// NOTE: ProgramState class only holds a pointer to a ProgramStateMessenger instance on the heap,
+// NOTE: ProgramState class only holds a pointer to a ProgramStateMessenger instance on the data segment,
 // since a pointer has a fixed memory size, there is no need to import here, import in ".cc" file
 // NOTE: Since both ProgramState and ProgramStateMessenger hold references to oneanother, importing
 // would also create circular dependencies
@@ -59,10 +59,12 @@ struct StateFlags {
 class ProgramState {
     public:
         // Delete copy constructor (Singletons should not be cloneable)
-        ProgramState(ProgramState& other) = delete;
+        // ProgramState(ProgramState& other) = delete;
+        ProgramState(ProgramState const&) = delete;
         
         // Delete assignment operator (Singletons should not be assignable)
-        void operator=(ProgramState const&) = delete;
+        // void operator=(ProgramState const&) = delete;
+        ProgramState& operator=(ProgramState const&) = delete;
         
         // Static method controls access to singleton instance (get instance if exists, else instantiate)
         static ProgramState& GetInstance();
@@ -82,7 +84,7 @@ class ProgramState {
     protected:
         // Business logic
         // 
-        // Heap allocated config object
+        // Stack allocated config object
         StateFlags fStateFlags;
         //
         // Messenger which exposes config control to ui
