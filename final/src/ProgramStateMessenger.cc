@@ -2,6 +2,9 @@
 #include "ProgramStateMessenger.hh"
 #include "ProgramState.hh"
 
+// G4 lib
+#include "G4UIcmdWithABool.hh"
+
 /*
  * Constructor
  * 
@@ -15,7 +18,16 @@
  * 
  * ^ no tbh exposing all flags individually likely best, will get messy else
  */
-ProgramStateMessenger::ProgramStateMessenger() : fProgramState(ProgramState::GetInstance()) {
+// ProgramStateMessenger::ProgramStateMessenger() : fProgramState(ProgramState::GetInstance()) {
+ProgramStateMessenger::ProgramStateMessenger() {
+// ProgramStateMessenger::ProgramStateMessenger() {
+    G4cout << "\n\n>>>>>>>>>>>>>>>>>>>>>>>I GOT CONSTRUCTED\n\n" << G4endl;
+    
+    // fProgramState = ProgramState::GetInstance();
+    
+    // fProgramState(ProgramState::GetInstance());
+    // fProgramState = ProgramState::GetInstance();
+    
     // fX = new G4UIcmdWithABool("/.../", this);
     // auto fX = new G4UIcmdWithABool("/prefix/myCmd", this);
     
@@ -44,17 +56,32 @@ ProgramStateMessenger::ProgramStateMessenger() : fProgramState(ProgramState::Get
     //     fStateCmds[i].command = cmd;
     // }
     
+//     // Iterate through the StateCommands vector
+//     for (int i = 0; i < fStateCmds.size(); i++) {
+//         // Create a new command, exposed via the cmdPath string
+//         auto* cmd = new G4UIcmdWithABool(fStateCmds[i].cmdPath, this);
+//         
+//         // Define usage string and default value
+//         cmd->SetGuidance(fStateCmds[i].cmdGuidance); // ..
+//         cmd->SetDefaultValue(true);
+//         
+//         // Create an entry in the map
+//         fCmdMap[cmd] = fStateCmds[i];
+//         // key: G4UIcommand*
+//         // val: BoolCommand
+//     }
+    
     // Iterate through the StateCommands vector
-    for (int i = 0; i < fStateCmds.size(); i++) {
+    for (int i = 0; i < StateCommands.size(); i++) {
         // Create a new command, exposed via the cmdPath string
-        auto* cmd = new G4UIcmdWithABool(fStateCmds[i].cmdPath, this);
+        auto* cmd = new G4UIcmdWithABool(StateCommands[i].cmdPath, this);
         
         // Define usage string and default value
-        cmd->SetGuidance(fStateCmds[i].cmdGuidance); // ..
+        cmd->SetGuidance(StateCommands[i].cmdGuidance); // ..
         cmd->SetDefaultValue(true);
         
-        // Create an entry in the map
-        fCmdMap[cmd] = fStateCmds[i];
+        // Create an entry in the map, linking the instantiated command to the command object
+        fCmdMap[cmd] = StateCommands[i];
         // key: G4UIcommand*
         // val: BoolCommand
     }
@@ -97,6 +124,10 @@ ProgramStateMessenger::~ProgramStateMessenger() {
 void ProgramStateMessenger::SetNewValue(G4UIcommand* cmd, G4String newValue) {
     // ...
     
+    if (!fProgramState) fProgramState = ProgramState::GetInstance();
+    
+    G4cout << "\n\n>>> SETTING COMMAND\n\n" << G4endl;
+    
     // if (cmd == fCmd1) {
     // if (cmd == fStateCmds.fBoundaryAbsorbCoords.command) {
     //     // fProgramState->stateFlags.fBoundaryAbsorbCoordsNtuple = false;
@@ -121,18 +152,29 @@ void ProgramStateMessenger::SetNewValue(G4UIcommand* cmd, G4String newValue) {
         // add name to state flags?
     // }
     
-    // ...
+    // Search for the command in the map (using cmd as key)
     auto found = fCmdMap.find(cmd);
+    // NOTE: find() returns [key, value] pair
     
-    // ...
+    // If the passed command is found in the map populated during class construction
     if (found != fCmdMap.end()) {
-        // ...
-        auto& flags = fProgramState.GetStateFlags();
+        // Get mutable reference to StateFlags object (as we need to update a bool)
+        // auto& stateFlags = fProgramState.GetStateFlags();
+        auto& stateFlags = fProgramState->GetStateFlags();
         
-        // ...
+        // Get a readonly reference to the BoolCommand object associated with this command
         auto const& definition = found->second;
         
-        // ...
-        flags.*(definition.member) = static_cast<G4UIcmdWithABool*>(cmd)->GetNewBoolValue(newValue);
+        // Since "cmd" was found in fCmdMap, we know its of type G4UIcmdWithABool
+        auto* casted = static_cast<G4UIcmdWithABool*>(cmd);
+        
+        // Convert the string ("true" | "false") to a boolean
+        G4bool value = casted->GetNewBoolValue(newValue);
+        
+        // Update StateFlags object member with the new bool value
+        stateFlags.*(definition.member) = value;
+        // NOTE: Takes flags, and accesses whichever member "member" points to,
+        // i.e., effectively doing flags.fDetectionNtuple
+        // NOTE: Essentially a compiler-checked version of dynamic property access
     }
 }

@@ -1,5 +1,6 @@
 // User class interfaces
 #include "AnalysisManager.hh"
+#include "ProgramState.hh"
 
 // G4 lib
 #include "G4AnalysisManager.hh"
@@ -10,7 +11,13 @@
  * Calls private method
  */
 AnalysisManager::AnalysisManager() {
-   InitialiseDataStructures(); 
+   InitialiseDataStructures();
+   
+   // .......
+   G4cout << "\n\n>>> INSTANTIATING PROGRAM STATE\n\n" << G4endl;
+   // auto& instance = ProgramState::GetInstance();
+   auto instance = ProgramState::GetInstance();
+   G4cout << "\n\n>>> INSTANTIATED PROGRAM STATE\n\n" << G4endl;
 }
 
 /*

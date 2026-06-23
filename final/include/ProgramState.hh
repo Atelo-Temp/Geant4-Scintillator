@@ -67,7 +67,8 @@ class ProgramState {
         ProgramState& operator=(ProgramState const&) = delete;
         
         // Static method controls access to singleton instance (get instance if exists, else instantiate)
-        static ProgramState& GetInstance();
+        // static ProgramState& GetInstance();
+        static ProgramState* GetInstance();
         
         // Business logic
         //
@@ -103,6 +104,9 @@ class ProgramState {
         // Pointer to current instance
         // inline static ProgramState* fInstance = nullptr;
         // NOTE: Inline keyword allows for nullptr assignment inside of class definition
+        
+        // static ProgramState* sInstance;
+        inline static ProgramState* sInstance = nullptr;
 };
 
 #endif

@@ -2,15 +2,16 @@
 #define MyProgramStateMessenger_HH
 
 // User classes
-#include "ProgramState.hh"
+#include "ProgramState.hh" // TODO:  Maybe extract StateFlags, BoolCommand, and StateCommands
 
 // C lib
 #include <unordered_map>
+#include <array>
 
 // G4 lib
 #include "G4UImessenger.hh"
 #include "G4UIcommand.hh"
-#include "G4UIcmdWithABool.hh"
+// #include "G4UIcmdWithABool.hh"
 // #include "G4UIcmdWithAnInteger.hh"
 
 // Forward declarations
@@ -56,425 +57,56 @@
 // };
 
 /*
- * ...
+ * ....
  */
 // struct BoolCommand {
-//     G4UIcmdWithABool* command;
+//     // Name of the command
+//     G4String name; // NOTE: Unused property currently, potentially remove
+//     
+//     // The command path exposed to the UI
 //     G4String cmdPath;
+//     
+//     // Guidance message for explaining endpoint usage
 //     G4String cmdGuidance;
-// };
-
-/*
- * ...
- */
-// struct StateCommands {
-//     //////////////
-//     // Event flags
-//     //////////////
 //     
-//     // Per-event detections
-//     BoolCommand fDetection {
-//         nullptr,
-//         "/output/",
-//         "Enable ... output."
-//     };
-//     // Per-event detections fraction
-//     BoolCommand fDetectionFraction {
-//         nullptr,
-//         "/output/",
-//         "Enable ... output."
-//     };
-//     // Per-event boundary absorptions fraction
-//     BoolCommand fBoundaryAbsorbFraction {
-//         nullptr,
-//         "/output/",
-//         "Enable ... output."
-//     };
-//     // Per-event bulk absorptions fraction
-//     BoolCommand fBulkAbsorbFraction {
-//         nullptr,
-//         "/output/",
-//         "Enable ... output."
-//     };
-//     
-//     ///////////////////////
-//     // Step detection flags
-//     ///////////////////////
-//     
-//     BoolCommand fDetectionCoords {
-//         nullptr,
-//         "/output/",
-//         "Enable ... output."
-//     };
-//     BoolCommand fDetectionDistance {
-//         nullptr,
-//         "/output/",
-//         "Enable ... output."
-//     };
-//     BoolCommand fDetectionTimeOfFlight {
-//         nullptr,
-//         "/output/",
-//         "Enable ... output."
-//     };
-//     BoolCommand fDetectionReflections {
-//         nullptr,
-//         "/output/",
-//         "Enable ... output."
-//     };
-//     
-//     /////////////////////////////////
-//     // Step boundary absorption flags
-//     /////////////////////////////////
-//     
-//     // BoolCommand fBoundaryAbsorb { // NOTE: Not writing per-event boundary absorption counts
-//     // nullptr,
-//     // "/output/...",
-//     // "Enable ... output."
-//     // };
-//     BoolCommand fBoundaryAbsorbCoords {
-//         nullptr,
-//         "/output/",
-//         "Enable ... output."
-//     };
-//     // BoolCommand fBoundaryAbsorbDistance { // NOTE: Not yet implemented
-//     // nullptr,
-//     // "/output/...",
-//     // "Enable ... output."
-//     // };
-//     // BoolCommand fBoundaryAbsorbTimeOfFlight { // NOTE: Not yet implemented
-//     // nullptr,
-//     // "/output/...",
-//     // "Enable ... output."
-//     // };
-//     // BoolCommand fBoundaryAbsorbReflections { // NOTE: Not yet implemented
-//     // nullptr, 
-//     // "/output/...",
-//     // "Enable ... output."
-//     // };
-//     
-//     /////////////////////////////
-//     // Step bulk absorption flags
-//     /////////////////////////////
-//     
-//     // BoolCommand fBulkAbsorb { // NOTE: Not writing per-event bulk absorption counts
-//     // nullptr,
-//     // "/output/...",
-//     // "Enable ... output."
-//     // };
-//     // BoolCommand fBulkAbsorbCoords { // NOTE: Not yet implemented
-//     // nullptr,
-//     // "/output/...",
-//     // "Enable ... output."
-//     // };
-//     BoolCommand fBulkAbsorbDistance {
-//         nullptr,
-//         "/output/",
-//         "Enable ... output."
-//     };
-//     // BoolCommand fBulkAbsorbTimeOfFlight { // NOTE: Not yet implemented
-//     // nullptr,
-//     // "/output/...",
-//     // "Enable ... output."
-//     // };
-//     BoolCommand fBulkAbsorbReflections {
-//         nullptr,
-//         "/output/",
-//         "Enable ... output."
-//     };
-// };
-
-// /*
-//  * ....
-//  */
-// struct BoolCommand {
-//     G4String name;
-//     G4UIcmdWithABool* command;
-//     G4String cmdPath;
-//     G4String cmdGuidance;
-// };
-// 
-// /*
-//  * ...
-//  */
-// std::vector<BoolCommand> StateCommands = {
-//     //////////////
-//     // Event flags
-//     //////////////
-//     
-//     // Per-event detections
-//     {
-//         "fDetection",
-//         nullptr,
-//         "/output/",
-//         "Enable ... output."
-//     },
-//     // Per-event detections fraction
-//     {
-//         "fDetectionFraction",
-//         nullptr,
-//         "/output/",
-//         "Enable ... output."
-//     },
-//     // Per-event boundary absorptions fraction
-//     {
-//         "fBoundaryAbsorbFraction",
-//         nullptr,
-//         "/output/",
-//         "Enable ... output."
-//     },
-//     // Per-event bulk absorptions fraction
-//     {
-//         "fBulkAbsorbFraction",
-//         nullptr,
-//         "/output/",
-//         "Enable ... output."
-//     },
-//     
-//     ///////////////////////
-//     // Step detection flags
-//     ///////////////////////
-//     
-//     {
-//         "fDetectionCoords",
-//         nullptr,
-//         "/output/",
-//         "Enable ... output."
-//     },
-//     {
-//         "fDetectionDistance",
-//         nullptr,
-//         "/output/",
-//         "Enable ... output."
-//     },
-//     {
-//         "fDetectionTimeOfFlight",
-//         nullptr,
-//         "/output/",
-//         "Enable ... output."
-//     },
-//     {
-//         "fDetectionReflections",
-//         nullptr,
-//         "/output/",
-//         "Enable ... output."
-//     },
-//     
-//     /////////////////////////////////
-//     // Step boundary absorption flags
-//     /////////////////////////////////
-//     
-//     // { // NOTE: Not writing per-event boundary absorption counts
-//     // "fBoundaryAbsorb",
-//     // nullptr,
-//     // "/output/...",
-//     // "Enable ... output."
-//     // },
-//     {
-//         "fBoundaryAbsorbCoords",
-//         nullptr,
-//         "/output/",
-//         "Enable ... output."
-//     },
-//     // { // NOTE: Not yet implemented
-//     // "fBoundaryAbsorbDistance",
-//     // nullptr,
-//     // "/output/...",
-//     // "Enable ... output."
-//     // },
-//     // { // NOTE: Not yet implemented
-//     // "fBoundaryAbsorbTimeOfFlight",
-//     // nullptr,
-//     // "/output/...",
-//     // "Enable ... output."
-//     // },
-//     // { // NOTE: Not yet implemented
-//     // "fBoundaryAbsorbReflections",
-//     // nullptr, 
-//     // "/output/...",
-//     // "Enable ... output."
-//     // },
-//     
-//     /////////////////////////////
-//     // Step bulk absorption flags
-//     /////////////////////////////
-//     
-//     // { // NOTE: Not writing per-event bulk absorption counts
-//     // "fBulkAbsorb",
-//     // nullptr,
-//     // "/output/...",
-//     // "Enable ... output."
-//     // },
-//     // { // NOTE: Not yet implemented
-//     // "fBulkAbsorbCoords",
-//     // nullptr,
-//     // "/output/...",
-//     // "Enable ... output."
-//     // },
-//     {
-//         "fBulkAbsorbDistance",
-//         nullptr,
-//         "/output/",
-//         "Enable ... output."
-//     },
-//     // { // NOTE: Not yet implemented
-//     // "fBulkAbsorbTimeOfFlight",
-//     // nullptr,
-//     // "/output/...",
-//     // "Enable ... output."
-//     // },
-//     {
-//         "fBulkAbsorbReflections",
-//         nullptr,
-//         "/output/",
-//         "Enable ... output."
-//     }
-// };
-
-
-// /*
-//  * ....
-//  */
-// struct BoolCommand {
-//     G4String name;
-//     G4String cmdPath;
-//     G4String cmdGuidance;
-// };
-// 
-// /*
-//  * ...
-//  */
-// std::vector<BoolCommand> StateCommands = {
-// // constexpr BoolCommand StateCommands[] = {
-//     //////////////
-//     // Event flags
-//     //////////////
-//     
-//     // Per-event detections
-//     {
-//         "fDetection",
-//         "/output/...",
-//         "Enable ... output."
-//     },
-//     // Per-event detections fraction
-//     {
-//         "fDetectionFraction",
-//         "/output/...",
-//         "Enable ... output."
-//     },
-//     // Per-event boundary absorptions fraction
-//     {
-//         "fBoundaryAbsorbFraction",
-//         "/output/...",
-//         "Enable ... output."
-//     },
-//     // Per-event bulk absorptions fraction
-//     {
-//         "fBulkAbsorbFraction",
-//         "/output/...",
-//         "Enable ... output."
-//     },
-//     
-//     ///////////////////////
-//     // Step detection flags
-//     ///////////////////////
-//     
-//     {
-//         "fDetectionCoords",
-//         "/output/...",
-//         "Enable ... output."
-//     },
-//     {
-//         "fDetectionDistance",
-//         "/output/...",
-//         "Enable ... output."
-//     },
-//     {
-//         "fDetectionTimeOfFlight",
-//         "/output/...",
-//         "Enable ... output."
-//     },
-//     {
-//         "fDetectionReflections",
-//         "/output/...",
-//         "Enable ... output."
-//     },
-//     
-//     /////////////////////////////////
-//     // Step boundary absorption flags
-//     /////////////////////////////////
-//     
-//     // { // NOTE: Not writing per-event boundary absorption counts
-//     // "fBoundaryAbsorb",
-//     // "/output/...",
-//     // "Enable ... output."
-//     // },
-//     {
-//         "fBoundaryAbsorbCoords",
-//         "/output/...",
-//         "Enable ... output."
-//     },
-//     // { // NOTE: Not yet implemented
-//     // "fBoundaryAbsorbDistance",
-//     // "/output/...",
-//     // "Enable ... output."
-//     // },
-//     // { // NOTE: Not yet implemented
-//     // "fBoundaryAbsorbTimeOfFlight",
-//     // "/output/...",
-//     // "Enable ... output."
-//     // },
-//     // { // NOTE: Not yet implemented
-//     // "fBoundaryAbsorbReflections",
-//     // "/output/...",
-//     // "Enable ... output."
-//     // },
-//     
-//     /////////////////////////////
-//     // Step bulk absorption flags
-//     /////////////////////////////
-//     
-//     // { // NOTE: Not writing per-event bulk absorption counts
-//     // "fBulkAbsorb",
-//     // "/output/...",
-//     // "Enable ... output."
-//     // },
-//     // { // NOTE: Not yet implemented
-//     // "fBulkAbsorbCoords",
-//     // "/output/...",
-//     // "Enable ... output."
-//     // },
-//     {
-//         "fBulkAbsorbDistance",
-//         "/output/...",
-//         "Enable ... output."
-//     },
-//     // { // NOTE: Not yet implemented
-//     // "fBulkAbsorbTimeOfFlight",
-//     // "/output/...",
-//     // "Enable ... output."
-//     // },
-//     {
-//         "fBulkAbsorbReflections",
-//         "/output/...",
-//         "Enable ... output."
-//     }
+//     // Pointer to a bool member of StateFlags
+//     bool StateFlags::* member;
+//     // NOTE: pointer-to-member
 // };
 
 /*
  * ....
  */
 struct BoolCommand {
-    G4String name;
-    G4String cmdPath;
-    G4String cmdGuidance;
+    // Name of the command
+    char const* name; // NOTE: Unused property currently, potentially remove
+    
+    // The command path exposed to the UI
+    char const* cmdPath;
+    
+    // Guidance message for explaining endpoint usage
+    char const* cmdGuidance;
+    
+    // Pointer to a bool member of StateFlags
     bool StateFlags::* member;
+    // NOTE: pointer-to-member
+    // const?
+    
+    // constexpr BoolCommand() {};
 };
 
 /*
- * ...
+ * Exposed API for controlling simulation output
+ * 
+ * Compile-time lookup table
+ * 
+ * NOTE: Each struct essentially states: "this command corresponds to this member of StateFlags"
  */
-std::vector<BoolCommand> StateCommands = {
+// std::vector<BoolCommand> const StateCommands = {
+// inline constexpr std::array<BoolCommand, 11> StateCommands = {
 // constexpr BoolCommand StateCommands[] = {
+// constexpr std::array<BoolCommand, 11> StateCommands = {{
+inline constexpr std::array<BoolCommand, 11> StateCommands = {{
     //////////////
     // Event flags
     //////////////
@@ -482,29 +114,33 @@ std::vector<BoolCommand> StateCommands = {
     // Per-event detections
     {
         "fDetection",
-        "/output/...",
-        "Enable ... output.",
-        &StateFlags::fDetectionNtuple
+        "/output/event/detection",
+        "Enable per-event detected photons output.",
+        &StateFlags::fDetectionNtuple // NOTE: Create the pointer-to-member
+        // NOTE: Pointer to the fDetectionNtuple field inside StateFlags, havent got an actual object yet,
+        // so it cant be the address of a particular bool - its just describing which member of the struct
+        // NOTE: This pointer does not contain a memory address, since any object of type StateFlags could
+        // be used for assignment, it only contains some compiler representation of "member #1 of StateFlags"
     },
     // Per-event detections fraction
     {
         "fDetectionFraction",
-        "/output/...",
-        "Enable ... output.",
+        "/output/event/detectionFraction",
+        "Enable per-event photons detected fraction output.",
         &StateFlags::fDetectionFractionNtuple
     },
     // Per-event boundary absorptions fraction
     {
         "fBoundaryAbsorbFraction",
-        "/output/...",
-        "Enable ... output.",
+        "/output/event/boundaryAbsorbFraction",
+        "Enable per-event photons absorbed at boundary fraction output.",
         &StateFlags::fBoundaryAbsorbFractionNtuple
     },
     // Per-event bulk absorptions fraction
     {
         "fBulkAbsorbFraction",
-        "/output/...",
-        "Enable ... output.",
+        "/output/event/bulkAbsorbFraction",
+        "Enable per-event photons bulk absorbed fraction output.",
         &StateFlags::fBulkAbsorbFractionNtuple
     },
     
@@ -514,26 +150,26 @@ std::vector<BoolCommand> StateCommands = {
     
     {
         "fDetectionCoords",
-        "/output/...",
-        "Enable ... output.",
+        "/output/step/detectionCoords",
+        "Enable detection coordinates output.",
         &StateFlags::fDetectionCoordsNtuple
     },
     {
         "fDetectionDistance",
-        "/output/...",
-        "Enable ... output.",
+        "/output/step/detectionDistance",
+        "Enable distance travelled by photon before detection output.",
         &StateFlags::fDetectionDistanceNtuple
     },
     {
         "fDetectionTimeOfFlight",
-        "/output/...",
-        "Enable ... output.",
+        "/output/step/detectionTimeOfFlight",
+        "Enable time duration of travel by photon before detection output.",
         &StateFlags::fDetectionTimeOfFlightNtuple
     },
     {
         "fDetectionReflections",
-        "/output/...",
-        "Enable ... output.",
+        "/output/step/detectionReflections",
+        "Enable number of reflections before detection output.",
         &StateFlags::fDetectionReflectionsNtuple
     },
     
@@ -543,31 +179,31 @@ std::vector<BoolCommand> StateCommands = {
     
     // { // NOTE: Not writing per-event boundary absorption counts
     // "fBoundaryAbsorb",
-    // "/output/...",
+    // "/output/step/...",
     // "Enable ... output.",
         // &StateFlags::fBoundaryAbsorb
     // },
     {
         "fBoundaryAbsorbCoords",
-        "/output/...",
-        "Enable ... output.",
+        "/output/step/boundaryAbsorbCoords",
+        "Enable boundary absorption coordinates output.",
         &StateFlags::fBoundaryAbsorbCoordsNtuple
     },
     // { // NOTE: Not yet implemented
     // "fBoundaryAbsorbDistance",
-    // "/output/...",
+    // "/output/step/...",
     // "Enable ... output.",
         // &StateFlags::fBoundaryAbsorbDistanceNtuple
     // },
     // { // NOTE: Not yet implemented
     // "fBoundaryAbsorbTimeOfFlight",
-    // "/output/...",
+    // "/output/step/...",
     // "Enable ... output.",
         // &StateFlags::fBoundaryAbsorbTimeOfFlightNtuple
     // },
     // { // NOTE: Not yet implemented
     // "fBoundaryAbsorbReflections",
-    // "/output/...",
+    // "/output/step/...",
     // "Enable ... output.",
         // &StateFlags::fBoundaryAbsorbReflectionsNtuple
     // },
@@ -578,35 +214,35 @@ std::vector<BoolCommand> StateCommands = {
     
     // { // NOTE: Not writing per-event bulk absorption counts
     // "fBulkAbsorb",
-    // "/output/...",
+    // "/output/step/...",
     // "Enable ... output.",
         // &StateFlags::fBulkAbsorbNtuple
     // },
     // { // NOTE: Not yet implemented
     // "fBulkAbsorbCoords",
-    // "/output/...",
+    // "/output/step/...",
     // "Enable ... output.",
         // &StateFlags::fBulkAbsorbCoordsNtuple
     // },
     {
         "fBulkAbsorbDistance",
-        "/output/...",
-        "Enable ... output.",
+        "/output/step/bulkAbsorbDistance",
+        "Enable distance travelled by photon before bulk absorption output.",
         &StateFlags::fBulkAbsorbDistanceNtuple
     },
     // { // NOTE: Not yet implemented
     // "fBulkAbsorbTimeOfFlight",
-    // "/output/...",
+    // "/output/step/...",
     // "Enable ... output.",
         // &StateFlags::fBulkAbsorbTimeOfFlightNtuple
     // },
     {
         "fBulkAbsorbReflections",
-        "/output/...",
-        "Enable ... output.",
+        "/output/step/bulkAbsorbReflections",
+        "Enable number of reflections before bulk absorption output.",
         &StateFlags::fBulkAbsorbReflectionsNtuple
     }
-};
+}};
 
 /*
  * ...
@@ -631,11 +267,16 @@ class ProgramStateMessenger : public G4UImessenger {
     
     private:
         // Maintain reference to program state singleton
-        ProgramState& fProgramState;
+        // ProgramState& fProgramState;
+        ProgramState* fProgramState;
         
         // Commands (cmd pointer, cmd path, guidance msg)
         // StateCommands fStateCmds;
-        std::vector<BoolCommand> fStateCmds;
+        // std::vector<BoolCommand> fStateCmds;
+        // constexpr BoolCommand[] fStateCmds = StateCommands;
+        // BoolCommand fStateCmds[11] = StateCommands;
+        // auto fStateCmds = StateCommands;
+        // std::array<BoolCommand, 11> fStateCommands = StateCommands;
         
         // ...
         // std::unordered_map<G4UIcommand*, G4String> cmdMap;

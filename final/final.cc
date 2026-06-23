@@ -2,6 +2,7 @@
 #include "DetectorConstruction.hh"
 #include "PhysicsList.hh"
 #include "ActionInitialization.hh"
+#include "ProgramState.hh"
 // #include "Timer.hh"
 
 // G4 lib
@@ -26,6 +27,9 @@
  * NOTE: examples/advanced/CaTS/CaTS.cc has some good arg handling
  */
 int main(int argc, char** argv) {
+    // Force initialisation here on the master thread
+    ProgramState::GetInstance();
+    
     // Detect interactive mode (if no arguments) and define UI session
     G4UIExecutive* ui = nullptr;
 
