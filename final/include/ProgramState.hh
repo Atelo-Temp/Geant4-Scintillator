@@ -88,7 +88,10 @@ class ProgramState {
         StateFlags fStateFlags;
         //
         // Messenger which exposes config control to ui
-        ProgramStateMessenger* fProgramStateMessenger = nullptr;
+        ProgramStateMessenger* fProgramStateMessenger = nullptr; // messenger instantiated and attached during construction
+        // NOTE: Since ProgramStateMessenger needs to be instantiated, it makes sense to do so
+        // in ProgramState constructor, since the two are linked, then have ProgramState control
+        // ProgramStateMessenger's lifetime
     
     private:
         // Constructor, private to prevent direct construction via "new" operator, only self callable
