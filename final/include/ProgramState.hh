@@ -1,6 +1,8 @@
 #ifndef MyProgramState_HH
 #define MyProgramState_HH
 
+// #include <string> // NOTE: For debugging
+
 // Forward declarations
 class ProgramStateMessenger;
 // NOTE: ProgramState class only holds a pointer to a ProgramStateMessenger instance on the data segment,
@@ -67,8 +69,11 @@ class ProgramState {
         ProgramState& operator=(ProgramState const&) = delete;
         
         // Static method controls access to singleton instance (get instance if exists, else instantiate)
-        // static ProgramState& GetInstance();
-        static ProgramState* GetInstance();
+        static ProgramState& GetInstance();
+        // static ProgramState* GetInstance();
+        
+        // NOTE: For debugging
+        // static ProgramState& GetInstance(std::string const& value);
         
         // Business logic
         //
@@ -82,6 +87,11 @@ class ProgramState {
         // NOTE: Const modifier after method name tells compiler that calling this method will not alter 
         // the state of the ProgramState instance itself
         
+        // NOTE: For debugging
+        // std::string value() const {
+        //     return value_;
+        // }
+        
     protected:
         // Business logic
         // 
@@ -93,10 +103,16 @@ class ProgramState {
         // NOTE: Since ProgramStateMessenger needs to be instantiated, it makes sense to do so
         // in ProgramState constructor, since the two are linked, then have ProgramState control
         // ProgramStateMessenger's lifetime
+        
+        // NOTE: For debugging
+        // std::string value_;
     
     private:
         // Constructor, private to prevent direct construction via "new" operator, only self callable
         ProgramState();
+        
+        // NOTE: For debugging
+        // ProgramState(std::string const value);
         
         // Destructor, private to prevent direct destruction call via "delete" operator
         ~ProgramState();
@@ -104,9 +120,6 @@ class ProgramState {
         // Pointer to current instance
         // inline static ProgramState* fInstance = nullptr;
         // NOTE: Inline keyword allows for nullptr assignment inside of class definition
-        
-        // static ProgramState* sInstance;
-        inline static ProgramState* sInstance = nullptr;
 };
 
 #endif

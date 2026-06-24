@@ -2,22 +2,13 @@
 #include "ProgramState.hh"
 #include "ProgramStateMessenger.hh"
 
-#include <G4AutoLock.hh>
-#include <G4Threading.hh>
-
-namespace {
-    G4Mutex paramMutex = G4MUTEX_INITIALIZER;
-}
-
 /*
  * Private constructor
  * 
  * Instantiates the messenger on the heap and caches the pointer
  */
 ProgramState::ProgramState() {
-    G4cout << "\n>>> CONSTRUCTING MESSENGER\n\n" << G4endl;
-    fProgramStateMessenger = new ProgramStateMessenger(); // TODO: If the messenger isnt instantiated until GetInstance() is called, i dont think messenger is going to work ....
-    G4cout << "\n>>> CONSTRUCTED MESSENGER\n\n" << G4endl;                                                    // ^^^^ But if run action calls GetInstance() in its constructor, as it was always going to, i think its fine ??
+    fProgramStateMessenger = new ProgramStateMessenger(*this);
 }
 
 /*
@@ -54,31 +45,14 @@ ProgramState::~ProgramState() {
  * 
  * NOTE: Allocates the instance in the data segment (not the stack or heap)
  */
-// ProgramState& ProgramState::GetInstance() {
-ProgramState* ProgramState::GetInstance() {
-    G4cout << "\n>>> GETTING INSTANCE\n\n" << G4endl;
+ProgramState& ProgramState::GetInstance() {
     // If the instance hasnt been instantiated, do so
-    // static ProgramState fInstance;
+    static ProgramState fInstance;
     // NOTE: This line is only executed ONCE by the very first thread that calls it
     // NOTE: C++ guarantees this initialisation is completely thread-safe
     
     // Every subsequent call skips the creation and just returns the reference
-    // return fInstance;
-    
-    if (sInstance == nullptr) {
-        G4AutoLock lock(&paramMutex);
-        
-        if (sInstance == nullptr) {
-            static ProgramState fInstance;
-            sInstance = &fInstance;
-        }
-        
-        lock.unlock();
-    }
-    
-    G4cout << "\n>>> GOT INSTANCE\n\n" << G4endl;
-
-    return sInstance;
+    return fInstance;
 }
 
 /*
@@ -101,3 +75,24 @@ StateFlags& ProgramState::GetStateFlags() {
 const StateFlags& ProgramState::ReadStateFlags() const {
     return fStateFlags;
 }
+
+/*
+ * NOTE: For debugging whether one instance is shared amongst all analysis classes/threads
+ */
+// ProgramState::ProgramState(std::string const value) : value_(value) {
+//     G4cout << "\n>>> CONSTRUCTING MESSENGER\n\n" << G4endl;
+//     fProgramStateMessenger = new ProgramStateMessenger(*this);
+//     G4cout << "\n>>> CONSTRUCTED MESSENGER\n\n" << G4endl;
+// }
+
+/*
+ * NOTE: For debugging whether one instance is shared amongst all analysis classes/threads
+ */
+// ProgramState& ProgramState::GetInstance(std::string const& value) {
+//     G4cout << "\n>>> GETTING INSTANCE\n\n" << G4endl;
+//  
+//     static ProgramState fInstance(value);
+//     return fInstance;
+//     
+//     G4cout << "\n>>> GOT INSTANCE\n\n" << G4endl;
+// }

@@ -2,8 +2,8 @@
 #include "DetectorConstruction.hh"
 #include "PhysicsList.hh"
 #include "ActionInitialization.hh"
-#include "ProgramState.hh"
 // #include "Timer.hh"
+// #include "ProgramState.hh"
 
 // G4 lib
 // #include "G4MTRunManager.hh"
@@ -28,7 +28,7 @@
  */
 int main(int argc, char** argv) {
     // Force initialisation here on the master thread
-    ProgramState::GetInstance();
+    // ProgramState::GetInstance(); // NOTE: For debugging
     
     // Detect interactive mode (if no arguments) and define UI session
     G4UIExecutive* ui = nullptr;

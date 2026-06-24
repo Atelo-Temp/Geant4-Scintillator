@@ -1,5 +1,6 @@
 // User classes
 #include "StepAnalysis.hh"
+#include "ProgramState.hh"
 
 // G4 lib
 #include "G4AnalysisManager.hh"
@@ -12,6 +13,11 @@
 StepAnalysis::StepAnalysis() {
     // Cache pointer to analysis manager singleton
     fAnalysisManager = G4AnalysisManager::Instance();
+    
+    // auto& instance = ProgramState::GetInstance("CCC");
+    // G4cout << "\n\n>>>>> STEP ANALYSIS:: " << instance.value() << "\n\n" << G4endl;
+    
+    auto& instance = ProgramState::GetInstance();
 }
 
 /*

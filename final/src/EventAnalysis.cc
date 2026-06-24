@@ -1,5 +1,6 @@
 // User classes
 #include "EventAnalysis.hh"
+#include "ProgramState.hh"
 
 // G4 lib
 #include "G4AnalysisManager.hh"
@@ -11,6 +12,12 @@
 EventAnalysis::EventAnalysis() {    
     // Cache a pointer to the analysis manager instance
     fAnalysisManager = G4AnalysisManager::Instance();
+    
+    // ...
+    // auto& instance = ProgramState::GetInstance("BBB");
+    // G4cout << "\n\n>>>>> EVENT ANALYSIS:: " << instance.value() << "\n\n" << G4endl;
+    
+    auto& instance = ProgramState::GetInstance();
     
     // Increase allocation for reflection vector map
     fReflectionMap.resize(40960);

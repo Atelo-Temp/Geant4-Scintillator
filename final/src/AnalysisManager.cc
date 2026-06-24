@@ -14,10 +14,12 @@ AnalysisManager::AnalysisManager() {
    InitialiseDataStructures();
    
    // .......
-   G4cout << "\n\n>>> INSTANTIATING PROGRAM STATE\n\n" << G4endl;
+   // G4cout << "\n\n>>> INSTANTIATING PROGRAM STATE\n\n" << G4endl;
    // auto& instance = ProgramState::GetInstance();
-   auto instance = ProgramState::GetInstance();
-   G4cout << "\n\n>>> INSTANTIATED PROGRAM STATE\n\n" << G4endl;
+   // auto instance = ProgramState::GetInstance();
+   // auto& instance = ProgramState::GetInstance("AAA");
+   // G4cout << "\n\n>>>>> ANALYSIS MANAGER:: " << instance.value() << "\n\n" << G4endl;
+   // G4cout << "\n\n>>> INSTANTIATED PROGRAM STATE\n\n" << G4endl;
 }
 
 /*
@@ -30,6 +32,9 @@ AnalysisManager::AnalysisManager() {
 void AnalysisManager::InitialiseDataStructures() {
     // Get a pointer to the singleton analysis manager via the static method
     auto analysisManager = G4AnalysisManager::Instance();
+    
+    // ...
+    auto& instance = ProgramState::GetInstance();
     
     //////////////////////////
     // PHOTON DETECTION COORDS
