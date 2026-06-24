@@ -4,7 +4,7 @@
 // User classes
 #include "EventAction.hh"
 #include "EventAnalysis.hh"
-#include "StepAnalysis.hh"
+#include "SteppingAnalysis.hh"
 
 // G4 Lib
 #include "G4UserSteppingAction.hh"
@@ -61,7 +61,7 @@ class SteppingAction : public G4UserSteppingAction {
         EventAnalysis* fEventAnalysis = nullptr;
         
         // ...
-        StepAnalysis* fStepAnalysis = nullptr;
+        SteppingAnalysis* fSteppingAnalysis = nullptr;
 };
 
 #endif

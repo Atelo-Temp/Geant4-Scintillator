@@ -11,13 +11,13 @@
 /*
  * ...
  */
-class StepAnalysis {
+class SteppingAnalysis {
     public:
         // Constructor
-        StepAnalysis();
+        SteppingAnalysis();
         
         // Destructor
-        ~StepAnalysis() = default;
+        ~SteppingAnalysis() = default;
         
         // ...
         void HandleBulkAbsorb(G4Track* track, EventAnalysis* fEventAnalysis);

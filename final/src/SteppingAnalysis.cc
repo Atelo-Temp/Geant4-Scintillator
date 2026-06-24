@@ -1,5 +1,5 @@
 // User classes
-#include "StepAnalysis.hh"
+#include "SteppingAnalysis.hh"
 #include "ProgramState.hh"
 
 // G4 lib
@@ -10,7 +10,7 @@
  * 
  * ...
  */
-StepAnalysis::StepAnalysis() {
+SteppingAnalysis::SteppingAnalysis() {
     // Cache pointer to analysis manager singleton
     fAnalysisManager = G4AnalysisManager::Instance();
     
@@ -23,7 +23,7 @@ StepAnalysis::StepAnalysis() {
 /*
  * Track photons lost via bulk absorption in the crystal (and window/grease to a far lesser extent)
  */
-void StepAnalysis::HandleBulkAbsorb(G4Track* track, EventAnalysis* fEventAnalysis) {
+void SteppingAnalysis::HandleBulkAbsorb(G4Track* track, EventAnalysis* fEventAnalysis) {
     // ..
     // std::string volume = endPoint->GetTouchable()->GetVolume()->GetName();
     // G4cout << "BULK ABSORPTION IN MEDIUM: " << endPoint->GetTouchable()->GetVolume()->GetName() << G4endl; // "Scintillator"
@@ -47,7 +47,7 @@ void StepAnalysis::HandleBulkAbsorb(G4Track* track, EventAnalysis* fEventAnalysi
 /*
  * Handle optical photon being detected at a boundary (i.e., photocathode)
  */
-void StepAnalysis::HandleDetection(G4StepPoint* endPoint, G4Track* track, EventAnalysis* fEventAnalysis) {
+void SteppingAnalysis::HandleDetection(G4StepPoint* endPoint, G4Track* track, EventAnalysis* fEventAnalysis) {
     // TODO: May be worth double checking the boundary is the photocathode
     // ...although since its only one with efficiency vector, it will be
     
@@ -126,7 +126,7 @@ void StepAnalysis::HandleDetection(G4StepPoint* endPoint, G4Track* track, EventA
 /*
  * Handle optical photon being absorbed without detection at a boundary (i.e., reflector or photocathode)
  */
-void StepAnalysis::HandleBoundaryAbsorb(G4StepPoint* endPoint) {
+void SteppingAnalysis::HandleBoundaryAbsorb(G4StepPoint* endPoint) {
     // TODO: Can get absorption volume via same process as above,
     // counts absorptions in crystal vs reflector, vs photocathode
     

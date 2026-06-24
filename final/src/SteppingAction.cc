@@ -2,7 +2,7 @@
 #include "SteppingAction.hh"
 // #include "AnalysisManager.hh"
 // #include "DetectorConstruction.hh"
-#include "StepAnalysis.hh"
+#include "SteppingAnalysis.hh"
 
 // G4 Lib
 #include "G4OpBoundaryProcess.hh"
@@ -37,7 +37,7 @@ SteppingAction::SteppingAction(EventAction* eventAction) {
     fOpticalPhotonDefinition = G4OpticalPhoton::OpticalPhotonDefinition();
     
     // ...
-    fStepAnalysis = new StepAnalysis();
+    fSteppingAnalysis = new SteppingAnalysis();
 }
 // SteppingAction::SteppingAction(EventAction* eventAction) : fEventAction(eventAction) {}
 
@@ -94,7 +94,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         fEventAnalysis->CountBulkAbsorption();
         
         // Forward to the bulk absorption event handler
-        fStepAnalysis->HandleBulkAbsorb(track, fEventAnalysis);
+        fSteppingAnalysis->HandleBulkAbsorb(track, fEventAnalysis);
         
         // Save a step status request and comparison by returning early
         return;
@@ -132,7 +132,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         fEventAnalysis->CountDetectedPhoton();
         
         // Forward to the detection event handler
-        fStepAnalysis->HandleDetection(endPoint, track, fEventAnalysis);
+        fSteppingAnalysis->HandleDetection(endPoint, track, fEventAnalysis);
     } 
     // If an optical photon is absorbed without detection at a boundary (i.e., reflector or photocathode)
     else if (boundaryStatus == Absorption) {
@@ -140,7 +140,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         fEventAnalysis->CountAbsorbedPhoton();
         
         // // Forward to the boundary absorption event handler
-        fStepAnalysis->HandleBoundaryAbsorb(endPoint);
+        fSteppingAnalysis->HandleBoundaryAbsorb(endPoint);
     }
     // Handle all types of reflection
     else if (
