@@ -1,5 +1,5 @@
-#ifndef MyAnalysisManager_HH
-#define MyAnalysisManager_HH
+#ifndef MyRunAnalysis_HH
+#define MyRunAnalysis_HH
 
 // Forward declarations
 class G4GenericAnalysisManager;
@@ -13,13 +13,13 @@ class NtupleIDs;
  * G4AnalysisManager singleton can be accessed anywhere via static method, also the
  * G4AnalysisManager constructor cannot be changed
  */
-class AnalysisManager {
+class RunAnalysis {
     public:
         // Constructor
-        AnalysisManager();
+        RunAnalysis();
         
         // Destructor
-        ~AnalysisManager() = default;
+        ~RunAnalysis() = default;
         
     private:
         // Should only be called on construction of this class (not accessible outside class)

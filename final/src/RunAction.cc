@@ -1,6 +1,6 @@
 // User classes
 #include "RunAction.hh"
-#include "AnalysisManager.hh"
+#include "RunAnalysis.hh"
 #include "Timer.hh"
 
 // G4 lib
@@ -16,7 +16,7 @@
  */
 RunAction::RunAction() {
     // Instantiate the analysis handler and store a pointer to it in class property
-    fAnalysis = new AnalysisManager(); // NOTE: Shouldnt have auto here!
+    fAnalysis = new RunAnalysis(); // NOTE: Shouldnt have auto here!
     
     // Enable merging of Ntuples which are spread across the threads into one outfile
     auto analysisManager = G4AnalysisManager::Instance();
@@ -35,6 +35,11 @@ RunAction::~RunAction() {
  * Define the start of run event handler (Takes run object as a parameter)
  * NOTE: This method is invoked at the beginning of the BeamOn() method, but after
  * confirmation of the conditions of the G4 kernel
+ * 
+ * TODO: Extract marked code below to fRunAnalysis->CreateOutfile()
+ * 
+ * TODO: call fRunAnalysis->CreateDataStructures() here, instead of at construction
+ * ^ needs to be delayed to allow macro to set output flags
  */
 void RunAction::BeginOfRunAction(const G4Run* run) {
     // Inform the runManager to save random number seed (for reproducibility at later date)
@@ -66,6 +71,8 @@ void RunAction::BeginOfRunAction(const G4Run* run) {
     // Create and open the file with the supplied name
     analysisManager->OpenFile(fileName);
     
+    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    
     // This code wont execute on the master thread, only on worker threads
     // NOTE: if (isMaster) enclosed code would execute only on the master thread
     if (!isMaster) {
@@ -83,6 +90,8 @@ void RunAction::BeginOfRunAction(const G4Run* run) {
 
 /*
  * Define the end of run event handler (Also takes run object)
+ * 
+ * TODO: Extract marked code below to fRunAnalysis->WriteOutfile()
  */
 void RunAction::EndOfRunAction(const G4Run* run) {
     // TODO: Again this all seems suitable for a dedicated method in AnalysisManager \/\/\/
@@ -103,7 +112,7 @@ void RunAction::EndOfRunAction(const G4Run* run) {
     // Write to G4 stdout at end of run with id
     G4cout << "Finishing Run: " << runID << G4endl;
     
-    // TEST
+    // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     
     // This code wont execute on the master thread, only on worker threads
     if (!isMaster && (fTimer != nullptr)) {

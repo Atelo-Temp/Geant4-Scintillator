@@ -6,7 +6,7 @@
 #include "G4Run.hh" // run object
 
 // Forward declarations
-class AnalysisManager; // may be better to import
+class RunAnalysis;
 class Timer;
 
 /*
@@ -30,7 +30,7 @@ class RunAction : public G4UserRunAction {
 
     private:
         // Store a pointer to analysis manager, which executes code on construction
-        AnalysisManager* fAnalysis = nullptr;
+        RunAnalysis* fAnalysis = nullptr;
         
         // Run timer pointer
         Timer* fTimer = nullptr;

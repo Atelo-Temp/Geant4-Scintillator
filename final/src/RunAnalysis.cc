@@ -1,5 +1,5 @@
 // User class interfaces
-#include "AnalysisManager.hh"
+#include "RunAnalysis.hh"
 #include "ProgramState.hh"
 #include "AnalysisRegistry.hh"
 
@@ -30,7 +30,7 @@
  *         |
  *         └─ RunAnalysis
  */
-AnalysisManager::AnalysisManager() {
+RunAnalysis::RunAnalysis() {
    InitialiseDataStructures();
    
    // .......
@@ -70,7 +70,7 @@ AnalysisManager::AnalysisManager() {
  * 
  * TODO: If grouping, will also need to store column IDs ...
  */
-void AnalysisManager::InitialiseDataStructures() {
+void RunAnalysis::InitialiseDataStructures() {
     // Get a pointer to the singleton analysis manager via the static method
     G4GenericAnalysisManager* iAnalysisManager = G4AnalysisManager::Instance();
     
@@ -104,15 +104,15 @@ void AnalysisManager::InitialiseDataStructures() {
 }
 
 // TODO: Extract file handling logic from RunAction
-// void AnalysisManager::CreateFile() {} // creates root outfile and opens it
-// void AnalysisManager::WriteAndClose() {} // writes stored data to outfile and closes it
+// void RunAnalysis::CreateFile() {} // creates root outfile and opens it
+// void RunAnalysis::WriteAndClose() {} // writes stored data to outfile and closes it
 
 /*
  * ...
  * 
  * TODO: Merge these into one ntuple
  */
-void AnalysisManager::EventDataStructures(G4GenericAnalysisManager* analysisManager, NtupleIDs& ntupleIDs) {
+void RunAnalysis::EventDataStructures(G4GenericAnalysisManager* analysisManager, NtupleIDs& ntupleIDs) {
     // ...
     
     ////////////////
@@ -182,7 +182,7 @@ void AnalysisManager::EventDataStructures(G4GenericAnalysisManager* analysisMana
 /*
  * ....
  */
-void AnalysisManager::StepDataDetectionStructures(G4GenericAnalysisManager* analysisManager, NtupleIDs& ntupleIDs) {
+void RunAnalysis::StepDataDetectionStructures(G4GenericAnalysisManager* analysisManager, NtupleIDs& ntupleIDs) {
     // ...
     
     //////////////////////////
@@ -296,7 +296,7 @@ void AnalysisManager::StepDataDetectionStructures(G4GenericAnalysisManager* anal
 /*
  * ...
  */
-void AnalysisManager::StepDataBoundaryAbsorbStructures(G4GenericAnalysisManager* analysisManager, NtupleIDs& ntupleIDs) {
+void RunAnalysis::StepDataBoundaryAbsorbStructures(G4GenericAnalysisManager* analysisManager, NtupleIDs& ntupleIDs) {
     // ...
     
     ////////////////////////////////////
@@ -342,7 +342,7 @@ void AnalysisManager::StepDataBoundaryAbsorbStructures(G4GenericAnalysisManager*
 /*
  * ...
  */
-void AnalysisManager::StepDataBulkAbsorbStructures(G4GenericAnalysisManager* analysisManager, NtupleIDs& ntupleIDs) {
+void RunAnalysis::StepDataBulkAbsorbStructures(G4GenericAnalysisManager* analysisManager, NtupleIDs& ntupleIDs) {
     // ...
     
     ////////////////////////////////
