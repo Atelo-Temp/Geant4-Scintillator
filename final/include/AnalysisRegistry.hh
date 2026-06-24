@@ -7,32 +7,81 @@
 /*
  * ...
  */
+// struct NtupleIDs {
+//     // Event flags
+//     G4int fDetectionNtuple = -1; // Per-event detections
+//     G4int fDetectionFractionNtuple = -1; // Per-event detections fraction
+//     G4int fBoundaryAbsorbFractionNtuple = -1; // Per-event boundary absorptions fraction
+//     G4int fBulkAbsorbFractionNtuple = -1; // Per-event bulk absorptions fraction
+//     
+//     // Step detection flags
+//     G4int fDetectionCoordsNtuple = -1;
+//     G4int fDetectionDistanceNtuple = -1;
+//     G4int fDetectionTimeOfFlightNtuple = -1;
+//     G4int fDetectionReflectionsNtuple = -1;
+//     
+//     // Step boundary absorption flags
+//     // G4int fBoundaryAbsorbNtuple = -1; // NOTE: Not writing per-event boundary absorption counts
+//     G4int fBoundaryAbsorbCoordsNtuple = -1;
+//     // G4int fBoundaryAbsorbDistanceNtuple = -1; // NOTE: Not yet implemented
+//     // G4int fBoundaryAbsorbTimeOfFlightNtuple = -1; // NOTE: Not yet implemented
+//     // G4int fBoundaryAbsorbReflectionsNtuple = -1;  // NOTE: Not yet implemented
+//     
+//     // Step bulk absorption flags
+//     // G4int fBulkAbsorbNtuple = -1; // NOTE: Not writing per-event bulk absorption counts
+//     // G4int fBulkAbsorbCoordsNtuple = -1; // NOTE: Not yet implemented
+//     G4int fBulkAbsorbDistanceNtuple = -1;
+//     // G4int fBulkAbsorbTimeOfFlightNtuple = -1; // NOTE: Not yet implemented
+//     G4int fBulkAbsorbReflectionsNtuple = -1;
+// };
+
+/*
+ * ...
+ */
+struct NtupleIndices {
+    G4int fNtupleID;
+    G4int fColumnID;
+};
+
+/*
+ * ...
+ */
+struct NtupleIndicesCoords {
+    G4int fNtupleID;
+    G4int fXColumnID;
+    G4int fYColumnID;
+    G4int fZColumnID;
+};
+
+/*
+ * ...
+ */
 struct NtupleIDs {
     // Event flags
-    G4int fDetectionNtuple = -1; // Per-event detections
-    G4int fDetectionFractionNtuple = -1; // Per-event detections fraction
-    G4int fBoundaryAbsorbFractionNtuple = -1; // Per-event boundary absorptions fraction
-    G4int fBulkAbsorbFractionNtuple = -1; // Per-event bulk absorptions fraction
+    NtupleIndices fDetectionNtuple = {-1, -1}; // Per-event detections
+    NtupleIndices fDetectionFractionNtuple = {-1, -1}; // Per-event detections fraction
+    NtupleIndices fBoundaryAbsorbFractionNtuple = {-1, -1}; // Per-event boundary absorptions fraction
+    NtupleIndices fBulkAbsorbFractionNtuple = {-1, -1}; // Per-event bulk absorptions fraction
     
     // Step detection flags
-    G4int fDetectionCoordsNtuple = -1;
-    G4int fDetectionDistanceNtuple = -1;
-    G4int fDetectionTimeOfFlightNtuple = -1;
-    G4int fDetectionReflectionsNtuple = -1;
+    NtupleIndicesCoords fDetectionCoordsNtuple = {-1, -1, -1, -1};
+    NtupleIndices fDetectionDistanceNtuple = {-1, -1};
+    NtupleIndices fDetectionTimeOfFlightNtuple = {-1, -1};
+    NtupleIndices fDetectionReflectionsNtuple = {-1, -1};
     
     // Step boundary absorption flags
-    // G4int fBoundaryAbsorbNtuple = -1; // NOTE: Not writing per-event boundary absorption counts
-    G4int fBoundaryAbsorbCoordsNtuple = -1;
-    // G4int fBoundaryAbsorbDistanceNtuple = -1; // NOTE: Not yet implemented
-    // G4int fBoundaryAbsorbTimeOfFlightNtuple = -1; // NOTE: Not yet implemented
-    // G4int fBoundaryAbsorbReflectionsNtuple = -1;  // NOTE: Not yet implemented
+    // NtupleIndices fBoundaryAbsorbNtuple = {-1, -1}; // NOTE: Not writing per-event boundary absorption counts
+    NtupleIndicesCoords fBoundaryAbsorbCoordsNtuple = {-1, -1, -1, -1};
+    // NtupleIndices fBoundaryAbsorbDistanceNtuple = {-1, -1}; // NOTE: Not yet implemented
+    // NtupleIndices fBoundaryAbsorbTimeOfFlightNtuple = {-1, -1}; // NOTE: Not yet implemented
+    // NtupleIndices fBoundaryAbsorbReflectionsNtuple = {-1, -1};  // NOTE: Not yet implemented
     
     // Step bulk absorption flags
-    // G4int fBulkAbsorbNtuple = -1; // NOTE: Not writing per-event bulk absorption counts
-    // G4int fBulkAbsorbCoordsNtuple = -1; // NOTE: Not yet implemented
-    G4int fBulkAbsorbDistanceNtuple = -1;
-    // G4int fBulkAbsorbTimeOfFlightNtuple = -1; // NOTE: Not yet implemented
-    G4int fBulkAbsorbReflectionsNtuple = -1;
+    // NtupleIndices fBulkAbsorbNtuple = {-1, -1}; // NOTE: Not writing per-event bulk absorption counts
+    // NtupleIndicesCoords fBulkAbsorbCoordsNtuple = {-1, -1, -1, -1}; // NOTE: Not yet implemented
+    NtupleIndices fBulkAbsorbDistanceNtuple = {-1, -1};
+    // NtupleIndices fBulkAbsorbTimeOfFlightNtuple = {-1, -1}; // NOTE: Not yet implemented
+    NtupleIndices fBulkAbsorbReflectionsNtuple = {-1, -1};
 };
 
 /*
