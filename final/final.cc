@@ -51,7 +51,7 @@ int main(int argc, char** argv) {
     // NOTE: ^ UNCOMMENT ME TO RANDOMISE SIMULATION RUNS
 
     // Construct the default run manager (NOTE: Factory will auto select MT or Serial based on G4 build)
-    auto runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::Default);
+    auto* runManager = G4RunManagerFactory::CreateRunManager(G4RunManagerType::Default);
     // NOTE: Use auto when initialising classes to avoid duplicating type name
 
     // Identify multi-threaded environment or not
@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
     runManager->SetUserInitialization(new ActionInitialization());
  
     // Initialise visualisation with the default graphics system
-    auto visManager = new G4VisExecutive(argc, argv);
+    auto* visManager = new G4VisExecutive(argc, argv);
     // Constructors can also take optional arguments:
     // - a graphics system of choice, eg. "OGL"
     // - and a verbosity argument - see /vis/verbose guidance.
@@ -94,18 +94,18 @@ int main(int argc, char** argv) {
     // Process supplied macro file, or start UI session (if pointer exists || null)
     if (!ui) {
         // Run in batch mode (execute the supplied macro file)
-        G4String command = "/control/execute ";
+        G4String const command = "/control/execute ";
 
         // Get the filename from the second command line argument (i.e. ./myProgram myMacro.mac)
-        G4String fileName = argv[1];
+        G4String const fileName = argv[1];
 
         // Execute the macro file
         UImanager->ApplyCommand(command + fileName);
     }
     else if (ui && (argc == 3) && (G4String(argv[2]) == "-i")) {
         // ...
-        G4String command = "/control/execute ";
-        G4String fileName = argv[1];
+        G4String const command = "/control/execute ";
+        G4String const fileName = argv[1];
         UImanager->ApplyCommand(command + fileName);
         
         // Start UI mode (interactive session)
