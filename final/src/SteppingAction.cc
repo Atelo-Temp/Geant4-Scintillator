@@ -38,6 +38,8 @@ SteppingAction::SteppingAction(EventAction* eventAction) {
     
     // ...
     fSteppingAnalysis = new SteppingAnalysis();
+    
+    G4cout << "\n\n>>>>> STEPPING ACTION INSTANTIATED\n\n" << G4endl;
 }
 // SteppingAction::SteppingAction(EventAction* eventAction) : fEventAction(eventAction) {}
 

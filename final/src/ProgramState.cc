@@ -9,6 +9,8 @@
  */
 ProgramState::ProgramState() {
     fProgramStateMessenger = new ProgramStateMessenger(*this);
+    
+    G4cout << "\n\n>>>>> PROGRAM STATE INSTANTIATED\n\n" << G4endl;
 }
 
 /*

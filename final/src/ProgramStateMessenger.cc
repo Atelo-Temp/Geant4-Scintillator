@@ -25,7 +25,7 @@
 // ProgramStateMessenger::ProgramStateMessenger(ProgramState& programStateInstance) {
 ProgramStateMessenger::ProgramStateMessenger(ProgramState& programStateInstance) : fProgramState(programStateInstance) {
     // ...
-    G4cout << "\n\n>>>>>>>>>>>>>>>>>>>>>>> I GOT CONSTRUCTED\n\n" << G4endl;
+    // G4cout << "\n\n>>>>>>>>>>>>>>>>>>>>>>> I GOT CONSTRUCTED\n\n" << G4endl;
     
     // fProgramState = ProgramState::GetInstance();
     // fProgramState(ProgramState::GetInstance());
@@ -47,6 +47,8 @@ ProgramStateMessenger::ProgramStateMessenger(ProgramState& programStateInstance)
         // key: G4UIcommand*
         // val: BoolCommand
     }
+    
+    G4cout << "\n\n>>>>> PROGRAM STATE MESSENGER INSTANTIATED\n\n" << G4endl;
 }
 
 /*

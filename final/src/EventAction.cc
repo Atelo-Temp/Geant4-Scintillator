@@ -22,6 +22,8 @@ EventAction::EventAction(RunAction* runAction) {
     
     // Instantiate event analysis manager and cache pointer
     fEventAnalysis = new EventAnalysis();
+    
+    G4cout << "\n\n>>>>> EVENT ACTION INSTANTIATED\n\n" << G4endl;
 }
 // EventAction::EventAction(RunAction* runAction) : fRunAction(runAction) {}
 
