@@ -43,17 +43,47 @@ void ActionInitialization::BuildForMaster() const {
  * Should include at least one mandatory user action class (G4VUserPrimaryGeneratorAction).
  * This mandatory class creates an instance of a primary particle generator.
  * User action classes are used during the run, and defined in this class.
+ * 
+ * 
+ * NOTE: Instantiation Order:            (TODO: AnalysisRegistry (before run analysis? only if DataStructures created in RunAnalysis constructor - not if in begin of run action))
+ * 
+ * 
+ * RunAnalysis (as it is instantiated in RunAction constructor, before RunAction finishes construction)
+ *      ↓
+ * RunAction
+ *      ↓
+ * ProgramStateMessenger (as it is being instantiated in ProgramState constructor)
+ *      ↓
+ * ProgramState (currently being instantiated 1st time by EventAnalysis constructor)
+ *      ↓
+ * EventAnalysis
+ *      ↓
+ * EventAction
+ *      ↓
+ * SteppingAnalysis
+ *      ↓
+ * SteppingAction
+ * 
+ * 
+ * NOTE: Instantiation Heirarchy:
+ * 
+ *      ↓ 
+ * RunAction → RunAnalysis
+ *      ↓
+ * EventAction → EventAnalysis → ProgramState → ProgramStateMessenger
+ *      ↓
+ * SteppingAction → SteppingAnalysis
 */
 void ActionInitialization::Build() const {
     // Instatiate the particle generator
     SetUserAction(new PrimaryGenerator());
     
     // Instantiate the run handler (start/end of run handlers for data output/run timings)
-    auto runHandler = new RunAction();
+    auto* runHandler = new RunAction();
     SetUserAction(runHandler);
     
     // Event handler (start/end of event handlers for photon counting, and passing data to run handler)
-    auto eventHandler = new EventAction(runHandler); // TODO: RunAction unused in EventAction
+    auto* eventHandler = new EventAction(runHandler); // TODO: RunAction unused in EventAction
     SetUserAction(eventHandler);
     
     // Track handler (start/end of track handlers for custom user information object assignment to particles)
