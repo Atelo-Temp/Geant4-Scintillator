@@ -69,25 +69,29 @@ Source:
 
 ### ...
 
-* G4RunManager
-*      ↓
-* DetectorConstruction
-*      ↓
-* PhysicsList
-*      ↓
-* ActionInitialisation
+```text
+G4RunManager
+     ↓
+DetectorConstruction
+     ↓
+PhysicsList
+     ↓
+ActionInitialisation
+```
 
 ### User Action Instantiation Heirarchy
 
- * ActionInitialisation
- *      ↓ 
- * PrimaryGenerator
- *      ↓ 
- * RunAction → RunAnalysis
- *      ↓
- * EventAction → EventAnalysis → ProgramState → ProgramStateMessenger
- *      ↓
- * SteppingAction → SteppingAnalysis
+```text
+ActionInitialisation
+     ↓ 
+PrimaryGenerator
+     ↓ 
+RunAction → RunAnalysis
+     ↓
+EventAction → EventAnalysis → ProgramState → ProgramStateMessenger
+     ↓
+SteppingAction → SteppingAnalysis
+```
 
 > NOTE: Instantiation happens top to bottom, and right to left
 
@@ -96,22 +100,24 @@ i.e.: ActionInitialisation is constructed before PrimaryGenerator, but ProgramSt
 EventAction constructor is called before ProgramStateMessenger constructor, but ProgramStateMessenger is instantiated before EventAction finishes construction (call stack).
 
 ### User Action Instantiation Order            (TODO: AnalysisRegistry (before run analysis? only if DataStructures created in RunAnalysis constructor - not if in begin of run action))
- 
- * RunAnalysis (as it is instantiated in RunAction constructor, before RunAction finishes construction)
- *      ↓
- * RunAction
- *      ↓
- * ProgramStateMessenger (as it is being instantiated in ProgramState constructor)
- *      ↓
- * ProgramState (currently being instantiated 1st time by EventAnalysis constructor)
- *      ↓
- * EventAnalysis
- *      ↓
- * EventAction
- *      ↓
- * SteppingAnalysis
- *      ↓
- * SteppingAction
+
+```text
+RunAnalysis (as it is instantiated in RunAction constructor, before RunAction finishes construction)
+     ↓
+RunAction
+     ↓
+ProgramStateMessenger (as it is being instantiated in ProgramState constructor)
+     ↓
+ProgramState (currently being instantiated 1st time by EventAnalysis constructor)
+     ↓
+EventAnalysis
+     ↓
+EventAction
+     ↓
+SteppingAnalysis
+     ↓
+SteppingAction
+```
 
 ### Run ...
 
@@ -119,6 +125,7 @@ Run → Event → Track → Step
 
 ### Run Execution Order
 
+```text
 RunAction::BeginOfRunAction
       ↓
 RunAnalysis::InitialiseDataStructures
@@ -138,9 +145,11 @@ SteppingAction::UserSteppingAction  (called for every step in every event)
 EventAction::EndOfEventAction  (called for every event in run)
       ↓
 RunAction::EndOfRunAction
+```
 
 ### Class Heirarchy (condensed)
 
+```text
 RunAction
        |
        └─ RunAnalysis (o)
@@ -164,7 +173,7 @@ SteppingAction
                         ├─ AnalysisRegistry*
                         |
                         └─ ProgramState*
-
+```
 
 NOTE:
 o = ownership (instantiates, owns, and manages lifetime of said instance)
@@ -172,7 +181,7 @@ o = ownership (instantiates, owns, and manages lifetime of said instance)
 
 ### Class Heirarchy (expanded)
 
-
+```text
 RunAction
        |
        └─ RunAnalysis (o)
@@ -204,7 +213,7 @@ SteppingAction
                         ├─ AnalysisRegistry*
                         |
                         └─ ProgramState*
-
+```
 
 NOTE:
 o = ownership (instantiates, owns, and manages lifetime of said instance)
