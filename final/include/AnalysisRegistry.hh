@@ -4,6 +4,10 @@
 // G4 lib
 #include "G4Types.hh"
 
+// C lib
+// #include <functional>
+#include <vector>
+
 /*
  * ...
  */
@@ -59,6 +63,8 @@ struct NtupleIndicesCoords {
 struct NtupleIDs {
     // Event flags
     NtupleIndices fDetectionNtuple = {-1, -1}; // Per-event detections
+    // NtupleIndices fBoundaryAbsorbNtuple = {-1, -1}; // NOTE: Not writing per-event boundary absorption counts
+    // NtupleIndices fBulkAbsorbNtuple = {-1, -1}; // NOTE: Not writing per-event bulk absorption counts
     NtupleIndices fDetectionFractionNtuple = {-1, -1}; // Per-event detections fraction
     NtupleIndices fBoundaryAbsorbFractionNtuple = {-1, -1}; // Per-event boundary absorptions fraction
     NtupleIndices fBulkAbsorbFractionNtuple = {-1, -1}; // Per-event bulk absorptions fraction
@@ -70,18 +76,25 @@ struct NtupleIDs {
     NtupleIndices fDetectionReflectionsNtuple = {-1, -1};
     
     // Step boundary absorption flags
-    // NtupleIndices fBoundaryAbsorbNtuple = {-1, -1}; // NOTE: Not writing per-event boundary absorption counts
     NtupleIndicesCoords fBoundaryAbsorbCoordsNtuple = {-1, -1, -1, -1};
     // NtupleIndices fBoundaryAbsorbDistanceNtuple = {-1, -1}; // NOTE: Not yet implemented
     // NtupleIndices fBoundaryAbsorbTimeOfFlightNtuple = {-1, -1}; // NOTE: Not yet implemented
     // NtupleIndices fBoundaryAbsorbReflectionsNtuple = {-1, -1};  // NOTE: Not yet implemented
     
     // Step bulk absorption flags
-    // NtupleIndices fBulkAbsorbNtuple = {-1, -1}; // NOTE: Not writing per-event bulk absorption counts
     // NtupleIndicesCoords fBulkAbsorbCoordsNtuple = {-1, -1, -1, -1}; // NOTE: Not yet implemented
     NtupleIndices fBulkAbsorbDistanceNtuple = {-1, -1};
     // NtupleIndices fBulkAbsorbTimeOfFlightNtuple = {-1, -1}; // NOTE: Not yet implemented
     NtupleIndices fBulkAbsorbReflectionsNtuple = {-1, -1};
+};
+
+/*
+ * ....
+ */
+class RegistryListener {
+    public:
+        // ...
+        virtual void UpdateRegistryCache();
 };
 
 /*
@@ -108,10 +121,6 @@ class AnalysisRegistry {
         
         // Static method controls access to singleton instance (get instance if exists, else instantiate)
         static AnalysisRegistry& GetInstance();
-        // static AnalysisRegistry* GetInstance();
-        
-        // NOTE: For debugging
-        // static AnalysisRegistry& GetInstance(std::string const& value);
         
         // Business logic
         //
@@ -125,10 +134,12 @@ class AnalysisRegistry {
         // NOTE: Const modifier after method name tells compiler that calling this method will not alter 
         // the state of the AnalysisRegistry instance itself
         
-        // NOTE: For debugging
-        // std::string value() const {
-        //     return value_;
-        // }
+        // ...
+        // void AddListener(std::function<void()> callback);
+        void AddListener(RegistryListener* callback);
+        
+        // ...
+        void NotifyListeners();
         
     protected:
         // Business logic
@@ -136,15 +147,12 @@ class AnalysisRegistry {
         // Stack allocated object containing ids for each created ntuple
         NtupleIDs fNtupleIDs;
         
-        // NOTE: For debugging
-        // std::string value_;
+        // ...
+        std::vector<RegistryListener*> fListeners = {};
     
     private:
         // Constructor, private to prevent direct construction via "new" operator, only self callable
         AnalysisRegistry() = default;
-        
-        // NOTE: For debugging
-        // AnalysisRegistry(std::string const value);
         
         // Destructor, private to prevent direct destruction call via "delete" operator
         ~AnalysisRegistry() = default;

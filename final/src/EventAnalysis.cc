@@ -1,6 +1,7 @@
 // User classes
 #include "EventAnalysis.hh"
 #include "ProgramState.hh"
+// #include "AnalysisRegistry.hh"
 
 // G4 lib
 #include "G4AnalysisManager.hh"
@@ -14,13 +15,32 @@ EventAnalysis::EventAnalysis() {
     fAnalysisManager = G4AnalysisManager::Instance();
     
     // ...
-    // auto& instance = ProgramState::GetInstance("BBB");
-    // G4cout << "\n\n>>>>> EVENT ANALYSIS:: " << instance.value() << "\n\n" << G4endl;
-    
     ProgramState& instance = ProgramState::GetInstance();
+    
+    // ...
+    AnalysisRegistry& registry = AnalysisRegistry::GetInstance();
+    
+    // ...
+    // registry.AddListener(this->UpdateRegistryCache);
+    registry.AddListener(this); // TEST
     
     // Increase allocation for reflection vector map
     fReflectionMap.resize(40960);
+    
+    G4cout << "\n\n>>>>> EVENT ANALYSIS INSTANTIATED\n\n" << G4endl;
+}
+
+/*
+ * 
+ */
+void EventAnalysis::UpdateRegistryCache() {
+    // ...
+    AnalysisRegistry& registry = AnalysisRegistry::GetInstance();
+    
+    // ...
+    const NtupleIDs& ntupleIDs = registry.ReadNtupleIDs();
+    
+    // ...
 }
 
 /*

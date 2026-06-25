@@ -52,3 +52,25 @@ NtupleIDs& AnalysisRegistry::GetNtupleIDs() {
 const NtupleIDs& AnalysisRegistry::ReadNtupleIDs() const {
     return fNtupleIDs;
 }
+
+/*
+ * ...
+ */
+void AnalysisRegistry::AddListener(RegistryListener* callback) {
+    // ...
+    fListeners.push_back(callback);
+    
+    return;
+}
+
+/*
+ * ...
+ */
+void AnalysisRegistry::NotifyListeners() {
+    // ...
+    for (int i = 0; i < fListeners.size(); i++) {
+        fListeners[i]->UpdateRegistryCache();
+    }
+    
+    return;
+}

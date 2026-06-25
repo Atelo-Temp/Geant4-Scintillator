@@ -1,7 +1,7 @@
 // User classes
 #include "SteppingAnalysis.hh"
 #include "ProgramState.hh"
-#include "AnalysisRegistry.hh"
+// #include "AnalysisRegistry.hh"
 
 // G4 lib
 #include "G4AnalysisManager.hh"
@@ -13,6 +13,7 @@
  *             | 
  *             ├─ EventAction*
  *             ├─ EventAnalysis*
+ *             | 
  *             └─ SteppingAnalysis <<<
  *                              | 
  *                              ├─ AnalysisRegistry*
@@ -24,12 +25,35 @@ SteppingAnalysis::SteppingAnalysis() {
     // Cache pointer to analysis manager singleton
     fAnalysisManager = G4AnalysisManager::Instance();
     
-    // auto& instance = ProgramState::GetInstance("CCC");
-    // G4cout << "\n\n>>>>> STEP ANALYSIS:: " << instance.value() << "\n\n" << G4endl;
-    
+    // ...
     ProgramState& instance = ProgramState::GetInstance(); // TODO: Class property
     
+    // ...
     AnalysisRegistry& registry = AnalysisRegistry::GetInstance();
+    
+    // ...
+    registry.AddListener(this); // TEST
+    
+    G4cout << "\n\n>>>>> STEPPING ANALYSIS INSTANTIATED\n\n" << G4endl;
+}
+
+/*
+ * ...
+ * 
+ * TODO: Maybe have this cache flags too
+ */
+void SteppingAnalysis::UpdateRegistryCache() {
+    // ...
+    
+    // G4cout << "\n\n>>>>> STEPPING ANALYSIS LISTENER\n\n" << G4endl;
+    
+    // ...
+    AnalysisRegistry& registry = AnalysisRegistry::GetInstance();
+    
+    // ...
+    const NtupleIDs& ntupleIDs = registry.ReadNtupleIDs();
+    
+    
 }
 
 /*
@@ -37,7 +61,7 @@ SteppingAnalysis::SteppingAnalysis() {
  * 
  * TODO: Eliminate hardcoded ntuple IDs
  * 
- * NOTE: Takes readonly pointers
+ * NOTE: Takes readonly pointers (pointer to const)
  */
 void SteppingAnalysis::HandleBulkAbsorb(G4Track const* track, EventAnalysis const* fEventAnalysis) {
     // ..
@@ -63,7 +87,7 @@ void SteppingAnalysis::HandleBulkAbsorb(G4Track const* track, EventAnalysis cons
 /*
  * Handle optical photon being detected at a boundary (i.e., photocathode)
  * 
- * NOTE: Takes readonly pointers
+ * NOTE: Takes readonly pointers (pointer to const)
  */
 void SteppingAnalysis::HandleDetection(G4StepPoint const* endPoint, G4Track const* track, EventAnalysis const* fEventAnalysis) {
     // TODO: May be worth double checking the boundary is the photocathode
@@ -144,7 +168,7 @@ void SteppingAnalysis::HandleDetection(G4StepPoint const* endPoint, G4Track cons
 /*
  * Handle optical photon being absorbed without detection at a boundary (i.e., reflector or photocathode)
  * 
- * NOTE: Takes readonly pointer
+ * NOTE: Takes readonly pointer (pointer to const)
  */
 void SteppingAnalysis::HandleBoundaryAbsorb(G4StepPoint const* endPoint) {
     // TODO: Can get absorption volume via same process as above,

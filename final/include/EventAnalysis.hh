@@ -1,6 +1,9 @@
 #ifndef MyEventAnalysis_HH
 #define MyEventAnalysis_HH
 
+// User lib
+#include "AnalysisRegistry.hh"
+
 // C lib
 #include <vector>
 
@@ -17,7 +20,8 @@
 /*
  * ...
  */
-class EventAnalysis {
+// class EventAnalysis {
+class EventAnalysis : public RegistryListener { // TEST
     public:
         // Constructor
         EventAnalysis();
@@ -57,6 +61,9 @@ class EventAnalysis {
         
         // Print particle information (not for use with batch mode, but handy for single runs via visualiser)
         void LogEventData() const; // NOTE: Readonly
+        
+        // TEST
+        void UpdateRegistryCache() override;
         
     private:
         // Cached pointer to analysis manager singleton

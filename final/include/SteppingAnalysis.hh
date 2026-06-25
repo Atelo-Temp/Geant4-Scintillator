@@ -3,6 +3,7 @@
 
 // User classes
 #include "EventAnalysis.hh"
+#include "AnalysisRegistry.hh"
 
 // G4 lib
 #include "G4Step.hh"
@@ -11,7 +12,8 @@
 /*
  * Handles writing output data to ntuples
  */
-class SteppingAnalysis {
+// class SteppingAnalysis {
+class SteppingAnalysis : public RegistryListener { // TEST
     public:
         // Constructor
         SteppingAnalysis();
@@ -27,6 +29,9 @@ class SteppingAnalysis {
         
         // ...
         void HandleBoundaryAbsorb(G4StepPoint const* endPoint);
+        
+        // TEST
+        void UpdateRegistryCache() override;
         
     private:  
         // Cached pointer to analysis manager singleton
