@@ -160,6 +160,10 @@ EventAction
        ├─ RunAction*
        |
        └─ EventAnalysis (o)
+                     |
+                     ├─ AnalysisRegistry*
+                     |
+                     └─ ProgramState*
 
 
 SteppingAction
@@ -169,10 +173,10 @@ SteppingAction
        ├─ EventAnalysis*
        |
        └─ SteppingAnalysis
-                        |
-                        ├─ AnalysisRegistry*
-                        |
-                        └─ ProgramState*
+                     |
+                     ├─ AnalysisRegistry*
+                     |
+                     └─ ProgramState*
 ```
 
 NOTE:
@@ -194,6 +198,10 @@ EventAction
        |         └─ RunAnalysis (o)
        |
        └─ EventAnalysis (o)
+                     | 
+                     ├─ AnalysisRegistry*
+                     |
+                     └─ ProgramState*
 
 
 SteppingAction
@@ -201,18 +209,22 @@ SteppingAction
        ├─ EventAction*
        |           |
        |           ├─ RunAction*
-       |           |         |
-       |           |         └─ RunAnalysis (o)
+       |           |          |
+       |           |          └─ RunAnalysis (o)
        |           |
        |           └─ EventAnalysis (o)
+       |                      | 
+       |                      ├─ AnalysisRegistry*
+       |                      |
+       |                      └─ ProgramState*
        |
        ├─ EventAnalysis*
        |
        └─ SteppingAnalysis
-                        | 
-                        ├─ AnalysisRegistry*
-                        |
-                        └─ ProgramState*
+                     | 
+                     ├─ AnalysisRegistry*
+                     |
+                     └─ ProgramState*
 ```
 
 NOTE:
