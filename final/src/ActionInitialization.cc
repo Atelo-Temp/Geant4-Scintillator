@@ -48,12 +48,12 @@ void ActionInitialization::Build() const {
     // Instatiate the particle generator
     SetUserAction(new PrimaryGenerator());
     
-    // Instantiate the run handler (start/end of run handlers for histogramming)
+    // Instantiate the run handler (start/end of run handlers for data output/run timings)
     auto runHandler = new RunAction();
     SetUserAction(runHandler);
     
     // Event handler (start/end of event handlers for photon counting, and passing data to run handler)
-    auto eventHandler = new EventAction(runHandler);
+    auto eventHandler = new EventAction(runHandler); // TODO: RunAction unused in EventAction
     SetUserAction(eventHandler);
     
     // Track handler (start/end of track handlers for custom user information object assignment to particles)

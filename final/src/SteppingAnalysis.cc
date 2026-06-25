@@ -1,6 +1,7 @@
 // User classes
 #include "SteppingAnalysis.hh"
 #include "ProgramState.hh"
+#include "AnalysisRegistry.hh"
 
 // G4 lib
 #include "G4AnalysisManager.hh"
@@ -8,7 +9,16 @@
 /*
  * Constructor
  * 
- * ...
+ * SteppingAction
+ *             | 
+ *             ├─ EventAction*
+ *             ├─ EventAnalysis*
+ *             └─ SteppingAnalysis <<<
+ *                              | 
+ *                              ├─ AnalysisRegistry*
+ *                              └─ ProgramState*
+ * 
+ * NOTE: Owned by SteppingAction
  */
 SteppingAnalysis::SteppingAnalysis() {
     // Cache pointer to analysis manager singleton
@@ -17,13 +27,19 @@ SteppingAnalysis::SteppingAnalysis() {
     // auto& instance = ProgramState::GetInstance("CCC");
     // G4cout << "\n\n>>>>> STEP ANALYSIS:: " << instance.value() << "\n\n" << G4endl;
     
-    auto& instance = ProgramState::GetInstance();
+    ProgramState& instance = ProgramState::GetInstance(); // TODO: Class property
+    
+    AnalysisRegistry& registry = AnalysisRegistry::GetInstance();
 }
 
 /*
  * Track photons lost via bulk absorption in the crystal (and window/grease to a far lesser extent)
+ * 
+ * TODO: Eliminate hardcoded ntuple IDs
+ * 
+ * NOTE: Takes readonly pointers
  */
-void SteppingAnalysis::HandleBulkAbsorb(G4Track* track, EventAnalysis* fEventAnalysis) {
+void SteppingAnalysis::HandleBulkAbsorb(G4Track const* track, EventAnalysis const* fEventAnalysis) {
     // ..
     // std::string volume = endPoint->GetTouchable()->GetVolume()->GetName();
     // G4cout << "BULK ABSORPTION IN MEDIUM: " << endPoint->GetTouchable()->GetVolume()->GetName() << G4endl; // "Scintillator"
@@ -46,8 +62,10 @@ void SteppingAnalysis::HandleBulkAbsorb(G4Track* track, EventAnalysis* fEventAna
 
 /*
  * Handle optical photon being detected at a boundary (i.e., photocathode)
+ * 
+ * NOTE: Takes readonly pointers
  */
-void SteppingAnalysis::HandleDetection(G4StepPoint* endPoint, G4Track* track, EventAnalysis* fEventAnalysis) {
+void SteppingAnalysis::HandleDetection(G4StepPoint const* endPoint, G4Track const* track, EventAnalysis const* fEventAnalysis) {
     // TODO: May be worth double checking the boundary is the photocathode
     // ...although since its only one with efficiency vector, it will be
     
@@ -94,7 +112,7 @@ void SteppingAnalysis::HandleDetection(G4StepPoint* endPoint, G4Track* track, Ev
     // G4cout << "Distance Travelled Before Detection: " << distance << " mm" << G4endl;
     
     // Get time of flight information (local time gives time since photon birth until now, i.e. birth to detection)
-    G4double const time = track->GetLocalTime(); 
+    G4double const time = track->GetLocalTime();
     fAnalysisManager->FillNtupleDColumn(3, 1, time); // NtupleID = 3, column = 1, val = time
     fAnalysisManager->AddNtupleRow(3); // Finish row for NtupleID = 3 // NOTE: NOW THAT ALL TRACK DATA WRITTEN, ADD THE ROW
     // NOTE: This method loses relative timing between different photons if they 
@@ -125,8 +143,10 @@ void SteppingAnalysis::HandleDetection(G4StepPoint* endPoint, G4Track* track, Ev
 
 /*
  * Handle optical photon being absorbed without detection at a boundary (i.e., reflector or photocathode)
+ * 
+ * NOTE: Takes readonly pointer
  */
-void SteppingAnalysis::HandleBoundaryAbsorb(G4StepPoint* endPoint) {
+void SteppingAnalysis::HandleBoundaryAbsorb(G4StepPoint const* endPoint) {
     // TODO: Can get absorption volume via same process as above,
     // counts absorptions in crystal vs reflector, vs photocathode
     

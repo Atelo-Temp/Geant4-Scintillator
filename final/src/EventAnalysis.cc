@@ -17,7 +17,7 @@ EventAnalysis::EventAnalysis() {
     // auto& instance = ProgramState::GetInstance("BBB");
     // G4cout << "\n\n>>>>> EVENT ANALYSIS:: " << instance.value() << "\n\n" << G4endl;
     
-    auto& instance = ProgramState::GetInstance();
+    ProgramState& instance = ProgramState::GetInstance();
     
     // Increase allocation for reflection vector map
     fReflectionMap.resize(40960);
@@ -136,15 +136,19 @@ void EventAnalysis::CountReflection(G4int photonIdx) {
 
 /*
  * Retrieve total number of reflections for specified photon
+ * 
+ * NOTE: Doesnt alter class data (readonly), so const method
  */
-G4int EventAnalysis::GetReflections(G4int photonIdx) {
+G4int EventAnalysis::GetReflections(G4int photonIdx) const {
     return fReflectionMap[photonIdx];
 }
 
 /*
  * Inspect event state, print to stdout
+ * 
+ * NOTE: Readonly method
  */
-void EventAnalysis::LogEventData() {
+void EventAnalysis::LogEventData() const {
     // Individual loss mechanisms
     G4cout << G4endl << "Optical Photons Generated: " << fTotalPhotons << G4endl;
     

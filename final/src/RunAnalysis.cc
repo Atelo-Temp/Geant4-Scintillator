@@ -21,13 +21,8 @@
  * 
  * 
  * RunAction
- *         ├─ RunAnalysis
- * 
- * 
- * 
- * 
- * RunAction
  *         |
+ *         ├─ RunTimer
  *         └─ RunAnalysis
  */
 RunAnalysis::RunAnalysis() {

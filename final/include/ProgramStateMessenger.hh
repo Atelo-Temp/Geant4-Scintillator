@@ -22,12 +22,13 @@ class ProgramState;
 // would also create circular dependencies
 // struct BoolCommand;
 
-
-
 /*
- * ...
+ * Output data messenger
  * 
- * Messenger has the responsibility of creating and deleting commands
+ * Messenger responsible for:
+ * - Creating and deleting commands
+ * - Exposing state flags to UI
+ * - Modifiying program StateFlags (on recieving UI command to do so)
  * 
  * Also takes care of delivering commands to the destination class, and provides
  * the current value(s) for the parameter(s)

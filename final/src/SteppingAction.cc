@@ -48,7 +48,7 @@ SteppingAction::SteppingAction(EventAction* eventAction) {
  */
 void SteppingAction::UserSteppingAction(const G4Step* step) {    
     // Get the track object for the current step
-    G4Track* track = step->GetTrack();
+    G4Track const* track = step->GetTrack();
     
     // TODO: If particle is gamma (for escape x-rays specifically)
     // Check pre and post step touchable logic volume
@@ -66,7 +66,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     }
     
     // Find the boundary process only once (cache the pointer)
-    if (fBoundary == nullptr) {
+    if (fBoundary == nullptr) { // TODO: || fAbsorb == nullptr
         CacheProcesses(track); // this->FindBoundary(track);
     }
  
@@ -78,7 +78,8 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     }
     
     // Get the post step point object for the particle
-    G4StepPoint* endPoint = step->GetPostStepPoint();
+    G4StepPoint const* endPoint = step->GetPostStepPoint();
+    // NOTE: We only need readonly methods, so const*
     
     // ...
     G4VProcess const* process = endPoint->GetProcessDefinedStep();
@@ -99,9 +100,6 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         // Save a step status request and comparison by returning early
         return;
     }
-    
-    // NOTE: Instead of returning inside one of those code blocks,
-    // can just let this next clause do so ....
     
     // NOTE: OpRayleigh, OpAbsorption, OpBoundary, OpScintillation (relevant process names)
     
@@ -200,7 +198,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
  * 
  * NOTE: Is there a cleaner way to do this?
  */
-void SteppingAction::CacheProcesses(G4Track* track) { // TODO: RENAME - CacheProcesses()
+void SteppingAction::CacheProcesses(G4Track const* track) { // TODO: RENAME - CacheProcesses()
     // Get pointer to the process list (for optical photons)
     G4ProcessVector* pv = track->GetDefinition()->GetProcessManager()->GetProcessList();
     
@@ -223,7 +221,7 @@ void SteppingAction::CacheProcesses(G4Track* track) { // TODO: RENAME - CachePro
             fBoundary = dynamic_cast<G4OpBoundaryProcess*>(process);
         }
         
-        // If the absorption process is found
+        // If the bulk absorption process is found
         if (process->GetProcessName() == "OpAbsorption") {
             // Cache the pointer to the bulk absorption process
             fAbsorb = dynamic_cast<G4OpAbsorption*>(process);

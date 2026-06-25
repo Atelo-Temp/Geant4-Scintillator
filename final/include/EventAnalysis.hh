@@ -52,11 +52,11 @@ class EventAnalysis {
         // Increment number of reflections a photon has undergone
         void CountReflection(G4int photonIdx);
         
-        // Get nnumber of reflections a photon has undergone
-        G4int GetReflections(G4int photonIdx);
+        // Get number of reflections a photon has undergone
+        G4int GetReflections(G4int photonIdx) const; // NOTE: Readonly
         
         // Print particle information (not for use with batch mode, but handy for single runs via visualiser)
-        void LogEventData();
+        void LogEventData() const; // NOTE: Readonly
         
     private:
         // Cached pointer to analysis manager singleton

@@ -37,7 +37,7 @@ class SteppingAction : public G4UserSteppingAction {
         void UserSteppingAction(G4Step const* step) override;
         
         // Find and cache optical photon absorption and boundary processes
-        void CacheProcesses(G4Track* track);
+        void CacheProcesses(G4Track const* track);
         
     private:
         // Pointer to event object
@@ -52,7 +52,7 @@ class SteppingAction : public G4UserSteppingAction {
         // Pointer to boundary process
         G4OpBoundaryProcess* fBoundary = nullptr;
         
-        // Pointer to absorption process
+        // Pointer to bulk absorption process
         G4OpAbsorption* fAbsorb = nullptr;
         
         // TODO: Maybe have pointer to event analysis here
@@ -60,7 +60,7 @@ class SteppingAction : public G4UserSteppingAction {
         // or make a getter for pointer on event action class, and fetch it once at construction of stepping action
         EventAnalysis* fEventAnalysis = nullptr;
         
-        // ...
+        // Pointer to ntuple output handler
         SteppingAnalysis* fSteppingAnalysis = nullptr;
 };
 

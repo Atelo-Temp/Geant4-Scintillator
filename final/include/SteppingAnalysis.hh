@@ -9,7 +9,7 @@
 #include "G4GenericAnalysisManager.hh"
 
 /*
- * ...
+ * Handles writing output data to ntuples
  */
 class SteppingAnalysis {
     public:
@@ -20,13 +20,13 @@ class SteppingAnalysis {
         ~SteppingAnalysis() = default;
         
         // ...
-        void HandleBulkAbsorb(G4Track* track, EventAnalysis* fEventAnalysis);
+        void HandleBulkAbsorb(G4Track const* track, EventAnalysis const* fEventAnalysis);
         
         // ...
-        void HandleDetection(G4StepPoint* endPoint, G4Track* track, EventAnalysis* fEventAnalysis);
+        void HandleDetection(G4StepPoint const* endPoint, G4Track const* track, EventAnalysis const* fEventAnalysis);
         
         // ...
-        void HandleBoundaryAbsorb(G4StepPoint* endPoint);
+        void HandleBoundaryAbsorb(G4StepPoint const* endPoint);
         
     private:  
         // Cached pointer to analysis manager singleton
