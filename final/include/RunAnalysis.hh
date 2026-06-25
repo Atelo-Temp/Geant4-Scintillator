@@ -21,16 +21,20 @@ class RunAnalysis {
         // Destructor
         ~RunAnalysis() = default;
         
-    private:
         // Should only be called on construction of this class (not accessible outside class)
         void InitialiseDataStructures();
         
+    private:
+        // ...
         void EventDataStructures(G4GenericAnalysisManager* analysisManager, NtupleIDs& ntupleIDs);
         
+        // ...
         void StepDataDetectionStructures(G4GenericAnalysisManager* analysisManager, NtupleIDs& ntupleIDs);
         
+        // ...
         void StepDataBoundaryAbsorbStructures(G4GenericAnalysisManager* analysisManager, NtupleIDs& ntupleIDs);
         
+        // ...
         void StepDataBulkAbsorbStructures(G4GenericAnalysisManager* analysisManager, NtupleIDs& ntupleIDs);
 };
 

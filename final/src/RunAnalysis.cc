@@ -26,7 +26,7 @@
  *         └─ RunAnalysis
  */
 RunAnalysis::RunAnalysis() {
-   InitialiseDataStructures();
+   // InitialiseDataStructures(); // NOTE: Creating data structures before run even starts is wasteful
    
    // .......
    // G4cout << "\n\n>>> INSTANTIATING PROGRAM STATE\n\n" << G4endl;
@@ -35,6 +35,8 @@ RunAnalysis::RunAnalysis() {
    // auto& instance = ProgramState::GetInstance("AAA");
    // G4cout << "\n\n>>>>> ANALYSIS MANAGER:: " << instance.value() << "\n\n" << G4endl;
    // G4cout << "\n\n>>> INSTANTIATED PROGRAM STATE\n\n" << G4endl;
+   
+   G4cout << "\n\n>>>>> RUN ANALYSIS INSTANTIATED\n\n" << G4endl;
 }
 
 /*
@@ -73,7 +75,7 @@ void RunAnalysis::InitialiseDataStructures() {
     ProgramState& iProgramState = ProgramState::GetInstance();
     
     // ...
-    StateFlags const& outputFlags = iProgramState.ReadStateFlags();
+    StateFlags const& outputFlags = iProgramState.ReadStateFlags(); // TODO: Unused
     
     // ...
     AnalysisRegistry& iAnalysisRegistry = AnalysisRegistry::GetInstance();
@@ -96,6 +98,9 @@ void RunAnalysis::InitialiseDataStructures() {
     
     // ...
     StepDataBulkAbsorbStructures(iAnalysisManager, ntupleIDs);
+    
+    // ...
+    iAnalysisRegistry.NotifyListeners(); // TEST
 }
 
 // TODO: Extract file handling logic from RunAction

@@ -19,9 +19,11 @@ RunAction::RunAction() {
     fAnalysis = new RunAnalysis(); // NOTE: Shouldnt have auto here!
     
     // Enable merging of Ntuples which are spread across the threads into one outfile
-    auto analysisManager = G4AnalysisManager::Instance();
+    G4GenericAnalysisManager* analysisManager = G4AnalysisManager::Instance();
     analysisManager->SetNtupleMerging(true); // <<<<<<<<<<<<<< Uncomment me
     // NOTE: See README.md for more info
+    
+    G4cout << "\n\n>>>>> RUN ACTION INSTANTIATED\n\n" << G4endl;
 }
 
 /*
@@ -49,7 +51,7 @@ void RunAction::BeginOfRunAction(const G4Run* run) {
     // as im instantiating fAnalysis in constructor anyways ...
     
     // Get a pointer to the singleton analysis manager
-    auto analysisManager = G4AnalysisManager::Instance();
+    G4GenericAnalysisManager* analysisManager = G4AnalysisManager::Instance();
     // NOTE: Couldnt the pointer just be stored in the class?
     // But then youre storing a pointer to it in two places, maybe wasteful ?
     
@@ -72,6 +74,13 @@ void RunAction::BeginOfRunAction(const G4Run* run) {
     analysisManager->OpenFile(fileName);
     
     // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    
+    
+    // TEST - Delay creation of data structures until start of run and outfile successfully opened
+    fAnalysis->InitialiseDataStructures();
+    // NOTE: Instead of doing so at construction
+    // TEST
+    
     
     // This code wont execute on the master thread, only on worker threads
     // NOTE: if (isMaster) enclosed code would execute only on the master thread
