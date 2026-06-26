@@ -130,11 +130,11 @@ RunAction::BeginOfRunAction
       ↓
 RunAnalysis::InitialiseDataStructures
       ↓
-AnalysisRegistry::Notify
+AnalysisRegistry::NotifyListeners ??
       ↓
-EventAction::Update ?
+EventAction::UpdateRegistryCache ??
       ↓
-SteppingAction::Update ?
+SteppingAction::UpdateRegistryCache ??
       ↓
 RunAnalysis::CreateOutfile
       ↓

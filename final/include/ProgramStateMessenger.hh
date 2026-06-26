@@ -7,6 +7,8 @@
 
 // C lib
 #include <unordered_map>
+// #include <variant> // TEST
+#include <functional>
 
 // G4 lib
 #include "G4UImessenger.hh"
@@ -43,6 +45,19 @@ class ProgramStateMessenger : public G4UImessenger {
         // Destructor - all commands defined in constructor must be deleted
         ~ProgramStateMessenger() override;
         
+        // Instantiate all commands
+        // template <typename T, std::size_t N>
+        // template <CustomCommand const* T, std::size_t N>
+        // template <typename T = CustomCommand const*, std::size_t N>
+        // void CreateCommands(const std::array<T, N>& commandsArray);
+        // void CreateCommands(const std::array<CustomCommand*, T> commandsArray);
+        // void CreateCommands(CustomCommand const* commandsArray, size_t length);
+        // void CreateCommands(CustomCommand const* commandsArray, size_t length, std::function<void(bool)> setter);
+        void CreateCommands(CustomCommand const* commandsArray, size_t length, std::function<void(CustomCommand const* def, bool val)> setter);
+        
+        // Deconstruct all created commands
+        void ClearCommands();
+        
         // Converts the string newVal to value(s) of the type(s) of parameter(s)
         void SetNewValue(G4UIcommand* cmd, G4String newVal) override;
     
@@ -62,8 +77,10 @@ class ProgramStateMessenger : public G4UImessenger {
         // Map
         // std::unordered_map<G4UIcommand*, BoolCommand> fCmdMap;
         // std::unordered_map<G4UIcommand*, BoolCommand&> fCmdMap;
-        std::unordered_map<G4UIcommand*, BoolCommand const*> fCmdMap;
+        // std::unordered_map<G4UIcommand*, BoolCommand const*> fCmdMap;
         // CommandMap fCmdMap;
+        std::unordered_map<G4UIcommand*, CustomCommand const*> fCmdMap;
+        // std::unordered_map<G4UIcommand*, std::variant<EventCommand const*, StepDetectionCommand const*, StepBoundaryAbsorbCommand const*, StepBulkAbsorbCommand const*>> fCmdMap;
 };
 
 #endif

@@ -17,7 +17,38 @@ class ProgramStateMessenger;
  * 
  * During the run, they will only be accessed in readonly mode
  */
-struct StateFlags {
+// struct StateFlags {
+//     // >>> Event flags
+//     bool fDetectionNtuple = true; // Per-event detections
+//     // bool fBoundaryAbsorbNtuple = true; // NOTE: Not writing per-event boundary absorption counts
+//     // bool fBulkAbsorbNtuple = true; // NOTE: Not writing per-event bulk absorption counts
+//     bool fDetectionFractionNtuple = true; // Per-event detections fraction
+//     bool fBoundaryAbsorbFractionNtuple = true; // Per-event boundary absorptions fraction
+//     bool fBulkAbsorbFractionNtuple = true; // Per-event bulk absorptions fraction
+//     
+//     // >>> Step detection flags
+//     bool fDetectionCoordsNtuple = true;
+//     bool fDetectionDistanceNtuple = true;
+//     bool fDetectionTimeOfFlightNtuple = true;
+//     bool fDetectionReflectionsNtuple = true;
+//     
+//     // >>> Step boundary absorption flags
+//     bool fBoundaryAbsorbCoordsNtuple = true;
+//     // bool fBoundaryAbsorbDistanceNtuple = true; // NOTE: Not yet implemented
+//     // bool fBoundaryAbsorbTimeOfFlightNtuple = true; // NOTE: Not yet implemented
+//     // bool fBoundaryAbsorbReflectionsNtuple = true;  // NOTE: Not yet implemented
+//     
+//     // >>> Step bulk absorption flags
+//     // bool fBulkAbsorbCoordsNtuple = true; // NOTE: Not yet implemented
+//     bool fBulkAbsorbDistanceNtuple = true;
+//     // bool fBulkAbsorbTimeOfFlightNtuple = true; // NOTE: Not yet implemented
+//     bool fBulkAbsorbReflectionsNtuple = true;
+// };
+
+/*
+ * ...
+ */
+struct EventFlags {
     // >>> Event flags
     bool fDetectionNtuple = true; // Per-event detections
     // bool fBoundaryAbsorbNtuple = true; // NOTE: Not writing per-event boundary absorption counts
@@ -25,24 +56,60 @@ struct StateFlags {
     bool fDetectionFractionNtuple = true; // Per-event detections fraction
     bool fBoundaryAbsorbFractionNtuple = true; // Per-event boundary absorptions fraction
     bool fBulkAbsorbFractionNtuple = true; // Per-event bulk absorptions fraction
-    
+};
+
+/*
+ * ...
+ */
+struct StepDetectionFlags {
     // >>> Step detection flags
     bool fDetectionCoordsNtuple = true;
     bool fDetectionDistanceNtuple = true;
     bool fDetectionTimeOfFlightNtuple = true;
     bool fDetectionReflectionsNtuple = true;
-    
+};
+
+/*
+ * ...
+ */
+struct StepBoundaryAbsorbFlags {
     // >>> Step boundary absorption flags
     bool fBoundaryAbsorbCoordsNtuple = true;
     // bool fBoundaryAbsorbDistanceNtuple = true; // NOTE: Not yet implemented
     // bool fBoundaryAbsorbTimeOfFlightNtuple = true; // NOTE: Not yet implemented
     // bool fBoundaryAbsorbReflectionsNtuple = true;  // NOTE: Not yet implemented
-    
+};
+
+/*
+ * ...
+ */
+struct StepBulkAbsorbFlags {
     // >>> Step bulk absorption flags
     // bool fBulkAbsorbCoordsNtuple = true; // NOTE: Not yet implemented
     bool fBulkAbsorbDistanceNtuple = true;
     // bool fBulkAbsorbTimeOfFlightNtuple = true; // NOTE: Not yet implemented
     bool fBulkAbsorbReflectionsNtuple = true;
+};
+
+/*
+ * Flags to control program output
+ * 
+ * NOTE: These will be set prior to the run, so dont need to worry about mutex for changing flags
+ * 
+ * During the run, they will only be accessed in readonly mode
+ */
+struct StateFlags {
+    // ...
+    EventFlags fEventFlags;
+    
+    // ...
+    StepDetectionFlags fStepDetectionFlags;
+    
+    // ...
+    StepBoundaryAbsorbFlags fStepBoundaryAbsorbFlags;
+    
+    // ...
+    StepBulkAbsorbFlags fStepBulkAbsorbFlags;
 };
 
 /*
