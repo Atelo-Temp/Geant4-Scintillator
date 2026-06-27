@@ -11,6 +11,9 @@
 #include "G4Types.hh"
 #include "G4GenericAnalysisManager.hh"
 
+// Forward declarations
+struct EventNtupleIDs;
+
 // TODO: If needed
 // struct LostPhotonMap {
 //     std::string location;
@@ -27,7 +30,7 @@ class EventAnalysis : public RegistryListener { // TEST
         EventAnalysis();
         
         // Destructor
-        ~EventAnalysis() = default;
+        ~EventAnalysis() override = default;
         
         // Reset tallys to zero and all reflection map indices values to zero
         void ResetCounters();
@@ -68,6 +71,9 @@ class EventAnalysis : public RegistryListener { // TEST
     private:
         // Cached pointer to analysis manager singleton
         G4GenericAnalysisManager* fAnalysisManager = nullptr;
+        
+        // TEST ...
+        EventNtupleIDs const* fEventNtupleIDs;
         
         // Optical photon tally
         G4int fTotalPhotons = 0;

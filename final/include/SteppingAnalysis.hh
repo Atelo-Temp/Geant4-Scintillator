@@ -19,7 +19,7 @@ class SteppingAnalysis : public RegistryListener { // TEST
         SteppingAnalysis();
         
         // Destructor
-        ~SteppingAnalysis() = default;
+        ~SteppingAnalysis() override = default;
         
         // ...
         void HandleBulkAbsorb(G4Track const* track, EventAnalysis const* fEventAnalysis);
