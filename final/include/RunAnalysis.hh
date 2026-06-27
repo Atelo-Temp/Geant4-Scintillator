@@ -2,8 +2,12 @@
 #define MyRunAnalysis_HH
 
 // Forward declarations
+// #include "AnalysisRegistry.hh"
 class G4GenericAnalysisManager;
-class NtupleIDs;
+struct EventNtupleIDs;
+struct StepDetectionNtupleIDs;
+struct StepBoundaryAbsorbNtupleIDs;
+struct StepBulkAbsorbNtupleIDs;
 
 /*
  * Class interface for output data structure initialiser
@@ -26,16 +30,20 @@ class RunAnalysis {
         
     private:
         // ...
-        void EventDataStructures(G4GenericAnalysisManager* analysisManager, NtupleIDs& ntupleIDs);
+        // void EventDataStructures(G4GenericAnalysisManager* analysisManager, NtupleIDs& ntupleIDs);
+        void EventDataStructures(G4GenericAnalysisManager* analysisManager, EventNtupleIDs& ntupleIDs);
         
         // ...
-        void StepDataDetectionStructures(G4GenericAnalysisManager* analysisManager, NtupleIDs& ntupleIDs);
+        // void StepDataDetectionStructures(G4GenericAnalysisManager* analysisManager, NtupleIDs& ntupleIDs);
+        void StepDataDetectionStructures(G4GenericAnalysisManager* analysisManager, StepDetectionNtupleIDs& ntupleIDs);
         
         // ...
-        void StepDataBoundaryAbsorbStructures(G4GenericAnalysisManager* analysisManager, NtupleIDs& ntupleIDs);
+        // void StepDataBoundaryAbsorbStructures(G4GenericAnalysisManager* analysisManager, NtupleIDs& ntupleIDs);
+        void StepDataBoundaryAbsorbStructures(G4GenericAnalysisManager* analysisManager, StepBoundaryAbsorbNtupleIDs& ntupleIDs);
         
         // ...
-        void StepDataBulkAbsorbStructures(G4GenericAnalysisManager* analysisManager, NtupleIDs& ntupleIDs);
+        // void StepDataBulkAbsorbStructures(G4GenericAnalysisManager* analysisManager, NtupleIDs& ntupleIDs);
+        void StepDataBulkAbsorbStructures(G4GenericAnalysisManager* analysisManager, StepBulkAbsorbNtupleIDs& ntupleIDs);
 };
 
 #endif

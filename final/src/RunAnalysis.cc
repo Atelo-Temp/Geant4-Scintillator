@@ -72,7 +72,7 @@ void RunAnalysis::InitialiseDataStructures() {
     G4GenericAnalysisManager* iAnalysisManager = G4AnalysisManager::Instance();
     
     // ...
-    ProgramState& iProgramState = ProgramState::GetInstance(); // TODO: Unused
+    ProgramState& iProgramState = ProgramState::GetInstance();
     
     // ...
     StateFlags const& outputFlags = iProgramState.ReadStateFlags(); // TODO: Unused
@@ -88,16 +88,20 @@ void RunAnalysis::InitialiseDataStructures() {
     G4cout << "\n\n>>>>>>>>>>>>>> CREATING DATA STRUCTURES NOW <<<<<<<<<<<<<<<<<<<\n\n" << G4endl;
     
     // ...
-    EventDataStructures(iAnalysisManager, ntupleIDs);
+    // EventDataStructures(iAnalysisManager, ntupleIDs);
+    EventDataStructures(iAnalysisManager, ntupleIDs.fEventNtupleIDs);
     
     // ...
-    StepDataDetectionStructures(iAnalysisManager, ntupleIDs);
+    // StepDataDetectionStructures(iAnalysisManager, ntupleIDs);
+    StepDataDetectionStructures(iAnalysisManager, ntupleIDs.fStepDetectionNtupleIDs);
     
     // ...
-    StepDataBoundaryAbsorbStructures(iAnalysisManager, ntupleIDs);
+    // StepDataBoundaryAbsorbStructures(iAnalysisManager, ntupleIDs);
+    StepDataBoundaryAbsorbStructures(iAnalysisManager, ntupleIDs.fStepBoundaryAbsorbNtupleIDs);
     
     // ...
-    StepDataBulkAbsorbStructures(iAnalysisManager, ntupleIDs);
+    // StepDataBulkAbsorbStructures(iAnalysisManager, ntupleIDs);
+    StepDataBulkAbsorbStructures(iAnalysisManager, ntupleIDs.fStepBulkAbsorbNtupleIDs);
     
     // ...
     iAnalysisRegistry.NotifyListeners(); // TEST
@@ -112,7 +116,8 @@ void RunAnalysis::InitialiseDataStructures() {
  * 
  * TODO: Merge these into one ntuple
  */
-void RunAnalysis::EventDataStructures(G4GenericAnalysisManager* analysisManager, NtupleIDs& ntupleIDs) {
+// void RunAnalysis::EventDataStructures(G4GenericAnalysisManager* analysisManager, NtupleIDs& ntupleIDs) {
+void RunAnalysis::EventDataStructures(G4GenericAnalysisManager* analysisManager, EventNtupleIDs& ntupleIDs) {
     // ...
     
     ////////////////
@@ -182,7 +187,8 @@ void RunAnalysis::EventDataStructures(G4GenericAnalysisManager* analysisManager,
 /*
  * ....
  */
-void RunAnalysis::StepDataDetectionStructures(G4GenericAnalysisManager* analysisManager, NtupleIDs& ntupleIDs) {
+// void RunAnalysis::StepDataDetectionStructures(G4GenericAnalysisManager* analysisManager, NtupleIDs& ntupleIDs) {
+void RunAnalysis::StepDataDetectionStructures(G4GenericAnalysisManager* analysisManager, StepDetectionNtupleIDs& ntupleIDs) {
     // ...
     
     //////////////////////////
@@ -296,7 +302,8 @@ void RunAnalysis::StepDataDetectionStructures(G4GenericAnalysisManager* analysis
 /*
  * ...
  */
-void RunAnalysis::StepDataBoundaryAbsorbStructures(G4GenericAnalysisManager* analysisManager, NtupleIDs& ntupleIDs) {
+// void RunAnalysis::StepDataBoundaryAbsorbStructures(G4GenericAnalysisManager* analysisManager, NtupleIDs& ntupleIDs) {
+void RunAnalysis::StepDataBoundaryAbsorbStructures(G4GenericAnalysisManager* analysisManager, StepBoundaryAbsorbNtupleIDs& ntupleIDs) {
     // ...
     
     ////////////////////////////////////
@@ -342,7 +349,8 @@ void RunAnalysis::StepDataBoundaryAbsorbStructures(G4GenericAnalysisManager* ana
 /*
  * ...
  */
-void RunAnalysis::StepDataBulkAbsorbStructures(G4GenericAnalysisManager* analysisManager, NtupleIDs& ntupleIDs) {
+// void RunAnalysis::StepDataBulkAbsorbStructures(G4GenericAnalysisManager* analysisManager, NtupleIDs& ntupleIDs) {
+void RunAnalysis::StepDataBulkAbsorbStructures(G4GenericAnalysisManager* analysisManager, StepBulkAbsorbNtupleIDs& ntupleIDs) {
     // ...
     
     ////////////////////////////////
