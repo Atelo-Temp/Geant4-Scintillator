@@ -39,6 +39,7 @@
 ProgramStateMessenger::ProgramStateMessenger(ProgramState& programStateInstance) : fProgramState(programStateInstance) {
     // ...
     // G4cout << "\n\n>>>>>>>>>>>>>>>>>>>>>>> I GOT CONSTRUCTED\n\n" << G4endl;
+    G4cout << "\n\n>>>>> PROGRAM STATE MESSENGER INSTANTIATING\n\n" << G4endl;
     
     // fProgramState = ProgramState::GetInstance();
     // fProgramState(ProgramState::GetInstance());
@@ -66,6 +67,11 @@ ProgramStateMessenger::ProgramStateMessenger(ProgramState& programStateInstance)
     // CreateCommands(StepDetectionCommands.data(), StepDetectionCommands.size());
     // CreateCommands(StepBoundaryAbsorbCommands.data(), StepBoundaryAbsorbCommands.size());
     // CreateCommands(StepBulkAbsorbCommands.data(), StepBulkAbsorbCommands.size());
+    
+    // CreateCommands(EventCommands.begin(), EventCommands.end());
+    // CreateCommands(StepDetectionCommands.begin(), StepDetectionCommands.end());
+    // CreateCommands(StepBoundaryAbsorbCommands.begin(), StepBoundaryAbsorbCommands.end());
+    // CreateCommands(StepBulkAbsorbCommands.begin(), StepBulkAbsorbCommands.end());
     // ...
     
     // programStateInstance.GetStateFlags().fEventFlags;
@@ -73,7 +79,7 @@ ProgramStateMessenger::ProgramStateMessenger(ProgramState& programStateInstance)
     // programStateInstance.GetStateFlags().fStepBoundaryAbsorbFlags;
     // programStateInstance.GetStateFlags().fStepBulkAbsorbFlags;
     
-    StateFlags& flags = programStateInstance.GetStateFlags();
+    // StateFlags& flags = programStateInstance.GetStateFlags();
     
     // [&flags](bool value) {
     //     flags.fEventFlags = value;
@@ -108,6 +114,23 @@ ProgramStateMessenger::ProgramStateMessenger(ProgramState& programStateInstance)
     // CreateCommands(StepBoundaryAbsorbCommands.data(), StepBoundaryAbsorbCommands.size(), [&flags](CustomCommand const* def) { flags.fStepBoundaryAbsorbFlags; });
     // CreateCommands(StepBulkAbsorbCommands.data(), StepBulkAbsorbCommands.size(), [&flags](CustomCommand const* def) { flags.fStepBulkAbsorbFlags; });
     
+    // CreateBoolCommands(EventCommands.begin(), EventCommands.end());
+    // CreateBoolCommands(StepDetectionCommands.begin(), StepDetectionCommands.end());
+    // CreateBoolCommands(StepBoundaryAbsorbCommands.begin(), StepBoundaryAbsorbCommands.end());
+    // CreateBoolCommands(StepBulkAbsorbCommands.begin(), StepBulkAbsorbCommands.end());
+    
+    // CreateBoolCommands(EventCommands.data(), EventCommands.size());
+    // CreateBoolCommands(StepDetectionCommands.data(), StepDetectionCommands.size());
+    // CreateBoolCommands(StepBoundaryAbsorbCommands.data(), StepBoundaryAbsorbCommands.size());
+    // CreateBoolCommands(StepBulkAbsorbCommands.data(), StepBulkAbsorbCommands.size());
+    
+    // ...
+    CreateBoolCommands(EventCommands.data(), EventCommands.size(), sizeof(EventCommand));
+    CreateBoolCommands(StepDetectionCommands.data(), StepDetectionCommands.size(), sizeof(StepDetectionCommand));
+    CreateBoolCommands(StepBoundaryAbsorbCommands.data(), StepBoundaryAbsorbCommands.size(), sizeof(StepBoundaryAbsorbCommand));
+    CreateBoolCommands(StepBulkAbsorbCommands.data(), StepBulkAbsorbCommands.size(), sizeof(StepBulkAbsorbCommand));
+    // ...
+    
     G4cout << "\n\n>>>>> PROGRAM STATE MESSENGER INSTANTIATED\n\n" << G4endl;
 }
 
@@ -117,7 +140,12 @@ ProgramStateMessenger::ProgramStateMessenger(ProgramState& programStateInstance)
  * Deletes all commands defined in constructor
  */
 ProgramStateMessenger::~ProgramStateMessenger() {    
-    ClearCommands();
+    G4cout << "\n\n>>>>> PROGRAM STATE MESSENGER BEING DESTROYED!\n\n" << G4endl;
+    
+    // ClearCommands();
+    ClearBoolCommands();
+    
+    G4cout << "\n\n>>>>> PROGRAM STATE MESSENGER DESTROYED!\n\n" << G4endl;
 }
 
 /*
@@ -132,8 +160,15 @@ ProgramStateMessenger::~ProgramStateMessenger() {
 // void ProgramStateMessenger::CreateCommands(const std::array<T, N>& commandsArray) {
 // void ProgramStateMessenger::CreateCommands(const std::array<T, N>& commandsArray) {
 // void ProgramStateMessenger::CreateCommands(const std::array<T, N>& commandsArray) {
+// void ProgramStateMessenger::CreateCommands(CustomCommand const* commandsArray, size_t length, std::function<void(bool)> setter) {
 // void ProgramStateMessenger::CreateCommands(CustomCommand const* commandsArray, size_t length) {
-void ProgramStateMessenger::CreateCommands(CustomCommand const* commandsArray, size_t length, std::function<void(bool)> setter) {
+// void ProgramStateMessenger::CreateCommands(CustomCommand const* start, CustomCommand const* end) {
+// void ProgramStateMessenger::CreateBoolCommands(CustomCommand const* commandsArray, size_t length) {
+// void ProgramStateMessenger::CreateBoolCommands(CustomBoolCommand const* commandsArray, size_t length) {
+// void ProgramStateMessenger::CreateBoolCommands(std::variant<EventCommand const*, StepDetectionCommand const*, StepBoundaryAbsorbCommand const*, StepBulkAbsorbCommand const*> commandsArray, size_t length) {
+// void ProgramStateMessenger::CreateBoolCommands(std::variant<EventCommand const*, StepDetectionCommand const*, StepBoundaryAbsorbCommand const*, StepBulkAbsorbCommand const*> const* commandsArray, size_t length) {
+// void ProgramStateMessenger::CreateBoolCommands(std::variant<EventCommand, StepDetectionCommand, StepBoundaryAbsorbCommand, StepBulkAbsorbCommand> const* commandsArray, size_t length) {
+void ProgramStateMessenger::CreateBoolCommands(void const* commandsArray, size_t length, size_t byte_stride) {
     //     // Iterate through the StateCommands vector
 //     for (int i = 0; i < StateCommands.size(); i++) {
 //         // Create a new command, exposed via the cmdPath string
@@ -234,38 +269,210 @@ void ProgramStateMessenger::CreateCommands(CustomCommand const* commandsArray, s
 //         // val: BoolCommand
 //     }
     
+//     G4cout << "\n >>> CHECK 1\n" << G4endl;
+//     
+//     G4cout << "\n >>> length = " << length << "\n"<< G4endl;
+//     
+//     // Iterate through the array
+//     for (size_t i = 0; i < length; i++) {
+//         G4cout << "\n >>> i = " << i << "\n" << G4endl;
+//         
+//         // Cache reference to the current object in the array
+//         // auto& definition = commandsArray[i];
+//         CustomCommand const& definition = commandsArray[i];
+//         // NOTE: "CustomCommand const definition" or "auto definition" (both without &) would create a copy of the object
+//         
+//         G4cout << "\n >>> CMD PATH: " << definition.cmdPath << " GUIDANCE: " << definition.cmdGuidance << "\n" << G4endl;
+//         
+//         G4cout << "\n >>> CHECK 2\n" << G4endl;
+//         
+//         // Create a new command, exposed via the cmdPath string
+//         auto* cmd = new G4UIcmdWithABool(definition.cmdPath, this); // params: theCommandPath, theMessenger
+//         
+//         G4cout << "\n >>> CHECK 3\n" << G4endl;
+//         
+//         // Define usage string and default value
+//         cmd->SetGuidance(definition.cmdGuidance); // ..
+//         cmd->SetDefaultValue(true);
+//         
+//         G4cout << "\n >>> CHECK 4\n" << G4endl;
+//         
+//         // Create an entry in the map, linking the instantiated command to the command object
+//         fCmdMap[cmd] = &definition;
+//         // key: G4UIcommand*
+//         // val: BoolCommand
+//         
+//         G4cout << "\n >>> CHECK 5\n" << G4endl;
+//     }
+    
+    
+//      G4cout << "\n >>> CHECK 1\n" << G4endl;
+//     
+//     // G4cout << "\n >>> length = " << length << "\n"<< G4endl;
+//     
+//     // Iterate through the array
+//     for (auto* definition = start; definition != end; definition++) {
+//         // G4cout << "\n >>> i = " << i << "\n" << G4endl;
+//         
+//         G4cout << "\n >>> CMD PATH: " << definition->cmdPath << " GUIDANCE: " << definition->cmdGuidance << "\n" << G4endl;
+//         
+//         G4cout << "\n >>> CHECK 2\n" << G4endl;
+//         
+//         // Create a new command, exposed via the cmdPath string
+//         auto* cmd = new G4UIcmdWithABool(definition->cmdPath, this); // params: theCommandPath, theMessenger
+//         
+//         G4cout << "\n >>> CHECK 3\n" << G4endl;
+//         
+//         // Define usage string and default value
+//         cmd->SetGuidance(definition->cmdGuidance); // ..
+//         cmd->SetDefaultValue(true);
+//         
+//         G4cout << "\n >>> CHECK 4\n" << G4endl;
+//         
+//         // Create an entry in the map, linking the instantiated command to the command object
+//         fCmdMap[cmd] = definition;
+//         // key: G4UIcommand*
+//         // val: BoolCommand
+//         
+//         G4cout << "\n >>> CHECK 5\n" << G4endl;
+//     }
+    
+//     G4cout << "\n >>> CHECK 1\n" << G4endl;
+//     
+//     G4cout << "\n >>> length = " << length << "\n"<< G4endl;
+//     
+//     // Iterate through the array
+//     for (size_t i = 0; i < length; i++) {
+//         G4cout << "\n >>> i = " << i << "\n" << G4endl;
+//         
+//         // Cache reference to the current object in the array
+//         // auto& definition = commandsArray[i];
+//         // CustomCommand const& definition = commandsArray[i];
+//         // CustomBoolCommand const& definition = commandsArray[i];
+//         auto const& definition = commandsArray[i];
+//         // NOTE: "CustomCommand const definition" or "auto definition" (both without &) would create a copy of the object
+//         
+//         G4cout << "\n >>> CMD PATH: " << definition.cmdPath << " GUIDANCE: " << definition.cmdGuidance << "\n" << G4endl;
+//         
+//         G4cout << "\n >>> CHECK 2\n" << G4endl;
+//         
+//         // Create a new command, exposed via the cmdPath string
+//         auto* cmd = new G4UIcmdWithABool(definition.cmdPath, this); // params: theCommandPath, theMessenger
+//         
+//         G4cout << "\n >>> CHECK 3\n" << G4endl;
+//         
+//         // Define usage string and default value
+//         cmd->SetGuidance(definition.cmdGuidance); // ..
+//         cmd->SetDefaultValue(true);
+//         
+//         G4cout << "\n >>> CHECK 4\n" << G4endl;
+//         
+//         // Create an entry in the map, linking the instantiated command to the command object
+//         fCmdMap[cmd] = &definition;
+//         // key: G4UIcommand*
+//         // val: BoolCommand
+//         
+//         G4cout << "\n >>> CHECK 5\n" << G4endl;
+//     }
+    
+    
+//     G4cout << "\n >>> CHECK 1\n" << G4endl;
+//     
+//     G4cout << "\n >>> length = " << length << "\n"<< G4endl;
+//     
+//     // ...
+//     auto const* rawBytePtr = reinterpret_cast<char const*>(commandsArray);
+//     
+//     // Iterate through the array
+//     for (size_t i = 0; i < length; i++) {
+//         G4cout << "\n >>> i = " << i << "\n" << G4endl;
+//         
+//         // ...
+//         char const* elementAddress = rawBytePtr + (i * byte_stride);
+//         
+//         auto const* basePtr = reinterpret_cast<CustomBoolCommand const*>(elementAddress);
+//         
+//         // Cache reference to the current object in the array
+//         // auto& definition = commandsArray[i];
+//         // CustomCommand const& definition = commandsArray[i];
+//         // CustomBoolCommand const& definition = commandsArray[i];
+//         // auto const& definition = commandsArray[i];
+//         CustomBoolCommand const& definition = *basePtr;
+//         // NOTE: "CustomCommand const definition" or "auto definition" (both without &) would create a copy of the object
+//         
+//         G4cout << "\n >>> CMD PATH: " << definition.cmdPath << " GUIDANCE: " << definition.cmdGuidance << "\n" << G4endl;
+//         
+//         G4cout << "\n >>> CHECK 2\n" << G4endl;
+//         
+//         // Create a new command, exposed via the cmdPath string
+//         auto* cmd = new G4UIcmdWithABool(definition.cmdPath, this); // params: theCommandPath, theMessenger
+//         
+//         G4cout << "\n >>> CHECK 3\n" << G4endl;
+//         
+//         // Define usage string and default value
+//         cmd->SetGuidance(definition.cmdGuidance); // ..
+//         cmd->SetDefaultValue(true);
+//         
+//         G4cout << "\n >>> CHECK 4\n" << G4endl;
+//         
+//         // Create an entry in the map, linking the instantiated command to the command object
+//         fCmdMap[cmd] = &definition;
+//         // key: G4UIcommand*
+//         // val: BoolCommand
+//         
+//         G4cout << "\n >>> CHECK 5\n" << G4endl;
+//     }
+
+    // ...
+    auto const* rawBytePtr = reinterpret_cast<char const*>(commandsArray);
+    
     // Iterate through the array
     for (size_t i = 0; i < length; i++) {
+        
+        // ...
+        char const* elementAddress = rawBytePtr + (i * byte_stride);
+        
+        // ...
+        auto const* basePtr = reinterpret_cast<CustomBoolCommand const*>(elementAddress);
+        
         // Cache reference to the current object in the array
-        // auto& definition = commandsArray[i];
-        CustomCommand const& definition = commandsArray[i];
+        CustomBoolCommand const& definition = *basePtr;
         // NOTE: "CustomCommand const definition" or "auto definition" (both without &) would create a copy of the object
+        
+        // G4cout << "\n >>> CMD PATH: " << definition.cmdPath << " GUIDANCE: " << definition.cmdGuidance << "\n" << G4endl;
         
         // Create a new command, exposed via the cmdPath string
         auto* cmd = new G4UIcmdWithABool(definition.cmdPath, this); // params: theCommandPath, theMessenger
+        
+        // G4cout << "\n\nAVAILABLE : " << cmd->IsAvailable() << G4endl;
+        // G4cout << "\n\nMESSENGER : " << cmd->GetMessenger() << G4endl;
+        // G4cout << "\n\nMESSENGER : " << this << G4endl;
         
         // Define usage string and default value
         cmd->SetGuidance(definition.cmdGuidance); // ..
         cmd->SetDefaultValue(true);
         
         // Create an entry in the map, linking the instantiated command to the command object
-        fCmdMap[cmd] = &definition;
+        // fCmdMap[cmd] = &definition;
+        fCmdMap[cmd] = basePtr;
         // key: G4UIcommand*
         // val: BoolCommand
+        
     }
 }
 
 /*
  * ...
  */
-void ProgramStateMessenger::ClearCommands() {
+// void ProgramStateMessenger::ClearCommands() {
+void ProgramStateMessenger::ClearBoolCommands() {
     // Iterate through the key-value pairs in the map
-    for (auto i = fCmdMap.begin(); i != fCmdMap.end(); i++) {
-        // i->first; // key (G4UIcommand*)
-        // i->second; // value (BoolCommand)
+    for (auto entry = fCmdMap.begin(); entry != fCmdMap.end(); entry++) {
+        // entry->first; // key (G4UIcommand*)
+        // entry->second; // value (CustomBoolCommand const*)
         
         // Free the heap allocated memory
-        delete i->first; // delete command
+        delete entry->first; // delete command
     }
 }
 
@@ -295,7 +502,8 @@ void ProgramStateMessenger::SetNewValue(G4UIcommand* cmd, G4String newValue) {
         
         // Get a readonly reference to the BoolCommand object associated with this command
         // auto const& definition = found->second;
-        CustomCommand const* definition = found->second;
+        // CustomCommand const* definition = found->second;
+        CustomBoolCommand const* definition = found->second;
         
         // Since "cmd" was found in fCmdMap, we know its of type G4UIcmdWithABool
         auto const* casted = static_cast<G4UIcmdWithABool*>(cmd);
@@ -327,24 +535,29 @@ void ProgramStateMessenger::SetNewValue(G4UIcommand* cmd, G4String newValue) {
         
         // ...
         switch (definition->type) {
-            case TypeAlias::Event: {
+            case OutputType::Event: {
                 auto const* castedDefinition = static_cast<EventCommand const*>(definition);
                 stateFlags.fEventFlags.*(castedDefinition->member) = value;
+                break;
             }
-            case TypeAlias::StepDetection: {
+            case OutputType::StepDetection: {
                 auto const* castedDefinition = static_cast<StepDetectionCommand const*>(definition);
                 stateFlags.fStepDetectionFlags.*(castedDefinition->member) = value;
+                break;
             }
-            case TypeAlias::StepBoundaryAbsorb: {
+            case OutputType::StepBoundaryAbsorb: {
                 auto const* castedDefinition = static_cast<StepBoundaryAbsorbCommand const*>(definition);
                 stateFlags.fStepBoundaryAbsorbFlags.*(castedDefinition->member) = value;
+                break;
             }
-            case TypeAlias::StepBulkAbsorb: {
+            case OutputType::StepBulkAbsorb: {
                 auto const* castedDefinition = static_cast<StepBulkAbsorbCommand const*>(definition);
                 stateFlags.fStepBulkAbsorbFlags.*(castedDefinition->member) = value;
+                break;
             }
             default: {
                 G4cout << "\nINVALID USAGE\n" << G4endl;
+                break;
             }
         }
     }
