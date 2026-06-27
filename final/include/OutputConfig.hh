@@ -232,80 +232,64 @@
 //     }
 // }};
 
-/*
- * ...
- */
-enum class TypeAlias {
-    Event,
-    StepDetection,
-    StepBoundaryAbsorb,
-    StepBulkAbsorb
-};
-
-/*
- * ....
- */
-struct CustomCommand {
-    // Name of the command
-    char const* name; // NOTE: Unused property currently, potentially remove
-    
-    // The command path exposed to the UI
-    char const* cmdPath;
-    
-    // Guidance message for explaining endpoint usage
-    char const* cmdGuidance;
-    
-    // TEST
-    // char const* type;
-    TypeAlias type;
-};
-
-/*
- * ....
- */
-struct EventCommand : public CustomCommand {
-    // Pointer to a bool member of EventFlags
-    bool EventFlags::* member;
-    // NOTE: pointer-to-member
-    // const?
-    
-    // char const* type = "Event";
-};
-
-/*
- * ....
- */
-struct StepDetectionCommand : public CustomCommand {
-    // Pointer to a bool member of StepDetectionFlags
-    bool StepDetectionFlags::* member;
-    // NOTE: pointer-to-member
-    // const?
-};
-
-/*
- * ....
- */
-struct StepBoundaryAbsorbCommand : public CustomCommand {
-    // Pointer to a bool member of StepBoundaryAbsorbFlags
-    bool StepBoundaryAbsorbFlags::* member;
-    // NOTE: pointer-to-member
-    // const?
-};
-
-/*
- * ....
- */
-struct StepBulkAbsorbCommand : public CustomCommand {
-    // Pointer to a bool member of StepBulkAbsorbFlags
-    bool StepBulkAbsorbFlags::* member;
-    // NOTE: pointer-to-member
-    // const?
-    
-    // StateFlags::* a = &StateFlags::StepBulkAbsorbFlags;
-    
-    // StateFlags::StepBulkAbsorbFlags StateFlags::* ptr_to_inner;
-    // StateFlags::fStepBulkAbsorbFlags StateFlags::* ptr_to_inner;
-};
+// /*
+//  * ....
+//  */
+// struct CustomCommand {
+//     // Name of the command
+//     char const* name; // NOTE: Unused property currently, potentially remove
+//     
+//     // The command path exposed to the UI
+//     char const* cmdPath;
+//     
+//     // Guidance message for explaining endpoint usage
+//     char const* cmdGuidance;
+// };
+// 
+// /*
+//  * ....
+//  */
+// struct EventCommand : public CustomCommand {
+//     // Pointer to a bool member of EventFlags
+//     bool EventFlags::* member;
+//     // NOTE: pointer-to-member
+//     // const?
+// };
+// 
+// /*
+//  * ....
+//  */
+// struct StepDetectionCommand : public CustomCommand {
+//     // Pointer to a bool member of StepDetectionFlags
+//     bool StepDetectionFlags::* member;
+//     // NOTE: pointer-to-member
+//     // const?
+// };
+// 
+// /*
+//  * ....
+//  */
+// struct StepBoundaryAbsorbCommand : public CustomCommand {
+//     // Pointer to a bool member of StepBoundaryAbsorbFlags
+//     bool StepBoundaryAbsorbFlags::* member;
+//     // NOTE: pointer-to-member
+//     // const?
+// };
+// 
+// /*
+//  * ....
+//  */
+// struct StepBulkAbsorbCommand : public CustomCommand {
+//     // Pointer to a bool member of StepBulkAbsorbFlags
+//     bool StepBulkAbsorbFlags::* member;
+//     // NOTE: pointer-to-member
+//     // const?
+//     
+//     // StateFlags::* a = &StateFlags::StepBulkAbsorbFlags;
+//     
+//     // StateFlags::StepBulkAbsorbFlags StateFlags::* ptr_to_inner;
+//     // StateFlags::fStepBulkAbsorbFlags StateFlags::* ptr_to_inner;
+// };
 
 /*
  * ....
@@ -367,6 +351,101 @@ struct StepBulkAbsorbCommand : public CustomCommand {
 //     // const?
 // };
 
+
+/*
+ * ...
+ */
+// enum class CmdTypeAlias {
+enum class OutputType {
+    Event,
+    StepDetection,
+    StepBoundaryAbsorb,
+    StepBulkAbsorb
+};
+
+/*
+ * Interface required to create a "G4UIcmdWithABool"
+ */
+struct CustomBoolCommand {
+    // Name of the command
+    char const* name; // NOTE: Unused property currently, potentially remove
+    
+    // The command path exposed to the UI
+    char const* cmdPath;
+    
+    // Guidance message for explaining endpoint usage
+    char const* cmdGuidance;
+    
+    // TEST
+    // char const* type;
+    // TypeAlias type;
+    OutputType const type;
+};
+
+/*
+ * ....
+ */
+struct EventCommand : public CustomBoolCommand {
+    // OutputType const type = OutputType::Event;
+    
+    // Pointer to a bool member of EventFlags
+    bool EventFlags::* member;
+    // NOTE: pointer-to-member
+    // const?
+    
+    // ...
+    // char const* type = "Event";
+    // TypeAlias type = TypeAlias::Event;
+    // OutputType const type = OutputType::Event;
+};
+
+/*
+ * ....
+ */
+struct StepDetectionCommand : public CustomBoolCommand {
+    // Pointer to a bool member of StepDetectionFlags
+    bool StepDetectionFlags::* member;
+    // NOTE: pointer-to-member
+    // const?
+    
+    // ...
+    // TypeAlias type = TypeAlias::StepDetection;
+    // OutputType const type = OutputType::StepDetection;
+};
+
+/*
+ * ....
+ */
+struct StepBoundaryAbsorbCommand : public CustomBoolCommand {
+    // Pointer to a bool member of StepBoundaryAbsorbFlags
+    bool StepBoundaryAbsorbFlags::* member;
+    // NOTE: pointer-to-member
+    // const?
+    
+    // ...
+    // TypeAlias type = TypeAlias::StepBoundaryAbsorb;
+    // OutputType const type = OutputType::StepBoundaryAbsorb;
+};
+
+/*
+ * ....
+ */
+struct StepBulkAbsorbCommand : public CustomBoolCommand {
+    // Pointer to a bool member of StepBulkAbsorbFlags
+    bool StepBulkAbsorbFlags::* member;
+    // NOTE: pointer-to-member
+    // const?
+    
+    // StateFlags::* a = &StateFlags::StepBulkAbsorbFlags;
+    
+    // StateFlags::StepBulkAbsorbFlags StateFlags::* ptr_to_inner;
+    // StateFlags::fStepBulkAbsorbFlags StateFlags::* ptr_to_inner;
+    
+    // ...
+    // TypeAlias type = TypeAlias::StepBulkAbsorb;
+    // OutputType const type = OutputType::StepBulkAbsorb;
+};
+
 /*
  * Exposed API for controlling simulation output
  * 
@@ -384,7 +463,9 @@ inline constexpr std::array<EventCommand, 4> EventCommands = {{
         "fDetection",
         "/output/event/detection",
         "Enable per-event detected photons output.",
+        // EventCommand.type,
         // &EventCommand::type,
+        OutputType::Event,
         &EventFlags::fDetectionNtuple // NOTE: Create the pointer-to-member
         // NOTE: Pointer to the fDetectionNtuple field inside StateFlags, havent got an actual object yet,
         // so it cant be the address of a particular bool - its just describing which member of the struct
@@ -396,6 +477,7 @@ inline constexpr std::array<EventCommand, 4> EventCommands = {{
         "fDetectionFraction",
         "/output/event/detectionFraction",
         "Enable per-event photons detected fraction output.",
+        OutputType::Event,
         &EventFlags::fDetectionFractionNtuple
     },
     // Per-event boundary absorptions fraction
@@ -403,6 +485,7 @@ inline constexpr std::array<EventCommand, 4> EventCommands = {{
         "fBoundaryAbsorbFraction",
         "/output/event/boundaryAbsorbFraction",
         "Enable per-event photons absorbed at boundary fraction output.",
+        OutputType::Event,
         &EventFlags::fBoundaryAbsorbFractionNtuple
     },
     // Per-event bulk absorptions fraction
@@ -410,6 +493,7 @@ inline constexpr std::array<EventCommand, 4> EventCommands = {{
         "fBulkAbsorbFraction",
         "/output/event/bulkAbsorbFraction",
         "Enable per-event photons bulk absorbed fraction output.",
+        OutputType::Event,
         &EventFlags::fBulkAbsorbFractionNtuple
     },
 }};
@@ -426,24 +510,28 @@ inline constexpr std::array<StepDetectionCommand, 4> StepDetectionCommands = {{
         "fDetectionCoords",
         "/output/step/detection/coords",
         "Enable detection coordinates output.",
+        OutputType::StepDetection,
         &StepDetectionFlags::fDetectionCoordsNtuple
     },
     {
         "fDetectionDistance",
         "/output/step/detection/distance",
         "Enable distance travelled by photon before detection output.",
+        OutputType::StepDetection,
         &StepDetectionFlags::fDetectionDistanceNtuple
     },
     {
         "fDetectionTimeOfFlight",
         "/output/step/detection/timeOfFlight",
         "Enable time duration of travel by photon before detection output.",
+        OutputType::StepDetection,
         &StepDetectionFlags::fDetectionTimeOfFlightNtuple
     },
     {
         "fDetectionReflections",
         "/output/step/detection/reflections",
         "Enable number of reflections before detection output.",
+        OutputType::StepDetection,
         &StepDetectionFlags::fDetectionReflectionsNtuple
     },
 }};
@@ -466,6 +554,7 @@ inline constexpr std::array<StepBoundaryAbsorbCommand, 1> StepBoundaryAbsorbComm
         "fBoundaryAbsorbCoords",
         "/output/step/boundaryAbsorb/coords",
         "Enable boundary absorption coordinates output.",
+        OutputType::StepBoundaryAbsorb,
         &StepBoundaryAbsorbFlags::fBoundaryAbsorbCoordsNtuple
     },
     // { // NOTE: Not yet implemented
@@ -512,6 +601,7 @@ inline constexpr std::array<StepBulkAbsorbCommand, 2> StepBulkAbsorbCommands = {
         "fBulkAbsorbDistance",
         "/output/step/bulkAbsorb/distance",
         "Enable distance travelled by photon before bulk absorption output.",
+        OutputType::StepBulkAbsorb,
         &StepBulkAbsorbFlags::fBulkAbsorbDistanceNtuple
     },
     // { // NOTE: Not yet implemented
@@ -524,6 +614,7 @@ inline constexpr std::array<StepBulkAbsorbCommand, 2> StepBulkAbsorbCommands = {
         "fBulkAbsorbReflections",
         "/output/step/bulkAbsorb/reflections",
         "Enable number of reflections before bulk absorption output.",
+        OutputType::StepBulkAbsorb,
         &StepBulkAbsorbFlags::fBulkAbsorbReflectionsNtuple
     }
 }};
