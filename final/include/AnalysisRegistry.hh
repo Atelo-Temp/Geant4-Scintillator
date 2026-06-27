@@ -60,32 +60,86 @@ struct NtupleIndicesCoords {
 /*
  * ...
  */
-struct NtupleIDs {
-    // Event flags
+// struct NtupleIDs {
+//     // Event flags
+//     NtupleIndices fDetectionNtuple = {-1, -1}; // Per-event detections
+//     // NtupleIndices fBoundaryAbsorbNtuple = {-1, -1}; // NOTE: Not writing per-event boundary absorption counts
+//     // NtupleIndices fBulkAbsorbNtuple = {-1, -1}; // NOTE: Not writing per-event bulk absorption counts
+//     NtupleIndices fDetectionFractionNtuple = {-1, -1}; // Per-event detections fraction
+//     NtupleIndices fBoundaryAbsorbFractionNtuple = {-1, -1}; // Per-event boundary absorptions fraction
+//     NtupleIndices fBulkAbsorbFractionNtuple = {-1, -1}; // Per-event bulk absorptions fraction
+//     
+//     // Step detection flags
+//     NtupleIndicesCoords fDetectionCoordsNtuple = {-1, -1, -1, -1};
+//     NtupleIndices fDetectionDistanceNtuple = {-1, -1};
+//     NtupleIndices fDetectionTimeOfFlightNtuple = {-1, -1};
+//     NtupleIndices fDetectionReflectionsNtuple = {-1, -1};
+//     
+//     // Step boundary absorption flags
+//     NtupleIndicesCoords fBoundaryAbsorbCoordsNtuple = {-1, -1, -1, -1};
+//     // NtupleIndices fBoundaryAbsorbDistanceNtuple = {-1, -1}; // NOTE: Not yet implemented
+//     // NtupleIndices fBoundaryAbsorbTimeOfFlightNtuple = {-1, -1}; // NOTE: Not yet implemented
+//     // NtupleIndices fBoundaryAbsorbReflectionsNtuple = {-1, -1};  // NOTE: Not yet implemented
+//     
+//     // Step bulk absorption flags
+//     // NtupleIndicesCoords fBulkAbsorbCoordsNtuple = {-1, -1, -1, -1}; // NOTE: Not yet implemented
+//     NtupleIndices fBulkAbsorbDistanceNtuple = {-1, -1};
+//     // NtupleIndices fBulkAbsorbTimeOfFlightNtuple = {-1, -1}; // NOTE: Not yet implemented
+//     NtupleIndices fBulkAbsorbReflectionsNtuple = {-1, -1};
+// };
+
+/*
+ * Event ntuple indices
+ */
+struct EventNtupleIDs {
     NtupleIndices fDetectionNtuple = {-1, -1}; // Per-event detections
     // NtupleIndices fBoundaryAbsorbNtuple = {-1, -1}; // NOTE: Not writing per-event boundary absorption counts
     // NtupleIndices fBulkAbsorbNtuple = {-1, -1}; // NOTE: Not writing per-event bulk absorption counts
     NtupleIndices fDetectionFractionNtuple = {-1, -1}; // Per-event detections fraction
     NtupleIndices fBoundaryAbsorbFractionNtuple = {-1, -1}; // Per-event boundary absorptions fraction
     NtupleIndices fBulkAbsorbFractionNtuple = {-1, -1}; // Per-event bulk absorptions fraction
-    
-    // Step detection flags
+};
+
+/*
+ * Step detection ntuple indices
+ */
+struct StepDetectionNtupleIDs {
     NtupleIndicesCoords fDetectionCoordsNtuple = {-1, -1, -1, -1};
     NtupleIndices fDetectionDistanceNtuple = {-1, -1};
     NtupleIndices fDetectionTimeOfFlightNtuple = {-1, -1};
     NtupleIndices fDetectionReflectionsNtuple = {-1, -1};
-    
-    // Step boundary absorption flags
+};
+
+/*
+ * Step boundary absorption ntuple indices
+ */
+struct StepBoundaryAbsorbNtupleIDs {
     NtupleIndicesCoords fBoundaryAbsorbCoordsNtuple = {-1, -1, -1, -1};
     // NtupleIndices fBoundaryAbsorbDistanceNtuple = {-1, -1}; // NOTE: Not yet implemented
     // NtupleIndices fBoundaryAbsorbTimeOfFlightNtuple = {-1, -1}; // NOTE: Not yet implemented
     // NtupleIndices fBoundaryAbsorbReflectionsNtuple = {-1, -1};  // NOTE: Not yet implemented
-    
-    // Step bulk absorption flags
+};
+
+/*
+ * Step bulk absorption ntuple indices
+ */
+struct StepBulkAbsorbNtupleIDs {
+    // 
     // NtupleIndicesCoords fBulkAbsorbCoordsNtuple = {-1, -1, -1, -1}; // NOTE: Not yet implemented
     NtupleIndices fBulkAbsorbDistanceNtuple = {-1, -1};
     // NtupleIndices fBulkAbsorbTimeOfFlightNtuple = {-1, -1}; // NOTE: Not yet implemented
     NtupleIndices fBulkAbsorbReflectionsNtuple = {-1, -1};
+};
+
+
+/*
+ * ...
+ */
+struct NtupleIDs {
+    EventNtupleIDs fEventNtupleIDs;
+    StepDetectionNtupleIDs fStepDetectionNtupleIDs;
+    StepBulkAbsorbNtupleIDs fStepBulkAbsorbNtupleIDs;
+    StepBoundaryAbsorbNtupleIDs fStepBoundaryAbsorbNtupleIDs;
 };
 
 /*
