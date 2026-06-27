@@ -20,6 +20,7 @@
 #include "EventAction.hh"
 #include "SteppingAction.hh"
 // #include "TrackingAction.hh"
+#include "ProgramState.hh"
 
 // When specifying default in header file, dont need to define these
 // ActionInitialization::ActionInitialization() {}
@@ -35,6 +36,14 @@
 void ActionInitialization::BuildForMaster() const {
     // Instantiate the run handler (start/end of run handlers for histogramming)
     SetUserAction(new RunAction());
+    
+    // Force initialisation here on the master thread
+    ProgramState::GetInstance();
+    // NOTE: Since ProgramState constructor instantiates ProgramStateMessenger, leaving the
+    // first call to GetInstance(), which constructs ProgramState, until one of the Analysis
+    // classes requests the ProgramState instance, means the ProgramStateMessenger will be
+    // instantiated on a worker thread, rather than the main thread, which prevents custom
+    // commands from working as intended
 }
 
 /*
