@@ -72,7 +72,7 @@ void RunAnalysis::InitialiseDataStructures() {
     G4GenericAnalysisManager* iAnalysisManager = G4AnalysisManager::Instance();
     
     // ...
-    ProgramState& iProgramState = ProgramState::GetInstance();
+    ProgramState& iProgramState = ProgramState::GetInstance(); // TODO: Unused
     
     // ...
     StateFlags const& outputFlags = iProgramState.ReadStateFlags(); // TODO: Unused

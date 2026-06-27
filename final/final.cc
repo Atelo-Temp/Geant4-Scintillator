@@ -3,7 +3,6 @@
 #include "PhysicsList.hh"
 #include "ActionInitialization.hh"
 // #include "Timer.hh"
-// #include "ProgramState.hh"
 
 // G4 lib
 // #include "G4MTRunManager.hh"
@@ -27,9 +26,6 @@
  * NOTE: examples/advanced/CaTS/CaTS.cc has some good arg handling
  */
 int main(int argc, char** argv) {
-    // Force initialisation here on the master thread
-    // ProgramState::GetInstance(); // NOTE: For debugging
-    
     // Detect interactive mode (if no arguments) and define UI session
     G4UIExecutive* ui = nullptr;
 
@@ -117,6 +113,9 @@ int main(int argc, char** argv) {
     else {
         // Run in interactive mode (execute visualisation macro)
         UImanager->ApplyCommand("/control/execute vis.mac");
+        
+        // NOTE: Debugging
+        // UImanager->ListCommands("/output/");
 
         // Start UI mode (interactive session)
         ui->SessionStart();

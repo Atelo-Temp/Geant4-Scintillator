@@ -453,7 +453,7 @@ struct StepBulkAbsorbCommand : public CustomBoolCommand {
  * 
  * NOTE: Each struct essentially states: "this command corresponds to this member of StateFlags"
  */
-inline constexpr std::array<EventCommand, 4> EventCommands = {{
+inline constexpr std::array<EventCommand, 4> EventCommands = {{ // TODO: EventCommandDefinitions
     //////////////
     // Event flags
     //////////////

@@ -32,6 +32,25 @@
  * Because the histogram is created in the master thread (output0.root),
  * whereas thread wise the output will be output0_TO.root, output0_T1.root, etc,
  * where the nTuples will be stored
+ * 
+ * NOTE: Instantiation Order
+ * 
+ *      ↓
+ * RunAnalysis (as it is instantiated in RunAction constructor, before RunAction finishes construction)
+ *      ↓
+ * RunAction
+ *      ↓
+ * ProgramStateMessenger (as it is being instantiated in ProgramState constructor)
+ *      ↓
+ * ProgramState
+ * 
+ * NOTE: Instantiation Heirarchy
+ * 
+ *      ↓ 
+ * RunAction → RunAnalysis
+ *      ↓ 
+ * ProgramState → ProgramStateMessenger
+ * 
 */
 void ActionInitialization::BuildForMaster() const {
     // Instantiate the run handler (start/end of run handlers for histogramming)
@@ -61,10 +80,6 @@ void ActionInitialization::BuildForMaster() const {
  *      ↓
  * RunAction
  *      ↓
- * ProgramStateMessenger (as it is being instantiated in ProgramState constructor)
- *      ↓
- * ProgramState (currently being instantiated 1st time by EventAnalysis constructor)
- *      ↓
  * EventAnalysis
  *      ↓
  * EventAction
@@ -79,7 +94,7 @@ void ActionInitialization::BuildForMaster() const {
  *      ↓ 
  * RunAction → RunAnalysis
  *      ↓
- * EventAction → EventAnalysis → ProgramState → ProgramStateMessenger
+ * EventAction → EventAnalysis
  *      ↓
  * SteppingAction → SteppingAnalysis
 */
