@@ -42,6 +42,8 @@ RunAction::~RunAction() {
  * 
  * TODO: call fRunAnalysis->CreateDataStructures() here, instead of at construction
  * ^ needs to be delayed to allow macro to set output flags
+ * 
+ * TODO: How do things behave with ntuple and file creation on worker threads ?
  */
 void RunAction::BeginOfRunAction(const G4Run* run) {
     // Inform the runManager to save random number seed (for reproducibility at later date)

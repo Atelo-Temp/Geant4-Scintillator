@@ -2,7 +2,7 @@
 #define MyEventAnalysis_HH
 
 // User lib
-#include "AnalysisRegistry.hh"
+#include "AnalysisRegistry.hh" // RegistryListener
 
 // C lib
 #include <vector>
@@ -12,7 +12,7 @@
 #include "G4GenericAnalysisManager.hh"
 
 // Forward declarations
-struct EventNtupleIDs;
+// struct EventNtupleIDs;
 
 // TODO: If needed
 // struct LostPhotonMap {
@@ -73,7 +73,7 @@ class EventAnalysis : public RegistryListener { // TEST
         G4GenericAnalysisManager* fAnalysisManager = nullptr;
         
         // TEST ...
-        EventNtupleIDs const* fEventNtupleIDs;
+        EventNtupleIDs const* fEventNtupleIDs = nullptr;
         
         // Optical photon tally
         G4int fTotalPhotons = 0;

@@ -58,9 +58,9 @@ void PhysicsList::SetCuts() {
     SetCutsWithDefault();
     
     // Production thresholds for detector regions
-    G4String regionName = "Scintillator";
+    G4String const regionName = "Scintillator";
     G4Region* region = G4RegionStore::GetInstance()->GetRegion(regionName);
-    auto cuts = new G4ProductionCuts();
+    auto* cuts = new G4ProductionCuts();
     cuts->SetProductionCut(100 * um);
     region->SetProductionCuts(cuts);
 }

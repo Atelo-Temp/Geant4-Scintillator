@@ -27,11 +27,11 @@ EventAnalysis::EventAnalysis() {
     // Increase allocation for reflection vector map
     fReflectionMap.resize(40960);
     
-    G4cout << "\n\n>>>>> EVENT ANALYSIS INSTANTIATED\n\n" << G4endl;
+    G4cout << "\n\n>>>>> EVENT ANALYSIS INSTANTIATED\n" << G4endl;
 }
 
 /*
- * 
+ * ...
  */
 void EventAnalysis::UpdateRegistryCache() {
     // ...

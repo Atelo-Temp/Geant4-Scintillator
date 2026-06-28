@@ -9,6 +9,11 @@
 #include "G4Step.hh"
 #include "G4GenericAnalysisManager.hh"
 
+// Forward declarations
+// struct StepDetectionNtupleIDs;
+// struct StepBoundaryAbsorbNtupleIDs;
+// struct StepBulkAbsorbNtupleIDs;
+
 /*
  * Handles writing output data to ntuples
  */
@@ -36,6 +41,11 @@ class SteppingAnalysis : public RegistryListener { // TEST
     private:  
         // Cached pointer to analysis manager singleton
         G4GenericAnalysisManager* fAnalysisManager = nullptr;
+        
+        // ...
+        StepDetectionNtupleIDs const* fStepDetectionNtupleIDs = nullptr;
+        StepBoundaryAbsorbNtupleIDs const* fStepBoundaryAbsorbNtupleIDs = nullptr;
+        StepBulkAbsorbNtupleIDs const* fStepBulkAbsorbNtupleIDs = nullptr;
 };
 
 #endif

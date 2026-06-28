@@ -25,6 +25,8 @@
  * TODO: May want to use initialiser list here
  * 
  * NOTE: Destruction of EventAction, EventAnalysis, etc is not this classes responsibility, hence default destructor
+ * 
+ * TODO: EventAction unused beyond extraction of analysis class, consider removing
  */
 SteppingAction::SteppingAction(EventAction* eventAction) {
     // ...

@@ -66,6 +66,10 @@ RunAnalysis::RunAnalysis() {
  * TODO: Need to either have an individual ntuple for each bit of data, or group ntuples, and ntuple flags
  * 
  * TODO: If grouping, will also need to store column IDs ...
+ * 
+ * TODO: THIS GETS CALLED ON EVERY THREAD, SHOULD IT JUST BE MASTER THREAD ??
+ * Pretty sure G4AnalysisManager instance is on master thread, so its not like im making these
+ * for each thread, i think its just pinging master 3 times ....
  */
 void RunAnalysis::InitialiseDataStructures() {
     // Get a pointer to the singleton analysis manager via the static method

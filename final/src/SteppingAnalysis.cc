@@ -34,13 +34,17 @@ SteppingAnalysis::SteppingAnalysis() {
     // ...
     registry.AddListener(this); // TEST
     
-    G4cout << "\n\n>>>>> STEPPING ANALYSIS INSTANTIATED\n\n" << G4endl;
+    G4cout << "\n\n>>>>> STEPPING ANALYSIS INSTANTIATED\n" << G4endl;
 }
 
 /*
- * ...
+ * Update ntuple indices cache
  * 
  * TODO: Maybe have this cache flags too
+ * 
+ * ^ Instead this just listens for BeginOfRunAction notification, then calls:
+ * - UpdateRegistryCache (ntuple ids)
+ * - UpdateStateFlags (enabled output flags)
  */
 void SteppingAnalysis::UpdateRegistryCache() {
     // ...
@@ -53,7 +57,10 @@ void SteppingAnalysis::UpdateRegistryCache() {
     // ...
     const NtupleIDs& ntupleIDs = registry.ReadNtupleIDs();
     
-    
+    // ...
+    fStepDetectionNtupleIDs = &(ntupleIDs.fStepDetectionNtupleIDs);
+    fStepBoundaryAbsorbNtupleIDs = &(ntupleIDs.fStepBoundaryAbsorbNtupleIDs);
+    fStepBulkAbsorbNtupleIDs = &(ntupleIDs.fStepBulkAbsorbNtupleIDs);
 }
 
 /*
@@ -68,18 +75,39 @@ void SteppingAnalysis::HandleBulkAbsorb(G4Track const* track, EventAnalysis cons
     // std::string volume = endPoint->GetTouchable()->GetVolume()->GetName();
     // G4cout << "BULK ABSORPTION IN MEDIUM: " << endPoint->GetTouchable()->GetVolume()->GetName() << G4endl; // "Scintillator"
     
+//     // Get distance travelled by photon before bulk absorption
+//     G4double const distance = track->GetTrackLength();
+//     fAnalysisManager->FillNtupleDColumn(4, 0, distance); // id = 4, column = 0, value = distance travelled
+//     fAnalysisManager->AddNtupleRow(4); // finish row for Ntuple id = 4
+//     // G4cout << "Distance Travelled Before Bulk Absorption: " << distance << " mm" << G4endl;
+//     
+//     // Retrieve number of reflections
+//     // G4int const numReflections = userTrackInfo->GetReflections();
+//     G4int const photonIdx = track->GetTrackID();
+//     G4int const numReflections = fEventAnalysis->GetReflections(photonIdx);
+//     fAnalysisManager->FillNtupleIColumn(7, 0, numReflections); // ...
+//     fAnalysisManager->AddNtupleRow(7); // ...
+    
     // Get distance travelled by photon before bulk absorption
     G4double const distance = track->GetTrackLength();
-    fAnalysisManager->FillNtupleDColumn(4, 0, distance); // id = 4, column = 0, value = distance travelled
-    fAnalysisManager->AddNtupleRow(4); // finish row for Ntuple id = 4
+    fAnalysisManager->FillNtupleDColumn(
+        fStepBulkAbsorbNtupleIDs->fBulkAbsorbDistanceNtuple.fNtupleID,
+        fStepBulkAbsorbNtupleIDs->fBulkAbsorbDistanceNtuple.fColumnID,
+        distance
+    ); // id = 4, column = 0, value = distance travelled
+    fAnalysisManager->AddNtupleRow(fStepBulkAbsorbNtupleIDs->fBulkAbsorbDistanceNtuple.fNtupleID); // finish row for Ntuple id = 4
     // G4cout << "Distance Travelled Before Bulk Absorption: " << distance << " mm" << G4endl;
     
     // Retrieve number of reflections
     // G4int const numReflections = userTrackInfo->GetReflections();
     G4int const photonIdx = track->GetTrackID();
     G4int const numReflections = fEventAnalysis->GetReflections(photonIdx);
-    fAnalysisManager->FillNtupleIColumn(7, 0, numReflections); // ...
-    fAnalysisManager->AddNtupleRow(7); // ...
+    fAnalysisManager->FillNtupleIColumn(
+        fStepBulkAbsorbNtupleIDs->fBulkAbsorbReflectionsNtuple.fNtupleID, 
+        fStepBulkAbsorbNtupleIDs->fBulkAbsorbReflectionsNtuple.fColumnID, 
+        numReflections
+    ); // ...
+    fAnalysisManager->AddNtupleRow(fStepBulkAbsorbNtupleIDs->fBulkAbsorbReflectionsNtuple.fNtupleID); // ...
     
     return;
 }
@@ -88,6 +116,15 @@ void SteppingAnalysis::HandleBulkAbsorb(G4Track const* track, EventAnalysis cons
  * Handle optical photon being detected at a boundary (i.e., photocathode)
  * 
  * NOTE: Takes readonly pointers (pointer to const)
+ * 
+ * TODO:
+ * if (fStepDetectionNtupleIDs->fDetectionCoordsNtuple.fNtupleID != fStepDetectionNtupleIDs->fDetectionDistanceNtuple.fNtupleID) {
+ *  AddNtupleRow(fStepDetectionNtupleIDs->fDetectionCoordsNtuple.fNtupleID)
+ * }
+ * if (fStepDetectionNtupleIDs->fDetectionDistanceNtuple.fNtupleID != fStepDetectionNtupleIDs->fDetectionTimeOfFlightNtuple.fNtupleID) {
+ *  AddNtupleRow(fStepDetectionNtupleIDs->fDetectionDistanceNtuple.fNtupleID)
+ * }
+ * ... etc
  */
 void SteppingAnalysis::HandleDetection(G4StepPoint const* endPoint, G4Track const* track, EventAnalysis const* fEventAnalysis) {
     // TODO: May be worth double checking the boundary is the photocathode
@@ -106,14 +143,42 @@ void SteppingAnalysis::HandleDetection(G4StepPoint const* endPoint, G4Track cons
     double const y = detectionPosition[1];
     double const z = detectionPosition[2];
     
+//     // Store this data in the nTuples (create a few rows) (IColumn = int, DColumn = double)
+//     fAnalysisManager->FillNtupleDColumn(0, 0, x); // NtupleID = 0, 0th column, x
+//     fAnalysisManager->FillNtupleDColumn(0, 1, y); // NtupleID = 0, 1st column, y
+//     fAnalysisManager->FillNtupleDColumn(0, 2, z); // NtupleID = 0, 2nd column, z
+//     // NOTE: Takes tuple ID (0 as we only made one), column number in this row, and the entry
+//     
+//     // Mark this row as complete (for Ntuple with passed ID)
+//     fAnalysisManager->AddNtupleRow(0); // Ntuple ID = 0
+    
+    // TODO: Maybe cache/reuse a little bit, might actually reduce chances of human error too tbh
+    // \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
+    // auto& ntuple = fStepDetectionNtupleIDs->fDetectionCoordsNtuple;
+    // auto& ntupleID = ntuple.fNtupleID;
+    // ntuple.fXColumnID;
+    // TODO ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    
     // Store this data in the nTuples (create a few rows) (IColumn = int, DColumn = double)
-    fAnalysisManager->FillNtupleDColumn(0, 0, x); // NtupleID = 0, 0th column, x
-    fAnalysisManager->FillNtupleDColumn(0, 1, y); // NtupleID = 0, 1st column, y
-    fAnalysisManager->FillNtupleDColumn(0, 2, z); // NtupleID = 0, 2nd column, z
+    fAnalysisManager->FillNtupleDColumn(
+        fStepDetectionNtupleIDs->fDetectionCoordsNtuple.fNtupleID,
+        fStepDetectionNtupleIDs->fDetectionCoordsNtuple.fXColumnID,
+        x
+    ); // NtupleID = 0, 0th column, x
+    fAnalysisManager->FillNtupleDColumn(
+        fStepDetectionNtupleIDs->fDetectionCoordsNtuple.fNtupleID,
+        fStepDetectionNtupleIDs->fDetectionCoordsNtuple.fYColumnID,
+        y
+    ); // NtupleID = 0, 1st column, y
+    fAnalysisManager->FillNtupleDColumn(
+        fStepDetectionNtupleIDs->fDetectionCoordsNtuple.fNtupleID,
+        fStepDetectionNtupleIDs->fDetectionCoordsNtuple.fZColumnID,
+        z
+    ); // NtupleID = 0, 2nd column, z
     // NOTE: Takes tuple ID (0 as we only made one), column number in this row, and the entry
     
     // Mark this row as complete (for Ntuple with passed ID)
-    fAnalysisManager->AddNtupleRow(0); // Ntuple ID = 0
+    fAnalysisManager->AddNtupleRow(fStepDetectionNtupleIDs->fDetectionCoordsNtuple.fNtupleID); // Ntuple ID = 0
     
     // TEST TEST TEST
     // Get the global time (TODO: For timing window)
@@ -129,24 +194,55 @@ void SteppingAnalysis::HandleDetection(G4StepPoint const* endPoint, G4Track cons
     // again much like photon counts
     // TEST TEST TEST
     
+//     // Get distance travelled by photon before detection (from creation to absorption in PC)
+//     G4double const distance = track->GetTrackLength();
+//     fAnalysisManager->FillNtupleDColumn(3, 0, distance); // NtupleID = 3, column = 0, val = distance
+//     // analysisManager->AddNtupleRow(3); // finish row for NtupleID = 3 // NOTE: OMIT THIS IF USING SAME NTUPLE FOR ALL TRACK DATA
+//     // G4cout << "Distance Travelled Before Detection: " << distance << " mm" << G4endl;
+//     
+//     // Get time of flight information (local time gives time since photon birth until now, i.e. birth to detection)
+//     G4double const time = track->GetLocalTime();
+//     fAnalysisManager->FillNtupleDColumn(3, 1, time); // NtupleID = 3, column = 1, val = time
+//     fAnalysisManager->AddNtupleRow(3); // Finish row for NtupleID = 3 // NOTE: NOW THAT ALL TRACK DATA WRITTEN, ADD THE ROW
+//     // NOTE: This method loses relative timing between different photons if they 
+//     // were created at different points along the primary particles track
+//     
+//     // Retrieve number of reflections
+//     G4int const photonIdx = track->GetTrackID();
+//     G4int const numReflections = fEventAnalysis->GetReflections(photonIdx);
+//     fAnalysisManager->FillNtupleIColumn(6, 0, numReflections); // TODO: Maybe clump all "detection" branches together in one ntuple
+//     fAnalysisManager->AddNtupleRow(6);
+    
     // Get distance travelled by photon before detection (from creation to absorption in PC)
     G4double const distance = track->GetTrackLength();
-    fAnalysisManager->FillNtupleDColumn(3, 0, distance); // NtupleID = 3, column = 0, val = distance
+    fAnalysisManager->FillNtupleDColumn(
+        fStepDetectionNtupleIDs->fDetectionDistanceNtuple.fNtupleID,
+        fStepDetectionNtupleIDs->fDetectionDistanceNtuple.fColumnID,
+        distance
+    ); // NtupleID = 3, column = 0, val = distance
     // analysisManager->AddNtupleRow(3); // finish row for NtupleID = 3 // NOTE: OMIT THIS IF USING SAME NTUPLE FOR ALL TRACK DATA
     // G4cout << "Distance Travelled Before Detection: " << distance << " mm" << G4endl;
     
     // Get time of flight information (local time gives time since photon birth until now, i.e. birth to detection)
     G4double const time = track->GetLocalTime();
-    fAnalysisManager->FillNtupleDColumn(3, 1, time); // NtupleID = 3, column = 1, val = time
-    fAnalysisManager->AddNtupleRow(3); // Finish row for NtupleID = 3 // NOTE: NOW THAT ALL TRACK DATA WRITTEN, ADD THE ROW
+    fAnalysisManager->FillNtupleDColumn(
+        fStepDetectionNtupleIDs->fDetectionTimeOfFlightNtuple.fNtupleID,
+        fStepDetectionNtupleIDs->fDetectionTimeOfFlightNtuple.fColumnID,
+        time
+    ); // NtupleID = 3, column = 1, val = time
+    fAnalysisManager->AddNtupleRow(fStepDetectionNtupleIDs->fDetectionTimeOfFlightNtuple.fNtupleID); // Finish row for NtupleID = 3 // NOTE: NOW THAT ALL TRACK DATA WRITTEN, ADD THE ROW
     // NOTE: This method loses relative timing between different photons if they 
     // were created at different points along the primary particles track
     
     // Retrieve number of reflections
     G4int const photonIdx = track->GetTrackID();
     G4int const numReflections = fEventAnalysis->GetReflections(photonIdx);
-    fAnalysisManager->FillNtupleIColumn(6, 0, numReflections); // TODO: Maybe clump all "detection" branches together in one ntuple
-    fAnalysisManager->AddNtupleRow(6);
+    fAnalysisManager->FillNtupleIColumn(
+        fStepDetectionNtupleIDs->fDetectionReflectionsNtuple.fNtupleID,
+        fStepDetectionNtupleIDs->fDetectionReflectionsNtuple.fColumnID,
+        numReflections
+    ); // TODO: Maybe clump all "detection" branches together in one ntuple
+    fAnalysisManager->AddNtupleRow(fStepDetectionNtupleIDs->fDetectionReflectionsNtuple.fNtupleID);
     
     // TEST
     // Calculate angle of incidence for detected photon
@@ -180,14 +276,35 @@ void SteppingAnalysis::HandleBoundaryAbsorb(G4StepPoint const* endPoint) {
     double const y = absorptionPosition[1];
     double const z = absorptionPosition[2];
     
+//     // Store this data in the nTuples (create a few rows) (IColumn = int, DColumn = double)
+//     fAnalysisManager->FillNtupleDColumn(1, 0, x); // NtupleID = 1, 3rd column, x
+//     fAnalysisManager->FillNtupleDColumn(1, 1, y); // NtupleID = 1, 4th column, y
+//     fAnalysisManager->FillNtupleDColumn(1, 2, z); // NtupleID = 1, 5th column, z
+//     // NOTE: Takes tuple ID (0 as we only made one), column number in this row, and the entry
+//     
+//     // Mark this row as complete (for Ntuple with passed ID)
+//     fAnalysisManager->AddNtupleRow(1); // Ntuple ID = 1
+    
     // Store this data in the nTuples (create a few rows) (IColumn = int, DColumn = double)
-    fAnalysisManager->FillNtupleDColumn(1, 0, x); // NtupleID = 1, 3rd column, x
-    fAnalysisManager->FillNtupleDColumn(1, 1, y); // NtupleID = 1, 4th column, y
-    fAnalysisManager->FillNtupleDColumn(1, 2, z); // NtupleID = 1, 5th column, z
+    fAnalysisManager->FillNtupleDColumn(
+        fStepBoundaryAbsorbNtupleIDs->fBoundaryAbsorbCoordsNtuple.fNtupleID,
+        fStepBoundaryAbsorbNtupleIDs->fBoundaryAbsorbCoordsNtuple.fXColumnID,
+        x
+    ); // NtupleID = 1, 3rd column, x
+    fAnalysisManager->FillNtupleDColumn(
+        fStepBoundaryAbsorbNtupleIDs->fBoundaryAbsorbCoordsNtuple.fNtupleID,
+        fStepBoundaryAbsorbNtupleIDs->fBoundaryAbsorbCoordsNtuple.fYColumnID,
+        y
+    ); // NtupleID = 1, 4th column, y
+    fAnalysisManager->FillNtupleDColumn(
+        fStepBoundaryAbsorbNtupleIDs->fBoundaryAbsorbCoordsNtuple.fNtupleID,
+        fStepBoundaryAbsorbNtupleIDs->fBoundaryAbsorbCoordsNtuple.fZColumnID,
+        z
+    ); // NtupleID = 1, 5th column, z
     // NOTE: Takes tuple ID (0 as we only made one), column number in this row, and the entry
     
     // Mark this row as complete (for Ntuple with passed ID)
-    fAnalysisManager->AddNtupleRow(1); // Ntuple ID = 1
+    fAnalysisManager->AddNtupleRow(fStepBoundaryAbsorbNtupleIDs->fBoundaryAbsorbCoordsNtuple.fNtupleID); // Ntuple ID = 1
     
     // For every photon that enters the detector and interacts, each interaction will call "ProcessHits()",
     // producing a new row (linked to the event ID) for each interaction,
