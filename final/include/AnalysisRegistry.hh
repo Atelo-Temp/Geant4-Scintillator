@@ -148,6 +148,8 @@ struct NtupleIDs {
  * NOTE: Cannot be instantiated, only extended
  * 
  * NOTE: C++ generates a default constructor automatically, defined virtual constructor not needed
+ * 
+ * TODO: Consider making this a separate singleton, or mediator
  */
 class RegistryListener {
     public:

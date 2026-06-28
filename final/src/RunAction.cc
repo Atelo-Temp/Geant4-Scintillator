@@ -10,16 +10,23 @@
 /*
  * Constructor
  * 
- * NOTE: A run action class is instantiated both thread-local and global,
- * hence the constructor & destructor will be called on the master thread,
- * and every worker thread (i.e. 3 threads = 4 constructions/destructions)
+ * NOTE: A run action class is instantiated both thread-local and global, hence
+ * the constructor & destructor will be called on the master thread, and every
+ * worker thread
+ * 
+ * So, the nummber of instances = 1 + number of threads
+ * (i.e. 3 threads = 4 constructions/destructions)
+ * 
+ * NOTE: G4AnalysisManager is a thread-local singleton, this first call to Instance
+ * instantiates the singleton for this thread, and all subsequent calls will use
+ * the same thread-local instance
  */
 RunAction::RunAction() {
     // Instantiate the analysis handler and store a pointer to it in class property
     fAnalysis = new RunAnalysis(); // NOTE: Shouldnt have auto here!
     
     // Enable merging of Ntuples which are spread across the threads into one outfile
-    G4GenericAnalysisManager* analysisManager = G4AnalysisManager::Instance();
+    G4AnalysisManager* analysisManager = G4AnalysisManager::Instance();
     analysisManager->SetNtupleMerging(true); // <<<<<<<<<<<<<< Uncomment me
     // NOTE: See README.md for more info
     
@@ -35,8 +42,14 @@ RunAction::~RunAction() {
  
 /*
  * Define the start of run event handler (Takes run object as a parameter)
+ * 
  * NOTE: This method is invoked at the beginning of the BeamOn() method, but after
  * confirmation of the conditions of the G4 kernel
+ * 
+ * NOTE: This method is called for the RunAction instance on the master thread, then
+ * for every RunAction instance on each worker thread
+ * 
+ * ...
  * 
  * TODO: Extract marked code below to fRunAnalysis->CreateOutfile()
  * 
@@ -45,20 +58,23 @@ RunAction::~RunAction() {
  * 
  * TODO: How do things behave with ntuple and file creation on worker threads ?
  */
-void RunAction::BeginOfRunAction(const G4Run* run) {
+void RunAction::BeginOfRunAction(G4Run const* run) {
     // Inform the runManager to save random number seed (for reproducibility at later date)
     // G4RunManager::GetRunManager()->SetRandomNumberStore(false);
   
+    // Access the ID for the run object (integer)
+    G4int const runID = run->GetRunID();
+    
+    // ...
+    if (IsMaster()) G4cout << "MASTER THREAD - ";
+    
+    // Write to G4 stdout at beginning of run with id
+    G4cout << "Starting Run: " << runID << G4endl;
+    
     // TODO: May wanna just move all the code below \/ \/ to a method in AnalysisManager,
     // as im instantiating fAnalysis in constructor anyways ...
     
-    // Get a pointer to the singleton analysis manager
-    G4GenericAnalysisManager* analysisManager = G4AnalysisManager::Instance();
-    // NOTE: Couldnt the pointer just be stored in the class?
-    // But then youre storing a pointer to it in two places, maybe wasteful ?
-    
-    // Access the ID for the run object (integer)
-    G4int const runID = run->GetRunID();
+    // \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
     
     // Convert ID integer to string (To include run ID in the filename)
     std::stringstream strRunID; // String stream object
@@ -72,20 +88,21 @@ void RunAction::BeginOfRunAction(const G4Run* run) {
     G4String const fileName = "output" + strRunID.str() + ".root"; // append file type
     // NOTE: Could overwrite output.root on each run, but this is a better option
     
+    // Get a pointer to the singleton analysis manager
+    G4AnalysisManager* analysisManager = G4AnalysisManager::Instance();
+    // NOTE: Couldnt the pointer just be stored in the class?
+    // But then youre storing a pointer to it in two places, maybe wasteful ?
+    
     // Create and open the file with the supplied name
     analysisManager->OpenFile(fileName);
     
     // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     
-    
-    // TEST - Delay creation of data structures until start of run and outfile successfully opened
+    // Delay creation of data structures until start of run and outfile successfully opened
     fAnalysis->InitialiseDataStructures();
-    // NOTE: Instead of doing so at construction
-    // TEST
-    
+    // NOTE: Instead of doing so at construction (avoids wasteful creation for vis only sessions)
     
     // This code wont execute on the master thread, only on worker threads
-    // NOTE: if (isMaster) enclosed code would execute only on the master thread
     if (!isMaster) {
         // Instantiate the timer (on the heap so it outlives enclosure)
         fTimer = new Timer();
@@ -97,19 +114,27 @@ void RunAction::BeginOfRunAction(const G4Run* run) {
         G4cout << "Starting Run At: " << startTime << G4endl;
         // NOTE: May move this stdout output to timer, not sure
     }
+    // NOTE: if (isMaster) enclosed code would execute only on the master thread
 }
 
 /*
  * Define the end of run event handler (Also takes run object)
  * 
+ * NOTE: This method is called for the RunAction instance on the master thread, then
+ * for every RunAction instance on each worker thread
+ * 
+ * ...
+ * 
  * TODO: Extract marked code below to fRunAnalysis->WriteOutfile()
  */
-void RunAction::EndOfRunAction(const G4Run* run) {
+void RunAction::EndOfRunAction(G4Run const* run) {
     // TODO: Again this all seems suitable for a dedicated method in AnalysisManager \/\/\/
     // except the "finishing run" console log (and run ID grab for said log)
     
-     // Get a pointer to the singleton analysis manager
-    auto analysisManager = G4AnalysisManager::Instance();
+    // \/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/\/
+    
+    // Get a pointer to the singleton analysis manager
+    G4AnalysisManager* analysisManager = G4AnalysisManager::Instance();
     
     // Write data (nTuples & histogram) to the open outfile at the end of each run
     analysisManager->Write();
@@ -117,8 +142,19 @@ void RunAction::EndOfRunAction(const G4Run* run) {
     // Ensure the the outfile is closed after writing data
     analysisManager->CloseFile();
     
+    // Destroy all constructed data structures, ready for fresh creation next run
+    analysisManager->Clear();
+    // NOTE: Frees the allocated memory
+    
+    // Clear the accumulated data (entries and rows) inside the ntuples
+    // analysisManager->Reset();
+    // NOTE: Memory is not freed, keeps the structural definitions
+    
     // Grab the run id from the ruin object again for G4 stdout feedback
     G4int const runID = run->GetRunID();
+    
+    // ...
+    if (IsMaster()) G4cout << "MASTER THREAD - ";
     
     // Write to G4 stdout at end of run with id
     G4cout << "Finishing Run: " << runID << G4endl;
