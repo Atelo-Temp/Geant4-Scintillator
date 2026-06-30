@@ -107,7 +107,7 @@ PrimaryGenerator
      ↓
 RunAction → RunAnalysis
      ↓
-EventAction → EventAnalysis
+EventAction → EventAnalysis → HitManager
      ↓
 SteppingAction → SteppingAnalysis
      ↓
@@ -121,6 +121,8 @@ RunAction constructor is called before RunAnalysis constructor, but RunAnalysis 
 
 ### User Action Instantiation Order            (TODO: AnalysisRegistry (before run analysis? only if DataStructures created in RunAnalysis constructor - not if in begin of run action))
 
+#### Master Thread
+
 ```text
      ↓
 RunAnalysis (as it is instantiated in RunAction constructor, before RunAction finishes construction)
@@ -129,7 +131,18 @@ RunAction
      ↓
 ProgramStateMessenger (as it is being instantiated in ProgramState constructor)
      ↓
-ProgramState (currently being instantiated 1st time by EventAnalysis constructor)
+ProgramState (currently being instantiated 1st time by ActionInitialisation::Build)
+```
+
+#### Worker Threads
+
+```text
+     ↓
+RunAnalysis (as it is instantiated in RunAction constructor, before RunAction finishes construction)
+     ↓
+RunAction
+     ↓
+HitManager (instantiated by event action)
      ↓
 EventAnalysis
      ↓
@@ -202,12 +215,14 @@ RunAction::EndOfRunAction
        |
        ├─ RunAction*
        |
-       └─ EventAnalysis (o)
-                     |
-                     ├─ AnalysisRegistry*
-                     |
-                     └─ ProgramState*
-
+       ├─ EventAnalysis (o)
+       |             |
+       |             ├─ AnalysisRegistry*
+       |             |
+       |             └─ ProgramState*
+       |
+       └─ HitManager (o)
+       
 
 > SteppingAction
        |
@@ -215,11 +230,13 @@ RunAction::EndOfRunAction
        |
        ├─ EventAnalysis*
        |
-       └─ SteppingAnalysis (o)
-                     |
-                     ├─ AnalysisRegistry*
-                     |
-                     └─ ProgramState*
+       ├─ SteppingAnalysis (o)
+       |             |
+       |             ├─ AnalysisRegistry*
+       |             |
+       |             └─ ProgramState*
+       |
+       └─ HitManager*
 ```
 
 TODO:
@@ -229,7 +246,7 @@ There is kinda no need to cache pointers for AnalysisRegistry and ProgramState, 
 
 NOTE:
 
-o = ownership (instantiates, owns, and manages lifetime of said instance)
+o = ownership (instantiates, owns, and manages lifetime of said instance, responsible for destruction)
 * = has pointer or reference to class (but doesnt manage lifetime explicitly, may instantiate indirectly via singleton GetInstance() though)
 
 ### Class Heirarchy (expanded)
@@ -246,11 +263,13 @@ o = ownership (instantiates, owns, and manages lifetime of said instance)
        |         |
        |         └─ RunAnalysis (o)
        |
-       └─ EventAnalysis (o)
-                 | 
-                 ├─ AnalysisRegistry*
-                 |
-                 └─ ProgramState*
+       ├─ EventAnalysis (o)
+       |         |
+       |         ├─ AnalysisRegistry*
+       |         |
+       |         └─ ProgramState*
+       |
+       └─ HitManager (o)
 
 
 > SteppingAction
@@ -261,24 +280,28 @@ o = ownership (instantiates, owns, and manages lifetime of said instance)
        |           |         |
        |           |         └─ RunAnalysis (o)
        |           |
-       |           └─ EventAnalysis (o)
-       |                     | 
-       |                     ├─ AnalysisRegistry*
-       |                     |
-       |                     └─ ProgramState*
+       |           ├─ EventAnalysis (o)
+       |           |         | 
+       |           |         ├─ AnalysisRegistry*
+       |           |         |
+       |           |         └─ ProgramState*
+       |           |
+       |           └─ HitManager (o)
        |
        ├─ EventAnalysis*
        |
-       └─ SteppingAnalysis (o)
-                     | 
-                     ├─ AnalysisRegistry*
-                     |
-                     └─ ProgramState*
+       ├─ SteppingAnalysis (o)
+       |           |
+       |           ├─ AnalysisRegistry*
+       |           |
+       |           └─ ProgramState*
+       |
+       └─ HitManager*
 ```
 
 NOTE:
 
-o = ownership (instantiates, owns, and manages lifetime of said instance)
+o = ownership (instantiates, owns, and manages lifetime of said instance, responsible for destruction)
 * = has pointer or reference to class (but doesnt manage lifetime explicitly, may instantiate indirectly via singleton GetInstance() though)
 
 ## Scintillation Parameters
