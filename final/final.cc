@@ -35,6 +35,8 @@ int main(int argc, char** argv) {
         // Instantiate the UI
         ui = new G4UIExecutive(argc, argv);
     }
+    // TODO: If ((argv[1] == "-i") || (argv[2] == "-i")) ui = new ...;
+    // TODO: If ((argc == 3) && (argv[1] != "-i") && (argv[2] != "-i")) return 1;
     
     // Get a timestamp for random seeding
     // auto timer = new Timer();

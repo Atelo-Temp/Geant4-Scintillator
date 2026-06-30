@@ -30,3 +30,7 @@
 
 #### This should be like a pseudo lab experience, choose source, place it X distance from detector face, run either 1 event, or potentially run batch mode
 ##   ^ if adding batch mode menu buttons, will want to disable trajectories drawing, etc
+
+#### TODO: Add a way to change detector geometry (i.e. switch between 3', 2', and 1' NaI:Tl detector)
+##   ^^ as well as changing detector material (i.e., NaI:Tl, LaBr:Ce, CeBr) (code optical params in c++ then switch selection via messenger)
+##   ^^ maybe expose api via messenger for changing things like reflector material too
