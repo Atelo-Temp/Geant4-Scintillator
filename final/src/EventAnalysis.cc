@@ -2,6 +2,7 @@
 #include "EventAnalysis.hh"
 #include "ProgramState.hh"
 // #include "AnalysisRegistry.hh"
+#include "HitManager.hh"
 
 // G4 lib
 #include "G4AnalysisManager.hh"
@@ -24,14 +25,11 @@ EventAnalysis::EventAnalysis() {
     // registry.AddListener(this->UpdateRegistryCache);
     registry.AddListener(this); // TEST
     
-    // Increase allocation for reflection vector map
-    fReflectionMap.resize(40960);
-    
     G4cout << "\n\n>>>>> EVENT ANALYSIS INSTANTIATED\n" << G4endl;
 }
 
 /*
- * ...
+ * Fetch ntuple indices and update local cache
  */
 void EventAnalysis::UpdateRegistryCache() {
     // ...
@@ -48,68 +46,36 @@ void EventAnalysis::UpdateRegistryCache() {
 }
 
 /*
- * Reset counters between events
- */
-void EventAnalysis::ResetCounters() {
-    // Set integers to zero
-    fTotalPhotons = 0;
-    fDetectedPhotons = 0;
-    fAbsorbedPhotons = 0;
-    fBulkAbsorb = 0;
-    fLostPhotons = 0; // NoRINDEX
-    
-    // Set all indices in reflection map to zero values
-    // fReflectionMap.assign(fReflectionMap.size(), 0);
-    std::fill(fReflectionMap.begin(), fReflectionMap.end(), 0);
-}
-
-/*
- * ...
+ * Write data for the current event to the ntuples
  * 
  * TODO: Handlers for the two clauses to encapsulate logic & separate concerns
  */
-void EventAnalysis::WriteEventData() const {
-    // Only write to histo when non-zero optical photons detected at the photocathode
-    if (fDetectedPhotons > 0) {
-        // // Fill the per-event total detected photons ntuple
-        // fAnalysisManager->FillNtupleIColumn(2, 0, fDetectedPhotons); // ntuple ID, column ID, fill value
-        // // NOTE: Only 1 column, hence column ID = 0
-        // fAnalysisManager->AddNtupleRow(2); // Save the row for Ntuple ID = 2
-        
-        // Fill the per-event total detected photons ntuple
-        fAnalysisManager->FillNtupleIColumn(
-            fEventNtupleIDs->fDetectionNtuple.fNtupleID, 
-            fEventNtupleIDs->fDetectionNtuple.fColumnID, 
-            fDetectedPhotons
-        ); // ntuple ID, column ID, fill value
-        // NOTE: Only 1 column, hence column ID = 0
-        fAnalysisManager->AddNtupleRow(fEventNtupleIDs->fDetectionNtuple.fNtupleID); // Save the row for Ntuple ID = 2
-        
-        // TEST: DEBUGGING THE HIGH COUNTS OF NEAR-ZERO DETECTIONS SINCE ADDING Al2O3 RINDEX
-        // if (fDetectedPhotons < 10) {
-        //     G4cout << "LOW PHOTON COUNT: " << fDetectedPhotons << G4endl;
-        // }
-    }
-    // NOTE: If using multiple histograms for any reason (i.e. two detectors) make sure to mark appropriate ID
+void EventAnalysis::WriteEventData() const {    
+    // ...
+    G4int const fTotalPhotons = fHitManager->GetDetectedPhotons();
     
     // Only write to ntuple when optical photons are generated via energy deposition
     if (fTotalPhotons > 0) {
-//         // Calculate fractional detection efficiency and write to respective column
-//         double const detectionEfficiency = (1. * fDetectedPhotons) / fTotalPhotons;
-//         fAnalysisManager->FillNtupleDColumn(5, 0, detectionEfficiency); // ntuple ID = 5, column ID = 0
-//         // NOTE: Cast to double (via 1. *)
-//         
-//         // Calculate fractional bulk absorption losses and write to respective column
-//         double const bulkAbsoptionLosses = (1. * fBulkAbsorb) / fTotalPhotons;
-//         fAnalysisManager->FillNtupleDColumn(5, 1, bulkAbsoptionLosses); // ntuple ID = 5, column ID = 1
-//         
-//         // Calculate fractional bulk absorption losses and write to respective column
-//         double const surfaceAbsoptionLosses = (1. * fAbsorbedPhotons) / fTotalPhotons;
-//         fAnalysisManager->FillNtupleDColumn(5, 2, surfaceAbsoptionLosses); // ntuple ID = 5, column ID = 2
-//         
-//         // Row complete
-//         fAnalysisManager->AddNtupleRow(5); // Save the row for Ntuple ID = 5
+        // ...
+        G4int const fDetectedPhotons = fHitManager->GetDetectedPhotons();
         
+        // Only write to histo when non-zero optical photons detected at the photocathode
+        if (fDetectedPhotons > 0) {
+            // Fill the per-event total detected photons ntuple
+            fAnalysisManager->FillNtupleIColumn(
+                fEventNtupleIDs->fDetectionNtuple.fNtupleID, 
+                fEventNtupleIDs->fDetectionNtuple.fColumnID, 
+                fDetectedPhotons
+            ); // ntuple ID, column ID, fill value
+            // NOTE: Only 1 column, hence column ID = 0
+            fAnalysisManager->AddNtupleRow(fEventNtupleIDs->fDetectionNtuple.fNtupleID); // Save the row for Ntuple ID = 2
+            
+            // TEST: DEBUGGING THE HIGH COUNTS OF NEAR-ZERO DETECTIONS SINCE ADDING Al2O3 RINDEX
+            // if (fDetectedPhotons < 10) {
+            //     G4cout << "LOW PHOTON COUNT: " << fDetectedPhotons << G4endl;
+            // }
+        }
+    
         // Calculate fractional detection efficiency and write to respective column
         double const detectionEfficiency = (1. * fDetectedPhotons) / fTotalPhotons;
         
@@ -120,17 +86,23 @@ void EventAnalysis::WriteEventData() const {
         ); // ntuple ID = 5, column ID = 0
         // NOTE: Cast to double (via 1. *)
         
+        // ...
+        G4int const fBoundaryAbsorbedPhotons = fHitManager->GetBoundaryAbsorptions();
+        
         // Calculate fractional bulk absorption losses and write to respective column
-        double const surfaceAbsoptionLosses = (1. * fAbsorbedPhotons) / fTotalPhotons;
+        double const surfaceAbsoptionLosses = (1. * fBoundaryAbsorbedPhotons) / fTotalPhotons;
         
         fAnalysisManager->FillNtupleDColumn(
             fEventNtupleIDs->fBoundaryAbsorbFractionNtuple.fNtupleID,
             fEventNtupleIDs->fBoundaryAbsorbFractionNtuple.fColumnID,
             surfaceAbsoptionLosses
         ); // ntuple ID = 5, column ID = 2
+        
+        // ...
+        G4int const fBulkAbsorbedPhotons = fHitManager->GetBulkAbsorptions();
                 
         // Calculate fractional bulk absorption losses and write to respective column
-        double const bulkAbsoptionLosses = (1. * fBulkAbsorb) / fTotalPhotons;
+        double const bulkAbsoptionLosses = (1. * fBulkAbsorbedPhotons) / fTotalPhotons;
         
         fAnalysisManager->FillNtupleDColumn(
             fEventNtupleIDs->fBulkAbsorbFractionNtuple.fNtupleID,
@@ -148,105 +120,59 @@ void EventAnalysis::WriteEventData() const {
 }
 
 /*
- * Increment optical photons generated
- */
-void EventAnalysis::CountPhoton() {
-    fTotalPhotons += 1;
-}
-
-/*
- * Increment optical photons detected (at photocathode)
- */
-void EventAnalysis::CountDetectedPhoton() {
-    fDetectedPhotons += 1;
-}
-
-/*
- * Increment optical photons absorbed (at a boundary)
- */
-void EventAnalysis::CountAbsorbedPhoton() {
-    fAbsorbedPhotons += 1;
-}
-
-/*
- * Increment optical photons lost (due to no RINDEX etc)
- */
-void EventAnalysis::CountLostPhoton() {
-    fLostPhotons += 1;
-}
-// void EventAnalysis::CountLostPhoton(std::string medium) { fLostPhotons += 1; } // TODO: Add medium where each of these things occured (same for absorption, etc)
-
-/*
- * Increment optical photons absorbed (in medium)
- */
-void EventAnalysis::CountBulkAbsorption() {
-    fBulkAbsorb += 1;
-}
-
-/*
- * Increment reflection counter for specified photon
- * 
- * NOTE: This is for any type of reflection:
- * - FresnelReflection
- * - TotalInternalReflection
- * - LambertianReflection
- * - LobeReflection
- * - SpikeReflection
- * - BackScattering
- * 
- * NOTE: Will increase size of vector if passed photonIdx exceeds capacity
- */
-void EventAnalysis::CountReflection(G4int photonIdx) {
-    if (photonIdx >= fReflectionMap.size()) fReflectionMap.resize(photonIdx + 2048, 0);
-    fReflectionMap[photonIdx]++;
-}
-
-/*
- * Retrieve total number of reflections for specified photon
- * 
- * NOTE: Doesnt alter class data (readonly), so const method
- */
-G4int EventAnalysis::GetReflections(G4int photonIdx) const {
-    return fReflectionMap[photonIdx];
-}
-
-/*
  * Inspect event state, print to stdout
  * 
  * NOTE: Readonly method
+ * 
+ * NOTE: Disabled to save time during batch processing, may want a logic statement that
+ * checks whether in visualisation or batch, as this nice for vis
+ * 
+ * TODO: Reflection logging ?
  */
-void EventAnalysis::LogEventData() const {
+void EventAnalysis::LogEventData() const {    
+    // ...
+    G4int const fTotalPhotons = fHitManager->GetDetectedPhotons();
+    
+    // ...
+    G4int const fDetectedPhotons = fHitManager->GetDetectedPhotons();
+    
+    // ...
+    G4int const fBoundaryAbsorbedPhotons = fHitManager->GetBoundaryAbsorptions();
+    
+    // ...
+    G4int const fBulkAbsorbedPhotons = fHitManager->GetBulkAbsorptions();
+    
+    // ...
+    G4int const fLostPhotons = fHitManager->GetLostPhotons();
+    
     // Individual loss mechanisms
     G4cout << G4endl << "Optical Photons Generated: " << fTotalPhotons << G4endl;
     
     G4cout << G4endl << "Optical Photons Detected: " << fDetectedPhotons << G4endl;
     G4cout << G4endl << "Percent Detected: " << ((1. * fDetectedPhotons) / fTotalPhotons) * 100 << G4endl;
     
-    G4cout << G4endl << "Optical Photons Boundary Absorbed: " << fAbsorbedPhotons << G4endl;
-    G4cout << G4endl << "Percent Boundary Absorbed: " << ((1. * fAbsorbedPhotons) / fTotalPhotons) * 100 << G4endl;
+    G4cout << G4endl << "Optical Photons Boundary Absorbed: " << fBoundaryAbsorbedPhotons << G4endl;
+    G4cout << G4endl << "Percent Boundary Absorbed: " << ((1. * fBoundaryAbsorbedPhotons) / fTotalPhotons) * 100 << G4endl;
     
-    G4cout << G4endl << "Optical Photons Bulk Absorbed: " << fBulkAbsorb << G4endl;
-    G4cout << G4endl << "Percent Bulk Absorbed: " << ((1. * fBulkAbsorb) / fTotalPhotons) * 100 << G4endl;
+    G4cout << G4endl << "Optical Photons Bulk Absorbed: " << fBulkAbsorbedPhotons << G4endl;
+    G4cout << G4endl << "Percent Bulk Absorbed: " << ((1. * fBulkAbsorbedPhotons) / fTotalPhotons) * 100 << G4endl;
     
     G4cout << G4endl << "Optical Photons Lost: " << fLostPhotons << G4endl;
     G4cout << G4endl << "Percent Lost: " << (1. * fLostPhotons / fTotalPhotons) * 100 << G4endl;
     
     // Group stats
-    G4cout << G4endl << "Optical Photons Detected OR Boundary Absorbed: " << fDetectedPhotons + fAbsorbedPhotons << G4endl;
-    G4cout << G4endl << "Percent Detected OR Boundary Absorbed: " << ((1. * (fDetectedPhotons + fAbsorbedPhotons)) / fTotalPhotons) * 100 << G4endl;
+    G4cout << G4endl << "Optical Photons Detected OR Boundary Absorbed: " << fDetectedPhotons + fBoundaryAbsorbedPhotons << G4endl;
+    G4cout << G4endl << "Percent Detected OR Boundary Absorbed: " << ((1. * (fDetectedPhotons + fBoundaryAbsorbedPhotons)) / fTotalPhotons) * 100 << G4endl;
     
-    G4cout << G4endl << "Optical Photons Detected OR Bulk Absorbed: " << fDetectedPhotons + fBulkAbsorb << G4endl;
-    G4cout << G4endl << "Percent Detected OR Bulk Absorbed: " << ((1. * (fDetectedPhotons + fBulkAbsorb)) / fTotalPhotons) * 100 << G4endl;
+    G4cout << G4endl << "Optical Photons Detected OR Bulk Absorbed: " << fDetectedPhotons + fBulkAbsorbedPhotons << G4endl;
+    G4cout << G4endl << "Percent Detected OR Bulk Absorbed: " << ((1. * (fDetectedPhotons + fBulkAbsorbedPhotons)) / fTotalPhotons) * 100 << G4endl;
     
-    G4cout << G4endl << "Optical Photons Boundary Absorbed OR Bulk Absorbed: " << fAbsorbedPhotons + fBulkAbsorb << G4endl;
-    G4cout << G4endl << "Percent Boundary Absorbed OR Bulk Absorbed: " << ((1. * (fAbsorbedPhotons + fBulkAbsorb)) / fTotalPhotons) * 100 << G4endl;
+    G4cout << G4endl << "Optical Photons Boundary Absorbed OR Bulk Absorbed: " << fBoundaryAbsorbedPhotons + fBulkAbsorbedPhotons << G4endl;
+    G4cout << G4endl << "Percent Boundary Absorbed OR Bulk Absorbed: " << ((1. * (fBoundaryAbsorbedPhotons + fBulkAbsorbedPhotons)) / fTotalPhotons) * 100 << G4endl;
     
-    G4cout << G4endl << "Optical Photons Detected OR Boundary Absorbed OR Bulk Absorbed: " << fDetectedPhotons + fAbsorbedPhotons + fBulkAbsorb << G4endl;
-    G4cout << G4endl << "Percent Detected OR Boundary Absorbed OR Bulk Absorbed: " << ((1. * (fDetectedPhotons + fAbsorbedPhotons + fBulkAbsorb)) / fTotalPhotons) * 100 << G4endl;
+    G4cout << G4endl << "Optical Photons Detected OR Boundary Absorbed OR Bulk Absorbed: " << fDetectedPhotons + fBoundaryAbsorbedPhotons + fBulkAbsorbedPhotons << G4endl;
+    G4cout << G4endl << "Percent Detected OR Boundary Absorbed OR Bulk Absorbed: " << ((1. * (fDetectedPhotons + fBoundaryAbsorbedPhotons + fBulkAbsorbedPhotons)) / fTotalPhotons) * 100 << G4endl;
     
-    G4cout << G4endl << "Optical Photons Detected OR Boundary Absorbed OR Bulk Absorbed OR Lost: " << fDetectedPhotons + fAbsorbedPhotons + fBulkAbsorb + fLostPhotons << G4endl;
-    G4cout << G4endl << "Percent Detected OR Boundary Absorbed OR Bulk Absorbed OR Lost: " << ((1. * (fDetectedPhotons + fAbsorbedPhotons + fBulkAbsorb + fLostPhotons)) / fTotalPhotons) * 100 << G4endl;
-    
-    // NOTE: ^ Removed to save time during batch processing, may want an logic statement that 
-    // checks whether in visualisation or batch, as this nice for vis
+    G4cout << G4endl << "Optical Photons Detected OR Boundary Absorbed OR Bulk Absorbed OR Lost: " << fDetectedPhotons + fBoundaryAbsorbedPhotons + fBulkAbsorbedPhotons + fLostPhotons << G4endl;
+    G4cout << G4endl << "Percent Detected OR Boundary Absorbed OR Bulk Absorbed OR Lost: " << ((1. * (fDetectedPhotons + fBoundaryAbsorbedPhotons + fBulkAbsorbedPhotons + fLostPhotons)) / fTotalPhotons) * 100 << G4endl;
 }
