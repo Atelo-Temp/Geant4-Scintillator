@@ -33,10 +33,24 @@ void HitManager::CountPhoton() {
 }
 
 /*
+ * ...
+ */
+G4int HitManager::GetPhotons() const {
+    return fTotalPhotons;
+}
+
+/*
  * Increment optical photons detected (at photocathode)
  */
 void HitManager::CountDetectedPhoton() {
     fDetectedPhotons += 1;
+}
+
+/*
+ * ...
+ */
+G4int HitManager::GetDetectedPhotons() const {
+    return fDetectedPhotons;
 }
 
 /*
@@ -47,10 +61,24 @@ void HitManager::CountAbsorbedPhoton() {
 }
 
 /*
+ * ...
+ */
+G4int HitManager::GetAbsorbedPhotons() const {
+    return fAbsorbedPhotons;
+}
+
+/*
  * Increment optical photons lost (due to no RINDEX etc)
  */
 void HitManager::CountLostPhoton() {
     fLostPhotons += 1;
+}
+
+/*
+ * ...
+ */
+G4int HitManager::GetLostPhotons() const {
+    return fLostPhotons;
 }
 // void HitManager::CountLostPhoton(std::string medium) { fLostPhotons += 1; } // TODO: Add medium where each of these things occured (same for absorption, etc)
 
@@ -59,6 +87,13 @@ void HitManager::CountLostPhoton() {
  */
 void HitManager::CountBulkAbsorption() {
     fBulkAbsorb += 1;
+}
+
+/*
+ * ...
+ */
+G4int HitManager::GetBulkAbsorptions() const {
+    return fBulkAbsorb;
 }
 
 /*

@@ -24,20 +24,35 @@ class HitManager {
         // Increment number of photons spawned in this event
         void CountPhoton();
         
+        // ...
+        G4int GetPhotons() const;
+        
         // Increment number of photons incident upon the photocathode
         // ...
         
         // Increment number of photons detected by the photocathode
         void CountDetectedPhoton();
         
+        // ...
+        G4int GetDetectedPhotons() const;
+        
         // Increment number of photons absorbed at a boundary without detection
         void CountAbsorbedPhoton();
+        
+        // ...
+        G4int GetAbsorbedPhotons() const;
         
         // Increment number of photons lost due to bulk absorption
         void CountBulkAbsorption();
         
+        // ...
+        G4int GetBulkAbsorptions() const;
+        
         // Increment number of photons lost due to NoRINDEX
         void CountLostPhoton();
+        
+        // ...
+        G4int GetLostPhotons() const;
         
         // Increment number of reflections a photon has undergone
         void CountReflection(G4int photonIdx);
