@@ -35,11 +35,13 @@ EventAction::EventAction(RunAction* runAction) {
 /*
  * Destructor
  * 
+ * NOTE: This class owns, and is responsible for, managing the lifetimes of HitManager
+ * and EventAnalysis instances
+ * 
  * NOTE: RunAction object deletion is not this class responsibility
  */
 EventAction::~EventAction() {
     delete fEventAnalysis;
-    // ...
     delete fHitManager;
 }
 
@@ -50,7 +52,6 @@ EventAction::~EventAction() {
  */
 void EventAction::BeginOfEventAction(G4Event const* /*event*/) {
     // Reset counters between events
-    // fEventAnalysis->ResetCounters();
     fHitManager->ResetCounters();
 }
 
@@ -71,10 +72,8 @@ void EventAction::EndOfEventAction(G4Event const* /*event*/) {
 }
 
 /*
- * Getter for event analysis instance
+ * Getter for hit manager instance
  */
-// EventAnalysis* EventAction::GetEventAnalysisPtr() const {
 HitManager* EventAction::GetHitManagerPtr() const {
-    // return fEventAnalysis;
     return fHitManager;
 }

@@ -20,6 +20,10 @@
  * NOTE: G4AnalysisManager is a thread-local singleton, this first call to Instance
  * instantiates the singleton for this thread, and all subsequent calls will use
  * the same thread-local instance
+ * 
+ * NOTE: It is recommended, but not necessary, to create the analysis manager, via
+ * first call to: G4AnalysisManager::Instance(); in the user run action constructor.
+ * This guarantees correct behaviour in multi-threading mode.
  */
 RunAction::RunAction() {
     // Instantiate the analysis handler and store a pointer to it in class property
@@ -49,14 +53,12 @@ RunAction::~RunAction() {
  * NOTE: This method is called for the RunAction instance on the master thread, then
  * for every RunAction instance on each worker thread
  * 
+ * NOTE: Calls fRunAnalysis->CreateDataStructures() here, instead of at construction
+ * ^ needs to be delayed to allow macro to set output flags
+ * 
  * ...
  * 
  * TODO: Extract marked code below to fRunAnalysis->CreateOutfile()
- * 
- * TODO: call fRunAnalysis->CreateDataStructures() here, instead of at construction
- * ^ needs to be delayed to allow macro to set output flags
- * 
- * TODO: How do things behave with ntuple and file creation on worker threads ?
  */
 void RunAction::BeginOfRunAction(G4Run const* run) {
     // Inform the runManager to save random number seed (for reproducibility at later date)
@@ -69,7 +71,7 @@ void RunAction::BeginOfRunAction(G4Run const* run) {
     if (IsMaster()) G4cout << "MASTER THREAD - ";
     
     // Write to G4 stdout at beginning of run with id
-    G4cout << "Starting Run: " << runID << G4endl;
+    G4cout << "Starting Run: " << runID << G4endl; // TODO: This is un-needed already logs
     
     // TODO: May wanna just move all the code below \/ \/ to a method in AnalysisManager,
     // as im instantiating fAnalysis in constructor anyways ...
