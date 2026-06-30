@@ -37,10 +37,12 @@ class HitManager {
         G4int GetDetectedPhotons() const;
         
         // Increment number of photons absorbed at a boundary without detection
-        void CountAbsorbedPhoton();
+        // void CountAbsorbedPhoton();
+        void CountBoundaryAbsorption();
         
         // ...
-        G4int GetAbsorbedPhotons() const;
+        // G4int GetAbsorbedPhotons() const;
+        G4int GetBoundaryAbsorptions() const;
         
         // Increment number of photons lost due to bulk absorption
         void CountBulkAbsorption();

@@ -56,14 +56,14 @@ G4int HitManager::GetDetectedPhotons() const {
 /*
  * Increment optical photons absorbed (at a boundary)
  */
-void HitManager::CountAbsorbedPhoton() {
+void HitManager::CountBoundaryAbsorption() {
     fAbsorbedPhotons += 1;
 }
 
 /*
  * ...
  */
-G4int HitManager::GetAbsorbedPhotons() const {
+G4int HitManager::GetBoundaryAbsorptions() const {
     return fAbsorbedPhotons;
 }
 
