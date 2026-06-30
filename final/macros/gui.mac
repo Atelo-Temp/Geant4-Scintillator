@@ -22,3 +22,11 @@
 /gui/addButton source "22Na" "/gps/ion 11 22 0 0"
 /gui/addButton source "241Am" "/gps/ion 95 241 0 0"
 /gui/addButton source "68Ge" "/gps/ion 32 68 0 0"
+
+
+#### TODO: Either add gps source setup code here (from test.mac), or call an external "place_source.mac", which is the same as test.mac, minus the run/beamOn call
+
+#### TODO: Add a way to alter the source-detector distance
+
+#### This should be like a pseudo lab experience, choose source, place it X distance from detector face, run either 1 event, or potentially run batch mode
+##   ^ if adding batch mode menu buttons, will want to disable trajectories drawing, etc
