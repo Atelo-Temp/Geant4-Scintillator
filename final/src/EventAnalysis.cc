@@ -15,7 +15,7 @@ EventAnalysis::EventAnalysis() {
     fAnalysisManager = G4AnalysisManager::Instance();
     
     // ...
-    ProgramState& instance = ProgramState::GetInstance();
+    // ProgramState& instance = ProgramState::GetInstance();
     
     // ...
     AnalysisRegistry& registry = AnalysisRegistry::GetInstance();
@@ -35,12 +35,14 @@ EventAnalysis::EventAnalysis() {
  */
 void EventAnalysis::UpdateRegistryCache() {
     // ...
-    AnalysisRegistry& registry = AnalysisRegistry::GetInstance();
+    AnalysisRegistry const& registry = AnalysisRegistry::GetInstance();
+    
+    // Get readonly reference to ntuple indices object
+    NtupleIDs const& ntupleIDs = registry.ReadNtupleIDs();
     
     // ...
-    const NtupleIDs& ntupleIDs = registry.ReadNtupleIDs();
-    
     fEventNtupleIDs = &(ntupleIDs.fEventNtupleIDs);
+    // NOTE: Cache a pointer to the indices, dont copy the data itself
     
     // ...
 }
@@ -66,7 +68,7 @@ void EventAnalysis::ResetCounters() {
  * 
  * TODO: Handlers for the two clauses to encapsulate logic & separate concerns
  */
-void EventAnalysis::WriteEventData() {
+void EventAnalysis::WriteEventData() const {
     // Only write to histo when non-zero optical photons detected at the photocathode
     if (fDetectedPhotons > 0) {
         // // Fill the per-event total detected photons ntuple

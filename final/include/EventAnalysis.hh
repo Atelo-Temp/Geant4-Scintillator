@@ -3,6 +3,7 @@
 
 // User lib
 #include "AnalysisRegistry.hh" // RegistryListener
+#include "ProgramState.hh"
 
 // C lib
 #include <vector>
@@ -23,7 +24,6 @@
 /*
  * ...
  */
-// class EventAnalysis {
 class EventAnalysis : public RegistryListener { // TEST
     public:
         // Constructor
@@ -36,7 +36,7 @@ class EventAnalysis : public RegistryListener { // TEST
         void ResetCounters();
         
         // Write event stats to ntuples (detected photons, and fraction detected, boundary absorbed, and bulk absorbed)
-        void WriteEventData();
+        void WriteEventData() const;
         
         // Increment number of photons spawned in this event
         void CountPhoton();
@@ -74,6 +74,9 @@ class EventAnalysis : public RegistryListener { // TEST
         
         // TEST ...
         EventNtupleIDs const* fEventNtupleIDs = nullptr;
+        
+        // ...
+        EventFlags const* fEventFlags = nullptr;
         
         // Optical photon tally
         G4int fTotalPhotons = 0;
