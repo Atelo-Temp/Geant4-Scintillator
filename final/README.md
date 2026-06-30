@@ -67,41 +67,62 @@ Source:
 
 ## Control Flow
 
-### ...
+> NOTE: This primarily covers user classes, not every G4 instance.
+
+### Main Entry Point
 
 ```text
-G4RunManager
-     ↓
-DetectorConstruction
-     ↓
-PhysicsList
-     ↓
-ActionInitialisation
+          ↓
+     G4RunManager
+          ↓
+     DetectorConstruction
+          ↓
+     PhysicsList
+          ↓
+     ActionInitialisation
+          ↓
 ```
 
 ### User Action Instantiation Heirarchy
 
+#### Master Thread
+
+Via: ActionInitialisation::BuildForMaster
+
 ```text
-ActionInitialisation
-     ↓ 
-PrimaryGenerator
-     ↓ 
+     ↓
 RunAction → RunAnalysis
      ↓
-EventAction → EventAnalysis → ProgramState → ProgramStateMessenger
+ProgramState → ProgramStateMessenger
+     ↓
+```
+
+#### Worker Threads
+
+Via: ActionInitialisation::Build
+
+```text
+     ↓
+PrimaryGenerator
+     ↓
+RunAction → RunAnalysis
+     ↓
+EventAction → EventAnalysis
      ↓
 SteppingAction → SteppingAnalysis
+     ↓
 ```
 
 > NOTE: Instantiation happens top to bottom, and right to left
 
-i.e.: ActionInitialisation is constructed before PrimaryGenerator, but ProgramStateMessenger is constructed before EventAction.
+i.e.: ActionInitialisation is constructed before PrimaryGenerator, but RunAnalysis is constructed before RunAction.
 
-EventAction constructor is called before ProgramStateMessenger constructor, but ProgramStateMessenger is instantiated before EventAction finishes construction (call stack).
+RunAction constructor is called before RunAnalysis constructor, but RunAnalysis is instantiated before RunAction finishes construction (call stack).
 
 ### User Action Instantiation Order            (TODO: AnalysisRegistry (before run analysis? only if DataStructures created in RunAnalysis constructor - not if in begin of run action))
 
 ```text
+     ↓
 RunAnalysis (as it is instantiated in RunAction constructor, before RunAction finishes construction)
      ↓
 RunAction
@@ -125,7 +146,29 @@ Run → Event → Track → Step
 
 ### Run Execution Order
 
+#### Master Thread
+
 ```text
+      ↓
+RunAction::BeginOfRunAction
+      ↓
+RunAnalysis::InitialiseDataStructures
+      ↓
+AnalysisRegistry::NotifyListeners ??? (wasted call ?)
+      ↓
+RunAnalysis::CreateOutfile
+      ↓
+RunAction::EndOfRunAction
+```
+
+TODO:
+
+Only notify listeners on worker threads (!IsMaster), as they arent instantiated on master
+
+#### Worker Threads
+
+```text
+      ↓
 RunAction::BeginOfRunAction
       ↓
 RunAnalysis::InitialiseDataStructures
@@ -150,12 +193,12 @@ RunAction::EndOfRunAction
 ### Class Heirarchy (condensed)
 
 ```text
-RunAction
+> RunAction
        |
        └─ RunAnalysis (o)
 
 
-EventAction
+> EventAction
        |
        ├─ RunAction*
        |
@@ -166,61 +209,67 @@ EventAction
                      └─ ProgramState*
 
 
-SteppingAction
+> SteppingAction
        |
        ├─ EventAction*
        |
        ├─ EventAnalysis*
        |
-       └─ SteppingAnalysis
+       └─ SteppingAnalysis (o)
                      |
                      ├─ AnalysisRegistry*
                      |
                      └─ ProgramState*
 ```
 
+TODO:
+
+There is kinda no need to cache pointers for AnalysisRegistry and ProgramState, just have Event/Stepping Analysis listeners cache pointer to output bools / ntuple indices at start of run
+^ at most it saves one extra call to GetInstance() (once in constructor, once in UpdateRegistryCache())
+
 NOTE:
+
 o = ownership (instantiates, owns, and manages lifetime of said instance)
 * = has pointer or reference to class (but doesnt manage lifetime explicitly, may instantiate indirectly via singleton GetInstance() though)
 
 ### Class Heirarchy (expanded)
 
 ```text
-RunAction
+> RunAction
        |
        └─ RunAnalysis (o)
 
 
-EventAction
+> EventAction
        |
        ├─ RunAction*
        |         |
        |         └─ RunAnalysis (o)
        |
        └─ EventAnalysis (o)
-                     | 
-                     ├─ AnalysisRegistry*
-                     |
-                     └─ ProgramState*
+                 | 
+                 ├─ AnalysisRegistry*
+                 |
+                 └─ ProgramState*
 
 
-SteppingAction
+> SteppingAction
        |
        ├─ EventAction*
        |           |
        |           ├─ RunAction*
-       |           |          |
-       |           |          └─ RunAnalysis (o)
+       |           |         |
+       |           |         └─ RunAnalysis (o)
        |           |
        |           └─ EventAnalysis (o)
-       |                      | 
-       |                      ├─ AnalysisRegistry*
-       |                      |
-       |                      └─ ProgramState*
+       |                     | 
+       |                     ├─ AnalysisRegistry*
+       |                     |
+       |                     └─ ProgramState*
        |
        ├─ EventAnalysis*
        |
-       └─ SteppingAnalysis
+       └─ SteppingAnalysis (o)
                      | 
                      ├─ AnalysisRegistry*
                      |
@@ -228,6 +277,7 @@ SteppingAction
 ```
 
 NOTE:
+
 o = ownership (instantiates, owns, and manages lifetime of said instance)
 * = has pointer or reference to class (but doesnt manage lifetime explicitly, may instantiate indirectly via singleton GetInstance() though)
 
