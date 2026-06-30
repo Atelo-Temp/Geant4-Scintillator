@@ -1,11 +1,6 @@
 #ifndef MySteppingAction_HH
 #define MySteppingAction_HH
 
-// User classes
-#include "EventAction.hh"
-#include "EventAnalysis.hh"
-#include "SteppingAnalysis.hh"
-
 // G4 Lib
 #include "G4UserSteppingAction.hh"
 #include "G4Step.hh"
@@ -15,7 +10,9 @@
 #include "G4OpticalPhoton.hh"
 
 // Forward declarations
-// class EventAction;
+class EventAction;
+class SteppingAnalysis;
+class HitManager;
 // TODO: Consider forward declaration
 
 /*
@@ -31,7 +28,7 @@ class SteppingAction : public G4UserSteppingAction {
         SteppingAction(EventAction* eventAction);
         
         // Destructor
-        ~SteppingAction() override = default;
+        ~SteppingAction() override;
         
         // Intra-event step handler (takes pointer to step object)
         void UserSteppingAction(G4Step const* step) override;
@@ -55,10 +52,10 @@ class SteppingAction : public G4UserSteppingAction {
         // Pointer to bulk absorption process
         G4OpAbsorption const* fAbsorb = nullptr; // NOTE: Readonly
         
-        // TODO: Maybe have pointer to event analysis here
-        // either pass event analysis into both the event action and stepping action constructors in action init
+        // Pointer to hit manager instance
+        HitManager* fHitManager = nullptr;
+        // TODO: either pass hit manager into both the event action and stepping action constructors in action init
         // or make a getter for pointer on event action class, and fetch it once at construction of stepping action
-        EventAnalysis* fEventAnalysis = nullptr;
         
         // Pointer to ntuple output handler
         SteppingAnalysis const* fSteppingAnalysis = nullptr; // NOTE: Readonly

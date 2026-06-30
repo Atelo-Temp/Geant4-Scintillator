@@ -3,6 +3,8 @@
 // #include "AnalysisManager.hh"
 // #include "DetectorConstruction.hh"
 #include "SteppingAnalysis.hh"
+#include "EventAction.hh"
+#include "HitManager.hh"
 
 // G4 Lib
 #include "G4OpBoundaryProcess.hh"
@@ -33,17 +35,26 @@ SteppingAction::SteppingAction(EventAction* eventAction) {
     fEventAction = eventAction;
     
     // Cache pointer to event analysis manager
-    fEventAnalysis = fEventAction->GetEventAnalysisPtr();
+    fHitManager = fEventAction->GetHitManagerPtr();
     
     // Cache optical photon definition
     fOpticalPhotonDefinition = G4OpticalPhoton::OpticalPhotonDefinition();
     
-    // ...
-    fSteppingAnalysis = new SteppingAnalysis();
+    // Instantiate analysis instance with the hit manager
+    fSteppingAnalysis = new SteppingAnalysis(fHitManager);
     
     G4cout << "\n\n>>>>> STEPPING ACTION INSTANTIATED\n\n" << G4endl;
 }
 // SteppingAction::SteppingAction(EventAction* eventAction) : fEventAction(eventAction) {}
+
+/*
+ * Destructor
+ * 
+ * NOTE: SteppingAction is responsible for SteppingAnalysis lifetime
+ */
+SteppingAction::~SteppingAction() {
+    delete fSteppingAnalysis;
+}
 
 /*
  * Step handler, will execute on each step a particle takes
@@ -70,7 +81,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     }
     
     // Find the boundary process only once (cache the pointer)
-    if (fBoundary == nullptr) { // TODO: || fAbsorb == nullptr
+    if (fBoundary == nullptr || fAbsorb == nullptr) {
         CacheProcesses(track); // this->FindBoundary(track);
     }
  
@@ -78,7 +89,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     // NOTE: Without if clause, when a photon reflects it will be counted twice,
     // could subtract interactions from this value, but this probably a cleaner way
     if (track->GetCurrentStepNumber() == 1) {
-        fEventAnalysis->CountPhoton();
+        fHitManager->CountPhoton();
     }
     
     // Get the post step point object for the particle
@@ -95,11 +106,11 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     if (process == fAbsorb) {
         // NOTE: Double check for boundary not necessary, it would be "OpBoundary" otherwise
         
-        // Increment bulk absorption counter
-        fEventAnalysis->CountBulkAbsorption();
+        // Increment bulk absorption counter via hit manager
+        fHitManager->CountBulkAbsorption();
         
-        // Forward to the bulk absorption event handler
-        fSteppingAnalysis->HandleBulkAbsorb(track, fEventAnalysis);
+        // Forward to the bulk absorption event handler for ntuple writing
+        fSteppingAnalysis->HandleBulkAbsorb(track, fHitManager);
         
         // Save a step status request and comparison by returning early
         return;
@@ -131,17 +142,17 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     // as it is the only volume with non-zero efficiency
     if (boundaryStatus == Detection) {
         // Manually track it in event tally
-        fEventAnalysis->CountDetectedPhoton();
+        fHitManager->CountDetectedPhoton();
         
-        // Forward to the detection event handler
-        fSteppingAnalysis->HandleDetection(endPoint, track, fEventAnalysis);
+        // Forward to the detection event handler for ntuple writing
+        fSteppingAnalysis->HandleDetection(endPoint, track, fHitManager);
     } 
     // If an optical photon is absorbed without detection at a boundary (i.e., reflector or photocathode)
     else if (boundaryStatus == Absorption) {
-        // Photon was absorbed without detection
-        fEventAnalysis->CountAbsorbedPhoton();
+        // Increment boundary absorption counter via hit manager
+        fHitManager->CountBoundaryAbsorption();
         
-        // // Forward to the boundary absorption event handler
+        // Forward to the boundary absorption event handler for ntuple writing
         fSteppingAnalysis->HandleBoundaryAbsorb(endPoint);
     }
     // Handle all types of reflection
@@ -161,8 +172,8 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         // userTrackInfo->CountReflection();
         
         // Increment reflection counter
-        G4int photonIdx = track->GetTrackID();
-        fEventAnalysis->CountReflection(photonIdx);
+        G4int const photonIdx = track->GetTrackID();
+        fHitManager->CountReflection(photonIdx);
     }
     // Check no loss via lack of rindex
     else if (boundaryStatus == G4OpBoundaryProcessStatus::NoRINDEX) {
@@ -175,7 +186,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         // }
         
         // Photon was killed due to lack of rindex
-        fEventAnalysis->CountLostPhoton();
+        fHitManager->CountLostPhoton();
         
         // TODO:
         // std::string volume = endPoint->GetTouchable()->GetVolume()->GetName();
