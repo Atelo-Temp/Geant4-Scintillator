@@ -1,5 +1,7 @@
 // User classes
 #include "EventAction.hh" // class interface
+#include "EventAnalysis.hh"
+#include "HitManager.hh"
 
 // G4 Lib
 #include "G4Event.hh" // event object
@@ -20,8 +22,11 @@
 EventAction::EventAction(RunAction* runAction) {
     fRunAction = runAction;
     
+    // ...
+    fHitManager = new HitManager();
+    
     // Instantiate event analysis manager and cache pointer
-    fEventAnalysis = new EventAnalysis();
+    fEventAnalysis = new EventAnalysis(fHitManager);
     
     G4cout << "\n\n>>>>> EVENT ACTION INSTANTIATED\n\n" << G4endl;
 }
@@ -34,6 +39,8 @@ EventAction::EventAction(RunAction* runAction) {
  */
 EventAction::~EventAction() {
     delete fEventAnalysis;
+    // ...
+    delete fHitManager;
 }
 
 /*
@@ -43,7 +50,8 @@ EventAction::~EventAction() {
  */
 void EventAction::BeginOfEventAction(G4Event const* /*event*/) {
     // Reset counters between events
-    fEventAnalysis->ResetCounters();
+    // fEventAnalysis->ResetCounters();
+    fHitManager->ResetCounters();
 }
 
 /*
@@ -65,6 +73,8 @@ void EventAction::EndOfEventAction(G4Event const* /*event*/) {
 /*
  * Getter for event analysis instance
  */
-EventAnalysis* EventAction::GetEventAnalysisPtr() const {
-    return fEventAnalysis;
+// EventAnalysis* EventAction::GetEventAnalysisPtr() const {
+HitManager* EventAction::GetHitManagerPtr() const {
+    // return fEventAnalysis;
+    return fHitManager;
 }

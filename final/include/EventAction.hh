@@ -1,14 +1,13 @@
 #ifndef MyEventAction_HH
 #define MyEventAction_HH
 
-// User lib
-#include "EventAnalysis.hh"
-
 // G4 Lib
 #include "G4UserEventAction.hh"
 
-// Forward declaration
+// Forward declarations
 class RunAction;
+class EventAnalysis;
+class HitManager;
 // NOTE: Sometimes preferred over #include, as it reduces compilation times and 
 // prevents cyclic dependencies (when #include'ing, the entire file is copied 
 // into this file, if that file #include's other files, those get copied too)
@@ -50,7 +49,8 @@ class EventAction : public G4UserEventAction {
         void EndOfEventAction(G4Event const* event) override;
         
         // Getter for cached event analysis instance pointer
-        EventAnalysis* GetEventAnalysisPtr() const;
+        // EventAnalysis* GetEventAnalysisPtr() const;
+        HitManager* GetHitManagerPtr() const;
         
     private:
         // Pointer to current run object
@@ -58,6 +58,9 @@ class EventAction : public G4UserEventAction {
         
         // Pointer to event analysis manager instance
         EventAnalysis* fEventAnalysis = nullptr;
+        
+        // ...
+        HitManager* fHitManager = nullptr;
 };
 
 #endif
