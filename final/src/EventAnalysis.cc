@@ -11,7 +11,7 @@
 /*
  * Constructor
  */
-EventAnalysis::EventAnalysis() {    
+EventAnalysis::EventAnalysis(HitManager* hitManager) : fHitManager(hitManager) {
     // Cache a pointer to the analysis manager instance
     fAnalysisManager = G4AnalysisManager::Instance();
     

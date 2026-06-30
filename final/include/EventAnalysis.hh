@@ -24,7 +24,7 @@ class HitManager;
 class EventAnalysis : public RegistryListener { // TEST
     public:
         // Constructor
-        EventAnalysis();
+        EventAnalysis(HitManager* hitManager);
         
         // Destructor
         ~EventAnalysis() override = default;
