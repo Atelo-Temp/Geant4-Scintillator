@@ -7,8 +7,8 @@ project(final)
 #----------------------------------------------------------------------------
 # Enforce c++17 globally
 #
-# set(CMAKE_CXX_STANDARD 17) # NOTE: Geant4 compiled against C++ 17 by default
-# set(CMAKE_CXX_STANDARD_REQUIRED)
+set(CMAKE_CXX_STANDARD 17) # NOTE: Geant4 compiled against C++ 17 by default
+set(CMAKE_CXX_STANDARD_REQUIRED)
 
 #----------------------------------------------------------------------------
 # Create compile_commands.json for C++ LSP
@@ -43,6 +43,7 @@ target_link_libraries(final PRIVATE ${Geant4_LIBRARIES})
 set(FINAL_SCRIPTS
   run.mac
   vis.mac
+  gui.mac
   test.mac
   137Cs.mac
   60Co.mac

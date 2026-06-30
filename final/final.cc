@@ -114,6 +114,10 @@ int main(int argc, char** argv) {
         // Run in interactive mode (execute visualisation macro)
         UImanager->ApplyCommand("/control/execute vis.mac");
         
+        if (ui->IsGUI()) {
+            UImanager->ApplyCommand("/control/execute gui.mac");
+        }
+        
         // NOTE: Debugging
         // UImanager->ListCommands("/output/");
 
