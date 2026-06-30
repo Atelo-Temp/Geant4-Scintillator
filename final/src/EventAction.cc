@@ -65,6 +65,6 @@ void EventAction::EndOfEventAction(G4Event const* /*event*/) {
 /*
  * Getter for event analysis instance
  */
-EventAnalysis* EventAction::GetEventAnalysisPtr() {
+EventAnalysis* EventAction::GetEventAnalysisPtr() const {
     return fEventAnalysis;
 }

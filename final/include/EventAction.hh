@@ -50,7 +50,7 @@ class EventAction : public G4UserEventAction {
         void EndOfEventAction(G4Event const* event) override;
         
         // Getter for cached event analysis instance pointer
-        EventAnalysis* GetEventAnalysisPtr();
+        EventAnalysis* GetEventAnalysisPtr() const;
         
     private:
         // Pointer to current run object
