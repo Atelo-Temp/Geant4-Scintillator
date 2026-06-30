@@ -41,19 +41,19 @@ class SteppingAction : public G4UserSteppingAction {
         
     private:
         // Pointer to event object
-        EventAction* fEventAction = nullptr;
+        EventAction const* fEventAction = nullptr; // NOTE: Readonly
         
         // Pointer to optical photon particle definition
-        G4OpticalPhoton* fOpticalPhotonDefinition = nullptr;
+        G4OpticalPhoton const* fOpticalPhotonDefinition = nullptr; // NOTE: Readonly
         
         // Pointer to scoring region
         // G4LogicalVolume* fScoringVolume = nullptr;
         
         // Pointer to boundary process
-        G4OpBoundaryProcess* fBoundary = nullptr;
+        G4OpBoundaryProcess const* fBoundary = nullptr; // NOTE: Readonly
         
         // Pointer to bulk absorption process
-        G4OpAbsorption* fAbsorb = nullptr;
+        G4OpAbsorption const* fAbsorb = nullptr; // NOTE: Readonly
         
         // TODO: Maybe have pointer to event analysis here
         // either pass event analysis into both the event action and stepping action constructors in action init
@@ -61,7 +61,7 @@ class SteppingAction : public G4UserSteppingAction {
         EventAnalysis* fEventAnalysis = nullptr;
         
         // Pointer to ntuple output handler
-        SteppingAnalysis* fSteppingAnalysis = nullptr;
+        SteppingAnalysis const* fSteppingAnalysis = nullptr; // NOTE: Readonly
 };
 
 #endif
