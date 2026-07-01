@@ -52,7 +52,7 @@ void EventAnalysis::UpdateRegistryCache() {
  */
 void EventAnalysis::WriteEventData() const {    
     // ...
-    G4int const fTotalPhotons = fHitManager->GetDetectedPhotons();
+    G4int const fTotalPhotons = fHitManager->GetTotalPhotons();
     
     // Only write to ntuple when optical photons are generated via energy deposition
     if (fTotalPhotons > 0) {
@@ -131,7 +131,7 @@ void EventAnalysis::WriteEventData() const {
  */
 void EventAnalysis::LogEventData() const {    
     // ...
-    G4int const fTotalPhotons = fHitManager->GetDetectedPhotons();
+    G4int const fTotalPhotons = fHitManager->GetTotalPhotons();
     
     // ...
     G4int const fDetectedPhotons = fHitManager->GetDetectedPhotons();

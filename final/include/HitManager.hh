@@ -25,7 +25,7 @@ class HitManager {
         void CountPhoton();
         
         // ...
-        G4int GetPhotons() const;
+        G4int GetTotalPhotons() const;
         
         // Increment number of photons incident upon the photocathode
         // ...

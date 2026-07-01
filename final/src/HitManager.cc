@@ -35,7 +35,7 @@ void HitManager::CountPhoton() {
 /*
  * ...
  */
-G4int HitManager::GetPhotons() const {
+G4int HitManager::GetTotalPhotons() const {
     return fTotalPhotons;
 }
 
