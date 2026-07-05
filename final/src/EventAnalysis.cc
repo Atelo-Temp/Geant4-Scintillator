@@ -1,6 +1,6 @@
 // User classes
 #include "EventAnalysis.hh"
-#include "ProgramState.hh"
+#include "OutputConfig.hh"
 // #include "AnalysisRegistry.hh"
 #include "HitManager.hh"
 
@@ -16,7 +16,7 @@ EventAnalysis::EventAnalysis(HitManager* hitManager) : fHitManager(hitManager) {
     fAnalysisManager = G4AnalysisManager::Instance();
     
     // ...
-    // ProgramState& instance = ProgramState::GetInstance();
+    // OutputConfig& instance = OutputConfig::GetInstance();
     
     // ...
     AnalysisRegistry& registry = AnalysisRegistry::GetInstance();

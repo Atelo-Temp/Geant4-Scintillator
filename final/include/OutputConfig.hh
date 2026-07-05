@@ -1,265 +1,154 @@
 #ifndef MyOutputConfig_HH
 #define MyOutputConfig_HH
 
-// User lib
-#include "ProgramState.hh"
-
 // C lib
-#include <array>
-// #include <unordered_map>
+// #include <string> // NOTE: For debugging
 
-// G4 lib
-// #include "G4UIcommand.hh"
+// Forward declarations
+class OutputConfigMessenger;
+// NOTE: OutputConfig class only holds a pointer to a OutputConfigMessenger instance on the data segment,
+// since a pointer has a fixed memory size, there is no need to import here, import in ".cc" file
+// NOTE: Since both OutputConfig and OutputConfigMessenger hold references to oneanother, importing
+// would also create circular dependencies
 
 /*
- * The four umbrella categories of output data
+ * Per-event output data
  */
-enum class OutputType {
-    Event,
-    StepDetection,
-    StepBoundaryAbsorb,
-    StepBulkAbsorb
+struct EventFlags {
+    bool fDetectionNtuple = true; // Per-event detections
+    // bool fBoundaryAbsorbNtuple = true; // NOTE: Not writing per-event boundary absorption counts
+    // bool fBulkAbsorbNtuple = true; // NOTE: Not writing per-event bulk absorption counts
+    bool fDetectionFractionNtuple = true; // Per-event detections fraction
+    bool fBoundaryAbsorbFractionNtuple = true; // Per-event boundary absorptions fraction
+    bool fBulkAbsorbFractionNtuple = true; // Per-event bulk absorptions fraction
 };
 
 /*
- * Interface required to create a "G4UIcmdWithABool"
+ * Step detection flags
  */
-struct CustomBoolCommand {
-    // Name of the command
-    char const* name; // NOTE: Unused property currently, potentially remove
-    
-    // The command path exposed to the UI
-    char const* cmdPath;
-    
-    // Guidance message for explaining endpoint usage
-    char const* cmdGuidance;
-    
-    // TEST
-    OutputType const type;
+struct StepDetectionFlags {
+    bool fDetectionCoordsNtuple = true;
+    bool fDetectionDistanceNtuple = true;
+    bool fDetectionTimeOfFlightNtuple = true;
+    bool fDetectionReflectionsNtuple = true;
 };
 
 /*
- * ....
+ * Step boundary absorption flags
  */
-struct EventCommand : public CustomBoolCommand {
-    // Pointer to a bool member of EventFlags
-    bool EventFlags::* member;
-    // NOTE: pointer-to-member
-    // const?
-    // bool EventFlags::* const member;
+struct StepBoundaryAbsorbFlags {
+    bool fBoundaryAbsorbCoordsNtuple = true;
+    // bool fBoundaryAbsorbDistanceNtuple = true; // NOTE: Not yet implemented
+    // bool fBoundaryAbsorbTimeOfFlightNtuple = true; // NOTE: Not yet implemented
+    // bool fBoundaryAbsorbReflectionsNtuple = true;  // NOTE: Not yet implemented
 };
 
 /*
- * ....
+ * Step bulk absorption flags
  */
-struct StepDetectionCommand : public CustomBoolCommand {
-    // Pointer to a bool member of StepDetectionFlags
-    bool StepDetectionFlags::* member;
-    // NOTE: pointer-to-member
-    // const?
+struct StepBulkAbsorbFlags {
+    // bool fBulkAbsorbCoordsNtuple = true; // NOTE: Not yet implemented
+    bool fBulkAbsorbDistanceNtuple = true;
+    // bool fBulkAbsorbTimeOfFlightNtuple = true; // NOTE: Not yet implemented
+    bool fBulkAbsorbReflectionsNtuple = true;
 };
 
 /*
- * ....
- */
-struct StepBoundaryAbsorbCommand : public CustomBoolCommand {
-    // Pointer to a bool member of StepBoundaryAbsorbFlags
-    bool StepBoundaryAbsorbFlags::* member;
-    // NOTE: pointer-to-member
-    // const?
-};
-
-/*
- * ....
- */
-struct StepBulkAbsorbCommand : public CustomBoolCommand {
-    // Pointer to a bool member of StepBulkAbsorbFlags
-    bool StepBulkAbsorbFlags::* member;
-    // NOTE: pointer-to-member
-    // const?
-    
-    // StateFlags::* a = &StateFlags::StepBulkAbsorbFlags;
-    
-    // StateFlags::StepBulkAbsorbFlags StateFlags::* ptr_to_inner;
-    // StateFlags::fStepBulkAbsorbFlags StateFlags::* ptr_to_inner;
-};
-
-/*
- * Exposed API for controlling simulation output
+ * Flags to control program output
  * 
- * Compile-time lookup table
+ * NOTE: These will be set prior to the run, so dont need to worry about mutex for changing flags
  * 
- * NOTE: Each struct essentially states: "this command corresponds to this member of StateFlags"
+ * During the run, they will only be accessed in readonly mode
  */
-inline constexpr std::array<EventCommand, 4> EventCommands = {{ // TODO: EventCommandDefinitions
-    //////////////
-    // Event flags
-    //////////////
-    
-    // Per-event detections
-    {
-        "fDetection", // name
-        "/output/event/detection", // command path
-        "Enable per-event detected photons output.", // guidance
-        // EventCommand.type,
-        // &EventCommand::type,
-        OutputType::Event, // umbrella category
-        &EventFlags::fDetectionNtuple // NOTE: Create the pointer-to-member
-        // NOTE: Pointer to the fDetectionNtuple field inside StateFlags, havent got an actual object yet,
-        // so it cant be the address of a particular bool - its just describing which member of the struct
-        // NOTE: This pointer does not contain a memory address, since any object of type StateFlags could
-        // be used for assignment, it only contains some compiler representation of "member #1 of StateFlags"
-    },
-    // Per-event detections fraction
-    {
-        "fDetectionFraction",
-        "/output/event/detectionFraction",
-        "Enable per-event photons detected fraction output.",
-        OutputType::Event,
-        &EventFlags::fDetectionFractionNtuple
-    },
-    // Per-event boundary absorptions fraction
-    {
-        "fBoundaryAbsorbFraction",
-        "/output/event/boundaryAbsorbFraction",
-        "Enable per-event photons absorbed at boundary fraction output.",
-        OutputType::Event,
-        &EventFlags::fBoundaryAbsorbFractionNtuple
-    },
-    // Per-event bulk absorptions fraction
-    {
-        "fBulkAbsorbFraction",
-        "/output/event/bulkAbsorbFraction",
-        "Enable per-event photons bulk absorbed fraction output.",
-        OutputType::Event,
-        &EventFlags::fBulkAbsorbFractionNtuple
-    }
-    // { // NOTE: Not writing per-event boundary absorption counts
-    // "fBoundaryAbsorb",
-    // "/output/step/...",
-    // "Enable ... output.",
-        // &StepBoundaryAbsorbFlags::fBoundaryAbsorb
-    // },
-    // { // NOTE: Not writing per-event bulk absorption counts
-    // "fBulkAbsorb",
-    // "/output/step/...",
-    // "Enable ... output.",
-        // &StepBulkAbsorbFlags::fBulkAbsorbNtuple
-    // },
-}};
-
-/*
- * ....
- */
-inline constexpr std::array<StepDetectionCommand, 4> StepDetectionCommands = {{
-    ///////////////////////
-    // Step detection flags
-    ///////////////////////
+struct StateFlags {
+    // ...
+    EventFlags fEventFlags;
     
     // ...
-    {
-        "fDetectionCoords",
-        "/output/step/detection/coords",
-        "Enable detection coordinates output.",
-        OutputType::StepDetection,
-        &StepDetectionFlags::fDetectionCoordsNtuple
-    },
-    {
-        "fDetectionDistance",
-        "/output/step/detection/distance",
-        "Enable distance travelled by photon before detection output.",
-        OutputType::StepDetection,
-        &StepDetectionFlags::fDetectionDistanceNtuple
-    },
-    {
-        "fDetectionTimeOfFlight",
-        "/output/step/detection/timeOfFlight",
-        "Enable time duration of travel by photon before detection output.",
-        OutputType::StepDetection,
-        &StepDetectionFlags::fDetectionTimeOfFlightNtuple
-    },
-    {
-        "fDetectionReflections",
-        "/output/step/detection/reflections",
-        "Enable number of reflections before detection output.",
-        OutputType::StepDetection,
-        &StepDetectionFlags::fDetectionReflectionsNtuple
-    }
-}};
+    StepDetectionFlags fStepDetectionFlags;
+    
+    // ...
+    StepBoundaryAbsorbFlags fStepBoundaryAbsorbFlags;
+    
+    // ...
+    StepBulkAbsorbFlags fStepBulkAbsorbFlags;
+};
 
 /*
- * ....
+ * Singleton object responsible for:
+ * - Storing program state flags
+ * - Instantiating program state messenger (which exposes state flags to ui)
+ * 
+ * Singleton class defines the "GetInstance" method that serves as an alternative to the constructor,
+ * and lets clients access the same instance of this class over and over again
+ * 
+ * NOTE: Meyers singleton (thread-safe) implementation eliminates need for mutex locking, while
+ * remaining completely thread-safe
+ * 
+ * NOTE: Meyers singleton also means "delete" does not ever need to be explicitly called
  */
-inline constexpr std::array<StepBoundaryAbsorbCommand, 1> StepBoundaryAbsorbCommands = {{
-    /////////////////////////////////
-    // Step boundary absorption flags
-    /////////////////////////////////
+class OutputConfig {
+    public:
+        // Delete copy constructor (Singletons should not be cloneable)
+        // OutputConfig(OutputConfig& other) = delete;
+        OutputConfig(OutputConfig const&) = delete;
+        
+        // Delete assignment operator (Singletons should not be assignable)
+        // void operator=(OutputConfig const&) = delete;
+        OutputConfig& operator=(OutputConfig const&) = delete;
+        
+        // Static method controls access to singleton instance (get instance if exists, else instantiate)
+        static OutputConfig& GetInstance();
+        // static OutputConfig* GetInstance();
+        
+        // NOTE: For debugging
+        // static OutputConfig& GetInstance(std::string const& value);
+        
+        // Business logic
+        //
+        // Messenger uses this before BeamOn to change settings
+        StateFlags& GetStateFlags();
+        // NOTE: Returning a reference to the object, which allows property mutation
+        //
+        // Worker threads use this during the run for thread-safe, fast reads
+        const StateFlags& ReadStateFlags() const;
+        // NOTE: Return type is readonly reference to flags
+        // NOTE: Const modifier after method name tells compiler that calling this method will not alter 
+        // the state of the OutputConfig instance itself
+        
+        // NOTE: For debugging
+        // std::string value() const {
+        //     return value_;
+        // }
+        
+    protected:
+        // Business logic
+        // 
+        // Stack allocated config object
+        StateFlags fStateFlags;
+        //
+        // Messenger which exposes config control to ui
+        OutputConfigMessenger* fOutputConfigMessenger = nullptr; // messenger instantiated and attached during construction
+        // NOTE: Since OutputConfigMessenger needs to be instantiated, it makes sense to do so
+        // in OutputConfig constructor, since the two are linked, then have OutputConfig control
+        // OutputConfigMessenger's lifetime
+        
+        // NOTE: For debugging
+        // std::string value_;
     
-    {
-        "fBoundaryAbsorbCoords",
-        "/output/step/boundaryAbsorb/coords",
-        "Enable boundary absorption coordinates output.",
-        OutputType::StepBoundaryAbsorb,
-        &StepBoundaryAbsorbFlags::fBoundaryAbsorbCoordsNtuple
-    }
-    // { // NOTE: Not yet implemented
-    // "fBoundaryAbsorbDistance",
-    // "/output/step/...",
-    // "Enable ... output.",
-        // &StepBoundaryAbsorbFlags::fBoundaryAbsorbDistanceNtuple
-    // },
-    // { // NOTE: Not yet implemented
-    // "fBoundaryAbsorbTimeOfFlight",
-    // "/output/step/...",
-    // "Enable ... output.",
-        // &StepBoundaryAbsorbFlags::fBoundaryAbsorbTimeOfFlightNtuple
-    // },
-    // { // NOTE: Not yet implemented
-    // "fBoundaryAbsorbReflections",
-    // "/output/step/...",
-    // "Enable ... output.",
-        // &StepBoundaryAbsorbFlags::fBoundaryAbsorbReflectionsNtuple
-    // },
-}};
-
-/*
- * ....
- */
-inline constexpr std::array<StepBulkAbsorbCommand, 2> StepBulkAbsorbCommands = {{
-    /////////////////////////////
-    // Step bulk absorption flags
-    /////////////////////////////
-    
-    // { // NOTE: Not yet implemented
-    // "fBulkAbsorbCoords",
-    // "/output/step/bulkAbsorb/coords",
-    // "Enable ... output.",
-        // &StepBulkAbsorbFlags::fBulkAbsorbCoordsNtuple
-    // },
-    {
-        "fBulkAbsorbDistance",
-        "/output/step/bulkAbsorb/distance",
-        "Enable distance travelled by photon before bulk absorption output.",
-        OutputType::StepBulkAbsorb,
-        &StepBulkAbsorbFlags::fBulkAbsorbDistanceNtuple
-    },
-    // { // NOTE: Not yet implemented
-    // "fBulkAbsorbTimeOfFlight",
-    // "/output/step/...",
-    // "Enable ... output.",
-        // &StepBulkAbsorbFlags::fBulkAbsorbTimeOfFlightNtuple
-    // },
-    {
-        "fBulkAbsorbReflections",
-        "/output/step/bulkAbsorb/reflections",
-        "Enable number of reflections before bulk absorption output.",
-        OutputType::StepBulkAbsorb,
-        &StepBulkAbsorbFlags::fBulkAbsorbReflectionsNtuple
-    }
-}};
-
-
-// typedef std::unordered_map<G4UIcommand*, BoolCommand&> afaasf;
-// using afsfaf = std::unordered_map<G4UIcommand*, BoolCommand&>;
+    private:
+        // Constructor, private to prevent direct construction via "new" operator, only self callable
+        OutputConfig();
+        
+        // NOTE: For debugging
+        // OutputConfig(std::string const value);
+        
+        // Destructor, private to prevent direct destruction call via "delete" operator
+        ~OutputConfig();
+        
+        // Pointer to current instance
+        // inline static OutputConfig* fInstance = nullptr;
+        // NOTE: Inline keyword allows for nullptr assignment inside of class definition
+};
 
 #endif

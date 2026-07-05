@@ -1,6 +1,6 @@
 // User classes
 #include "SteppingAnalysis.hh"
-#include "ProgramState.hh"
+#include "OutputConfig.hh"
 // #include "AnalysisRegistry.hh"
 #include "HitManager.hh"
 
@@ -18,7 +18,7 @@
  *             └─ SteppingAnalysis <<<
  *                              | 
  *                              ├─ AnalysisRegistry*
- *                              └─ ProgramState*
+ *                              └─ OutputConfig*
  * 
  * NOTE: Owned by SteppingAction
  */
@@ -27,7 +27,7 @@ SteppingAnalysis::SteppingAnalysis(HitManager* hitManager) : fHitManager(hitMana
     fAnalysisManager = G4AnalysisManager::Instance();
     
     // ...
-    // ProgramState& instance = ProgramState::GetInstance(); // TODO: Class property
+    // OutputConfig& instance = OutputConfig::GetInstance(); // TODO: Class property
     
     // ...
     AnalysisRegistry& registry = AnalysisRegistry::GetInstance();

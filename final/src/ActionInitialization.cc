@@ -20,7 +20,7 @@
 #include "EventAction.hh"
 #include "SteppingAction.hh"
 // #include "TrackingAction.hh"
-#include "ProgramState.hh"
+#include "OutputConfig.hh"
 
 // When specifying default in header file, dont need to define these
 // ActionInitialization::ActionInitialization() {}
@@ -40,16 +40,16 @@
  *      ↓
  * RunAction
  *      ↓
- * ProgramStateMessenger (as it is being instantiated in ProgramState constructor)
+ * OutputConfigMessenger (as it is being instantiated in OutputConfig constructor)
  *      ↓
- * ProgramState
+ * OutputConfig
  * 
  * NOTE: Instantiation Heirarchy
  * 
  *      ↓ 
  * RunAction → RunAnalysis
  *      ↓ 
- * ProgramState → ProgramStateMessenger
+ * OutputConfig → OutputConfigMessenger
  * 
 */
 void ActionInitialization::BuildForMaster() const {
@@ -57,10 +57,10 @@ void ActionInitialization::BuildForMaster() const {
     SetUserAction(new RunAction());
     
     // Force initialisation here on the master thread
-    ProgramState::GetInstance();
-    // NOTE: Since ProgramState constructor instantiates ProgramStateMessenger, leaving the
-    // first call to GetInstance(), which constructs ProgramState, until one of the Analysis
-    // classes requests the ProgramState instance, means the ProgramStateMessenger will be
+    OutputConfig::GetInstance();
+    // NOTE: Since OutputConfig constructor instantiates OutputConfigMessenger, leaving the
+    // first call to GetInstance(), which constructs OutputConfig, until one of the Analysis
+    // classes requests the OutputConfig instance, means the OutputConfigMessenger will be
     // instantiated on a worker thread, rather than the main thread, which prevents custom
     // commands from working as intended
 }

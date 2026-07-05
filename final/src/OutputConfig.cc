@@ -1,14 +1,14 @@
 // User classes
-#include "ProgramState.hh"
-#include "ProgramStateMessenger.hh"
+#include "OutputConfig.hh"
+#include "OutputConfigMessenger.hh"
 
 /*
  * Private constructor
  * 
  * Instantiates the messenger on the heap and caches the pointer
  */
-ProgramState::ProgramState() {
-    fProgramStateMessenger = new ProgramStateMessenger(*this);
+OutputConfig::OutputConfig() {
+    fOutputConfigMessenger = new OutputConfigMessenger(*this);
     
     G4cout << "\n\n>>>>> PROGRAM STATE INSTANTIATED\n\n" << G4endl;
 }
@@ -19,17 +19,17 @@ ProgramState::ProgramState() {
  * NOTE: Since fInstance is allocated in the "data segment", not the stack or heap,
  * C++ will automatically destroy it when the program exits by calling this destructor
  * 
- * Automatic destruction of ProgramState at the end of the program triggers destruction
- * of ProgramStateMessenger
+ * Automatic destruction of OutputConfig at the end of the program triggers destruction
+ * of OutputConfigMessenger
  */
-ProgramState::~ProgramState() {
-    delete fProgramStateMessenger;
+OutputConfig::~OutputConfig() {
+    delete fOutputConfigMessenger;
 }
 
 /*
  * Get the singleton instance
  * 
- * NOTE: Lazy initialisation, the ProgramState constructor runs only when execution 
+ * NOTE: Lazy initialisation, the OutputConfig constructor runs only when execution 
  * hits GetInstance() for the first time
  * 
  * Before calling GetInstance() the local static variable "fInstance" does not 
@@ -47,9 +47,9 @@ ProgramState::~ProgramState() {
  * 
  * NOTE: Allocates the instance in the data segment (not the stack or heap)
  */
-ProgramState& ProgramState::GetInstance() {
+OutputConfig& OutputConfig::GetInstance() {
     // If the instance hasnt been instantiated, do so
-    static ProgramState fInstance;
+    static OutputConfig fInstance;
     // NOTE: This line is only executed ONCE by the very first thread that calls it
     // NOTE: C++ guarantees this initialisation is completely thread-safe
     
@@ -62,7 +62,7 @@ ProgramState& ProgramState::GetInstance() {
  * 
  * NOTE: Returning a reference to the object, which allows property mutation
  */
-StateFlags& ProgramState::GetStateFlags() {
+StateFlags& OutputConfig::GetStateFlags() {
     return fStateFlags;
 }
 
@@ -72,28 +72,28 @@ StateFlags& ProgramState::GetStateFlags() {
  * NOTE: Return type is readonly reference to flags to avoid any accidental mutations
  * 
  * NOTE: Const modifier after method name tells compiler that calling this method will 
- * not alter the state of the ProgramState instance itself
+ * not alter the state of the OutputConfig instance itself
  */
-const StateFlags& ProgramState::ReadStateFlags() const {
+const StateFlags& OutputConfig::ReadStateFlags() const {
     return fStateFlags;
 }
 
 /*
  * NOTE: For debugging whether one instance is shared amongst all analysis classes/threads
  */
-// ProgramState::ProgramState(std::string const value) : value_(value) {
+// OutputConfig::OutputConfig(std::string const value) : value_(value) {
 //     G4cout << "\n>>> CONSTRUCTING MESSENGER\n\n" << G4endl;
-//     fProgramStateMessenger = new ProgramStateMessenger(*this);
+//     fOutputConfigMessenger = new OutputConfigMessenger(*this);
 //     G4cout << "\n>>> CONSTRUCTED MESSENGER\n\n" << G4endl;
 // }
 
 /*
  * NOTE: For debugging whether one instance is shared amongst all analysis classes/threads
  */
-// ProgramState& ProgramState::GetInstance(std::string const& value) {
+// OutputConfig& OutputConfig::GetInstance(std::string const& value) {
 //     G4cout << "\n>>> GETTING INSTANCE\n\n" << G4endl;
 //  
-//     static ProgramState fInstance(value);
+//     static OutputConfig fInstance(value);
 //     return fInstance;
 //     
 //     G4cout << "\n>>> GOT INSTANCE\n\n" << G4endl;

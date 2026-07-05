@@ -1,6 +1,6 @@
 // User class interfaces
 #include "RunAnalysis.hh"
-#include "ProgramState.hh"
+#include "OutputConfig.hh"
 #include "AnalysisRegistry.hh"
 
 // G4 lib
@@ -30,9 +30,9 @@ RunAnalysis::RunAnalysis() {
    
    // .......
    // G4cout << "\n\n>>> INSTANTIATING PROGRAM STATE\n\n" << G4endl;
-   // auto& instance = ProgramState::GetInstance();
-   // auto instance = ProgramState::GetInstance();
-   // auto& instance = ProgramState::GetInstance("AAA");
+   // auto& instance = OutputConfig::GetInstance();
+   // auto instance = OutputConfig::GetInstance();
+   // auto& instance = OutputConfig::GetInstance("AAA");
    // G4cout << "\n\n>>>>> ANALYSIS MANAGER:: " << instance.value() << "\n\n" << G4endl;
    // G4cout << "\n\n>>> INSTANTIATED PROGRAM STATE\n\n" << G4endl;
    
@@ -50,7 +50,7 @@ RunAnalysis::RunAnalysis() {
  * so will break code in EventAnalysis and SteppingAnalysis which relies on IDs
  * ^^
  * ^^ going to need to store IDs
- *    ^^ potentially add them to ProgramState, so EventAnalysis and SteppingAnalysis can query
+ *    ^^ potentially add them to OutputConfig, so EventAnalysis and SteppingAnalysis can query
  * 
  * 
  * TODO:
@@ -60,7 +60,7 @@ RunAnalysis::RunAnalysis() {
  * 
  * analysisManager->FinishNtuple: pass this returned ID of CreateNtuple()
  * 
- * ProgramState->SetNtupleID (or something like this)
+ * OutputConfig->SetNtupleID (or something like this)
  * 
  * 
  * TODO: Need to either have an individual ntuple for each bit of data, or group ntuples, and ntuple flags
@@ -78,10 +78,10 @@ void RunAnalysis::InitialiseDataStructures() {
     G4GenericAnalysisManager* iAnalysisManager = G4AnalysisManager::Instance();
     
     // ...
-    ProgramState& iProgramState = ProgramState::GetInstance();
+    OutputConfig& iOutputConfig = OutputConfig::GetInstance();
     
     // ...
-    StateFlags const& outputFlags = iProgramState.ReadStateFlags(); // TODO: Unused
+    StateFlags const& outputFlags = iOutputConfig.ReadStateFlags(); // TODO: Unused
     
     // ...
     AnalysisRegistry& iAnalysisRegistry = AnalysisRegistry::GetInstance();
@@ -112,7 +112,7 @@ void RunAnalysis::InitialiseDataStructures() {
     // ...
     iAnalysisRegistry.NotifyListeners(); // TEST
     
-    // TODO: iProgramState.NotifyListeners();
+    // TODO: iOutputConfig.NotifyListeners();
 }
 
 // TODO: Extract file handling logic from RunAction

@@ -121,6 +121,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
     // If post step point not at a defined geometric boundary, break
     if (endPoint->GetStepStatus() != fGeomBoundary) return;
     // if (process->GetProcessName() != "OpBoundary") return;
+    // if (process != fBoundary) return;
     
     // If at a boundary ...
     G4OpBoundaryProcessStatus const boundaryStatus = fBoundary->GetStatus();

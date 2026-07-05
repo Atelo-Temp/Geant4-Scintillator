@@ -1,7 +1,7 @@
 // User classes
-#include "ProgramStateMessenger.hh"
+#include "OutputConfigMessenger.hh"
+#include "OutputCommands.hh"
 #include "OutputConfig.hh"
-#include "ProgramState.hh"
 
 // G4 lib
 #include "G4UIcmdWithABool.hh"
@@ -29,9 +29,9 @@
  * \/
  * Construct messenger
  * 
- * NOTE: So calling GetStateFlags before ProgramState has finished construction is safe
+ * NOTE: So calling GetStateFlags before OutputConfig has finished construction is safe
  */
-ProgramStateMessenger::ProgramStateMessenger(ProgramState& programStateInstance) : fProgramState(programStateInstance) {
+OutputConfigMessenger::OutputConfigMessenger(OutputConfig& programStateInstance) : fOutputConfig(programStateInstance) {
     // ...
     G4cout << "\n\n>>>>> PROGRAM STATE MESSENGER INSTANTIATING\n\n" << G4endl;
     
@@ -50,7 +50,7 @@ ProgramStateMessenger::ProgramStateMessenger(ProgramState& programStateInstance)
  * 
  * Deletes all commands defined in constructor
  */
-ProgramStateMessenger::~ProgramStateMessenger() {    
+OutputConfigMessenger::~OutputConfigMessenger() {    
     G4cout << "\n\n>>>>> PROGRAM STATE MESSENGER BEING DESTROYED!\n\n" << G4endl;
     
     // ...
@@ -62,7 +62,7 @@ ProgramStateMessenger::~ProgramStateMessenger() {
 /*
  * ...
  */
-void ProgramStateMessenger::CreateBoolCommands(void const* commandsArray, size_t length, size_t byte_stride) {
+void OutputConfigMessenger::CreateBoolCommands(void const* commandsArray, size_t length, size_t byte_stride) {
     //     // Iterate through the StateCommands vector
 //     for (int i = 0; i < StateCommands.size(); i++) {
 //         // Create a new command, exposed via the cmdPath string
@@ -116,7 +116,7 @@ void ProgramStateMessenger::CreateBoolCommands(void const* commandsArray, size_t
 /*
  * ...
  */
-void ProgramStateMessenger::ClearBoolCommands() {
+void OutputConfigMessenger::ClearBoolCommands() {
     // Iterate through the key-value pairs in the map
     for (auto entry = fOutputCmdMap.begin(); entry != fOutputCmdMap.end(); entry++) {
         // entry->first; // key (G4UIcommand*)
@@ -132,7 +132,7 @@ void ProgramStateMessenger::ClearBoolCommands() {
  * 
  * Updates the boolean value of the StateFlags object
  */
-void ProgramStateMessenger::SetNewValue(G4UIcommand* cmd, G4String newValue) {
+void OutputConfigMessenger::SetNewValue(G4UIcommand* cmd, G4String newValue) {
     // ...    
     G4cout << "\n\n>>> SETTING COMMAND\n\n" << G4endl;
     
@@ -149,9 +149,9 @@ void ProgramStateMessenger::SetNewValue(G4UIcommand* cmd, G4String newValue) {
 /*
  * ...
  */
-void ProgramStateMessenger::HandleOutputCmd(G4UIcommand* cmd, G4String newValue, CustomBoolCommand const* definition) {
+void OutputConfigMessenger::HandleOutputCmd(G4UIcommand* cmd, G4String newValue, CustomBoolCommand const* definition) {
     // Get mutable reference to StateFlags object (as we need to update a bool)
-    StateFlags& stateFlags = fProgramState.GetStateFlags();
+    StateFlags& stateFlags = fOutputConfig.GetStateFlags();
     
     // Get a readonly reference to the BoolCommand object associated with this command
     // auto const& definition = found->second;

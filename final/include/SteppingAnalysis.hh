@@ -4,7 +4,7 @@
 // User classes
 // #include "EventAnalysis.hh"
 #include "AnalysisRegistry.hh"
-#include "ProgramState.hh" // .....
+#include "OutputConfig.hh" // .....
 
 // G4 lib
 #include "G4Step.hh"

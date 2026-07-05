@@ -3,7 +3,7 @@
 
 // User lib
 #include "AnalysisRegistry.hh" // RegistryListener
-#include "ProgramState.hh"
+#include "OutputConfig.hh"
 
 // G4 lib
 #include "G4GenericAnalysisManager.hh"
