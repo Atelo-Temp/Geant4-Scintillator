@@ -71,12 +71,12 @@ void SteppingAnalysis::UpdateRegistryCache() {
 /*
  * Fetch output flags and update local cache
  */
-void SteppingAnalysis::UpdateStateFlags() {
+void SteppingAnalysis::UpdateOutputFlagsCache() {
     // Get readonly reference to config singleton
     OutputConfig const& outputConfig = OutputConfig::GetInstance();
     
     // Get readonly reference to output flags object
-    StateFlags const& outputFlags = outputConfig.ReadStateFlags();
+    OutputFlags const& outputFlags = outputConfig.ReadOutputFlags();
     
     // Cache flags relevant to this class
     fStepDetectionFlags = &(outputFlags.fStepDetectionFlags);

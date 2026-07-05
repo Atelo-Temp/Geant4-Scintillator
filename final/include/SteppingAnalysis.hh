@@ -42,7 +42,7 @@ class SteppingAnalysis : public RegistryListener, OutputConfigListener { // TEST
         void UpdateRegistryCache() override;
         
         // ...
-        void UpdateStateFlags() override;
+        void UpdateOutputFlagsCache() override;
         
     private:  
         // Cached pointer to analysis manager singleton

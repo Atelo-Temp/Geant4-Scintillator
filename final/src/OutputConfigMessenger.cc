@@ -29,7 +29,7 @@
  * \/
  * Construct messenger
  * 
- * NOTE: So calling GetStateFlags before OutputConfig has finished construction is safe
+ * NOTE: So calling GetOutputFlags before OutputConfig has finished construction is safe
  */
 OutputConfigMessenger::OutputConfigMessenger(OutputConfig& programStateInstance) : fOutputConfig(programStateInstance) {
     // ...
@@ -130,7 +130,7 @@ void OutputConfigMessenger::ClearBoolCommands() {
 /*
  * Converts the string newVal to value(s) of the type(s) of parameter(s)
  * 
- * Updates the boolean value of the StateFlags object
+ * Updates the boolean value of the OutputFlags object
  */
 void OutputConfigMessenger::SetNewValue(G4UIcommand* cmd, G4String newValue) {
     // ...    
@@ -150,8 +150,8 @@ void OutputConfigMessenger::SetNewValue(G4UIcommand* cmd, G4String newValue) {
  * ...
  */
 void OutputConfigMessenger::HandleOutputCmd(G4UIcommand* cmd, G4String newValue, CustomBoolCommand const* definition) {
-    // Get mutable reference to StateFlags object (as we need to update a bool)
-    StateFlags& stateFlags = fOutputConfig.GetStateFlags();
+    // Get mutable reference to OutputFlags object (as we need to update a bool)
+    OutputFlags& stateFlags = fOutputConfig.GetOutputFlags();
     
     // Get a readonly reference to the BoolCommand object associated with this command
     // auto const& definition = found->second;
@@ -164,7 +164,7 @@ void OutputConfigMessenger::HandleOutputCmd(G4UIcommand* cmd, G4String newValue,
     // Convert the string ("true" | "false") to a boolean
     G4bool const value = casted->GetNewBoolValue(newValue);
     
-    // Update StateFlags object member with the new bool value
+    // Update OutputFlags object member with the new bool value
     // stateFlags.*(definition.member) = value;
     // stateFlags.*(definition->member) = value;
     // NOTE: Takes flags, and accesses whichever member "member" points to,

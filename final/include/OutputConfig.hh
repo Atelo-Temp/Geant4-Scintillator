@@ -61,7 +61,7 @@ struct StepBulkAbsorbFlags {
  * 
  * During the run, they will only be accessed in readonly mode
  */
-struct StateFlags {
+struct OutputFlags {
     // ...
     EventFlags fEventFlags;
     
@@ -93,7 +93,7 @@ class OutputConfigListener {
         // destructor, only the base destructor runs, leaking resources managed by the derived constructor.
         
         // Pure virtual method
-        virtual void UpdateStateFlags() = 0;
+        virtual void UpdateOutputFlagsCache() = 0;
         // NOTE: An empty definition here "{}" would mean derived classes are not forced to override the 
         // base method, by setting the method to "= 0", the class cannot be instantiated directly, and 
         // derived classes must override this method in order to be instantiated
@@ -132,11 +132,11 @@ class OutputConfig {
         // Business logic
         //
         // Messenger uses this before BeamOn to change settings
-        StateFlags& GetStateFlags();
+        OutputFlags& GetOutputFlags();
         // NOTE: Returning a reference to the object, which allows property mutation
         //
         // Worker threads use this during the run for thread-safe, fast reads
-        const StateFlags& ReadStateFlags() const;
+        const OutputFlags& ReadOutputFlags() const;
         // NOTE: Return type is readonly reference to flags
         // NOTE: Const modifier after method name tells compiler that calling this method will not alter 
         // the state of the OutputConfig instance itself
@@ -148,7 +148,7 @@ class OutputConfig {
         
         // ...
         // void AddListener(std::function<void()> callback);
-        void AddListener(OutputConfigListener* callback);
+        void AddListener(OutputConfigListener* listener);
         
         // ...
         void NotifyListeners();
@@ -157,7 +157,7 @@ class OutputConfig {
         // Business logic
         // 
         // Stack allocated config object
-        StateFlags fStateFlags;
+        OutputFlags fOutputFlags;
         //
         // Messenger which exposes config control to ui
         OutputConfigMessenger* fOutputConfigMessenger = nullptr; // messenger instantiated and attached during construction

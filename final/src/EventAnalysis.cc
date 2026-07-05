@@ -37,7 +37,7 @@ void EventAnalysis::UpdateRegistryCache() {
     // Get readonly reference to ntuple indices object
     NtupleIDs const& ntupleIDs = registry.ReadNtupleIDs();
     
-    // Cache flags relevant to this class
+    // Cache indices relevant to this class
     fEventNtupleIDs = &(ntupleIDs.fEventNtupleIDs);
     // NOTE: Cache a pointer to the indices, dont copy the data itself
 }
@@ -45,12 +45,12 @@ void EventAnalysis::UpdateRegistryCache() {
 /*
  * Fetch output flags and update local cache
  */
-void EventAnalysis::UpdateStateFlags() {
-    //  Get readonly reference to config singleton
+void EventAnalysis::UpdateOutputFlagsCache() {
+    // Get readonly reference to config singleton
     OutputConfig const& outputConfig = OutputConfig::GetInstance();
     
     // Get readonly reference to output flags object
-    StateFlags const& outputFlags = outputConfig.ReadStateFlags();
+    OutputFlags const& outputFlags = outputConfig.ReadOutputFlags();
     
     // Cache flags relevant to this class
     fEventFlags = &(outputFlags.fEventFlags);

@@ -62,8 +62,8 @@ OutputConfig& OutputConfig::GetInstance() {
  * 
  * NOTE: Returning a reference to the object, which allows property mutation
  */
-StateFlags& OutputConfig::GetStateFlags() {
-    return fStateFlags;
+OutputFlags& OutputConfig::GetOutputFlags() {
+    return fOutputFlags;
 }
 
 /*
@@ -74,8 +74,8 @@ StateFlags& OutputConfig::GetStateFlags() {
  * NOTE: Const modifier after method name tells compiler that calling this method will 
  * not alter the state of the OutputConfig instance itself
  */
-const StateFlags& OutputConfig::ReadStateFlags() const {
-    return fStateFlags;
+const OutputFlags& OutputConfig::ReadOutputFlags() const {
+    return fOutputFlags;
 }
 
 /*
@@ -98,3 +98,25 @@ const StateFlags& OutputConfig::ReadStateFlags() const {
 //     
 //     G4cout << "\n>>> GOT INSTANCE\n\n" << G4endl;
 // }
+
+/*
+ * ...
+ */
+void OutputConfig::AddListener(OutputConfigListener* listener) {
+    // ...
+    fListeners.push_back(listener);
+    
+    return;
+}
+
+/*
+ * ...
+ */
+void OutputConfig::NotifyListeners() {
+    // ...
+    for (int i = 0; i < fListeners.size(); i++) {
+        fListeners[i]->UpdateOutputFlagsCache();
+    }
+    
+    return;
+}
