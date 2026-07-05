@@ -81,7 +81,7 @@ void RunAnalysis::InitialiseDataStructures() {
     OutputConfig& iOutputConfig = OutputConfig::GetInstance();
     
     // ...
-    StateFlags const& outputFlags = iOutputConfig.ReadStateFlags(); // TODO: Unused
+    // StateFlags const& outputFlags = iOutputConfig.ReadStateFlags(); // TODO: Unused
     
     // ...
     AnalysisRegistry& iAnalysisRegistry = AnalysisRegistry::GetInstance();
@@ -109,10 +109,9 @@ void RunAnalysis::InitialiseDataStructures() {
     // StepDataBulkAbsorbStructures(iAnalysisManager, ntupleIDs);
     StepDataBulkAbsorbStructures(iAnalysisManager, ntupleIDs.fStepBulkAbsorbNtupleIDs);
     
-    // ...
+    // Notify the EventAnalysis and SteppingAnalysis classes to update their caches
     iAnalysisRegistry.NotifyListeners(); // TEST
-    
-    // TODO: iOutputConfig.NotifyListeners();
+    iOutputConfig.NotifyListeners();
 }
 
 // TODO: Extract file handling logic from RunAction
