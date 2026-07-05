@@ -93,7 +93,7 @@ Via: ActionInitialisation::BuildForMaster
      ↓
 RunAction → RunAnalysis
      ↓
-ProgramState → ProgramStateMessenger
+OutputConfig → OutputConfigMessenger
      ↓
 ```
 
@@ -129,9 +129,9 @@ RunAnalysis (as it is instantiated in RunAction constructor, before RunAction fi
      ↓
 RunAction
      ↓
-ProgramStateMessenger (as it is being instantiated in ProgramState constructor)
+OutputConfigMessenger (as it is being instantiated in OutputConfig constructor)
      ↓
-ProgramState (currently being instantiated 1st time by ActionInitialisation::Build)
+OutputConfig (currently being instantiated 1st time by ActionInitialisation::Build)
 ```
 
 #### Worker Threads
@@ -219,7 +219,7 @@ RunAction::EndOfRunAction
        |             |
        |             ├─ AnalysisRegistry*
        |             |
-       |             └─ ProgramState*
+       |             └─ OutputConfig*
        |
        └─ HitManager (o)
        
@@ -228,20 +228,18 @@ RunAction::EndOfRunAction
        |
        ├─ EventAction*
        |
-       ├─ EventAnalysis*
-       |
        ├─ SteppingAnalysis (o)
        |             |
        |             ├─ AnalysisRegistry*
        |             |
-       |             └─ ProgramState*
+       |             └─ OutputConfig*
        |
        └─ HitManager*
 ```
 
 TODO:
 
-There is kinda no need to cache pointers for AnalysisRegistry and ProgramState, just have Event/Stepping Analysis listeners cache pointer to output bools / ntuple indices at start of run
+There is kinda no need to cache pointers for AnalysisRegistry and OutputConfig, just have Event/Stepping Analysis listeners cache pointer to output bools / ntuple indices at start of run
 ^ at most it saves one extra call to GetInstance() (once in constructor, once in UpdateRegistryCache())
 
 NOTE:
@@ -267,7 +265,7 @@ o = ownership (instantiates, owns, and manages lifetime of said instance, respon
        |         |
        |         ├─ AnalysisRegistry*
        |         |
-       |         └─ ProgramState*
+       |         └─ OutputConfig*
        |
        └─ HitManager (o)
 
@@ -284,17 +282,15 @@ o = ownership (instantiates, owns, and manages lifetime of said instance, respon
        |           |         | 
        |           |         ├─ AnalysisRegistry*
        |           |         |
-       |           |         └─ ProgramState*
+       |           |         └─ OutputConfig*
        |           |
        |           └─ HitManager (o)
-       |
-       ├─ EventAnalysis*
        |
        ├─ SteppingAnalysis (o)
        |           |
        |           ├─ AnalysisRegistry*
        |           |
-       |           └─ ProgramState*
+       |           └─ OutputConfig*
        |
        └─ HitManager*
 ```
