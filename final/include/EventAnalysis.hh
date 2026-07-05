@@ -43,7 +43,7 @@ class EventAnalysis : public RegistryListener { // TEST
         G4GenericAnalysisManager* fAnalysisManager = nullptr;
         
         // ...
-        HitManager* fHitManager = nullptr;
+        HitManager const* fHitManager = nullptr;
         
         // TEST ...
         EventNtupleIDs const* fEventNtupleIDs = nullptr;
