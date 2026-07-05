@@ -3,6 +3,7 @@
 
 // C lib
 // #include <string> // NOTE: For debugging
+#include <vector>
 
 // Forward declarations
 class OutputConfigMessenger;
@@ -75,6 +76,30 @@ struct StateFlags {
 };
 
 /*
+ * Abstract base class interface for OutputConfig notification listeners
+ * 
+ * NOTE: Cannot be instantiated, only extended
+ * 
+ * NOTE: C++ generates a default constructor automatically, defined virtual constructor not needed
+ * 
+ * TODO: Consider making this a separate singleton, or mediator
+ */
+class OutputConfigListener {
+    public:
+        // Virtual destructor
+        virtual ~OutputConfigListener() = default;
+        // NOTE: When you delete a derived class object via a OutputConfigListener*, the program needs to know
+        // it must call the derived class destructor first, then the base class destructor. Without a virtual
+        // destructor, only the base destructor runs, leaking resources managed by the derived constructor.
+        
+        // Pure virtual method
+        virtual void UpdateStateFlags() = 0;
+        // NOTE: An empty definition here "{}" would mean derived classes are not forced to override the 
+        // base method, by setting the method to "= 0", the class cannot be instantiated directly, and 
+        // derived classes must override this method in order to be instantiated
+};
+
+/*
  * Singleton object responsible for:
  * - Storing program state flags
  * - Instantiating program state messenger (which exposes state flags to ui)
@@ -121,6 +146,13 @@ class OutputConfig {
         //     return value_;
         // }
         
+        // ...
+        // void AddListener(std::function<void()> callback);
+        void AddListener(OutputConfigListener* callback);
+        
+        // ...
+        void NotifyListeners();
+        
     protected:
         // Business logic
         // 
@@ -149,6 +181,9 @@ class OutputConfig {
         // Pointer to current instance
         // inline static OutputConfig* fInstance = nullptr;
         // NOTE: Inline keyword allows for nullptr assignment inside of class definition
+        
+        // ...
+        std::vector<OutputConfigListener*> fListeners = {};
 };
 
 #endif
