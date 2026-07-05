@@ -21,19 +21,23 @@
  *                              └─ OutputConfig*
  * 
  * NOTE: Owned by SteppingAction
+ * 
+ * TODO: Storing HitManager here as well as in SteppingAction is redundant, just pass as arg
+ * ^ or dont pass as arg to methods below, just pass at construction and use class property
+ * ^ probably former tbh
  */
 SteppingAnalysis::SteppingAnalysis(HitManager* hitManager) : fHitManager(hitManager) {
     // Cache pointer to analysis manager singleton
     fAnalysisManager = G4AnalysisManager::Instance();
     
+    // TEST
     // ...
-    // OutputConfig& instance = OutputConfig::GetInstance(); // TODO: Class property
+    OutputConfig& outputConfig = OutputConfig::GetInstance();
+    outputConfig.AddListener(this);
     
     // ...
-    AnalysisRegistry& registry = AnalysisRegistry::GetInstance();
-    
-    // ...
-    registry.AddListener(this); // TEST
+    AnalysisRegistry& analysisRegistry = AnalysisRegistry::GetInstance();
+    analysisRegistry.AddListener(this);
     
     G4cout << "\n\n>>>>> STEPPING ANALYSIS INSTANTIATED\n" << G4endl;
 }
@@ -49,19 +53,35 @@ SteppingAnalysis::SteppingAnalysis(HitManager* hitManager) : fHitManager(hitMana
  */
 void SteppingAnalysis::UpdateRegistryCache() {
     // ...
-    
     // G4cout << "\n\n>>>>> STEPPING ANALYSIS LISTENER\n\n" << G4endl;
     
-    // ...
+    // Get readonly reference to registry singleton
     AnalysisRegistry const& registry = AnalysisRegistry::GetInstance();
     
     // Get readonly reference to ntuple indices object
     NtupleIDs const& ntupleIDs = registry.ReadNtupleIDs();
     
-    // ...
+    // Cache indices relevant to this class
     fStepDetectionNtupleIDs = &(ntupleIDs.fStepDetectionNtupleIDs);
     fStepBoundaryAbsorbNtupleIDs = &(ntupleIDs.fStepBoundaryAbsorbNtupleIDs);
     fStepBulkAbsorbNtupleIDs = &(ntupleIDs.fStepBulkAbsorbNtupleIDs);
+    // NOTE: Cache a pointer to the indices, dont copy the data itself
+}
+
+/*
+ * Fetch output flags and update local cache
+ */
+void SteppingAnalysis::UpdateStateFlags() {
+    // Get readonly reference to config singleton
+    OutputConfig const& outputConfig = OutputConfig::GetInstance();
+    
+    // Get readonly reference to output flags object
+    StateFlags const& outputFlags = outputConfig.ReadStateFlags();
+    
+    // Cache flags relevant to this class
+    fStepDetectionFlags = &(outputFlags.fStepDetectionFlags);
+    fStepBoundaryAbsorbFlags = &(outputFlags.fStepBoundaryAbsorbFlags);
+    fStepBulkAbsorbFlags = &(outputFlags.fStepBulkAbsorbFlags);
     // NOTE: Cache a pointer to the indices, dont copy the data itself
 }
 

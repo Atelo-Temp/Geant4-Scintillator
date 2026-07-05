@@ -20,10 +20,10 @@ class HitManager;
  * Handles writing output data to ntuples
  */
 // class SteppingAnalysis {
-class SteppingAnalysis : public RegistryListener { // TEST
+class SteppingAnalysis : public RegistryListener, OutputConfigListener { // TEST
     public:
         // Constructor
-        SteppingAnalysis(HitManager* hitManager);
+        SteppingAnalysis(HitManager* hitManager); // TODO: UNUSED/REDUNDANT ARG
         
         // Destructor
         ~SteppingAnalysis() override = default;
@@ -38,14 +38,18 @@ class SteppingAnalysis : public RegistryListener { // TEST
         void HandleBoundaryAbsorb(G4StepPoint const* endPoint) const;
         
         // TEST
+        // ...
         void UpdateRegistryCache() override;
+        
+        // ...
+        void UpdateStateFlags() override;
         
     private:  
         // Cached pointer to analysis manager singleton
         G4GenericAnalysisManager* fAnalysisManager = nullptr;
         
         // ...
-        HitManager* fHitManager = nullptr;
+        HitManager* fHitManager = nullptr; // TODO: UNUSED/REDUNDANT
         
         // ...
         StepDetectionNtupleIDs const* fStepDetectionNtupleIDs = nullptr;
