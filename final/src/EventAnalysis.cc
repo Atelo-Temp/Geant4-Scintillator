@@ -15,15 +15,14 @@ EventAnalysis::EventAnalysis(HitManager* hitManager) : fHitManager(hitManager) {
     // Cache a pointer to the analysis manager instance
     fAnalysisManager = G4AnalysisManager::Instance();
     
+    // TEST
     // ...
-    // OutputConfig& instance = OutputConfig::GetInstance();
+    OutputConfig& outputConfig = OutputConfig::GetInstance();
+    outputConfig.AddListener(this);
     
     // ...
-    AnalysisRegistry& registry = AnalysisRegistry::GetInstance();
-    
-    // ...
-    // registry.AddListener(this->UpdateRegistryCache);
-    registry.AddListener(this); // TEST
+    AnalysisRegistry& analysisRegistry = AnalysisRegistry::GetInstance();
+    analysisRegistry.AddListener(this);
     
     G4cout << "\n\n>>>>> EVENT ANALYSIS INSTANTIATED\n" << G4endl;
 }
@@ -32,17 +31,29 @@ EventAnalysis::EventAnalysis(HitManager* hitManager) : fHitManager(hitManager) {
  * Fetch ntuple indices and update local cache
  */
 void EventAnalysis::UpdateRegistryCache() {
-    // ...
+    // Get readonly reference to registry singleton
     AnalysisRegistry const& registry = AnalysisRegistry::GetInstance();
     
     // Get readonly reference to ntuple indices object
     NtupleIDs const& ntupleIDs = registry.ReadNtupleIDs();
     
-    // ...
+    // Cache flags relevant to this class
     fEventNtupleIDs = &(ntupleIDs.fEventNtupleIDs);
     // NOTE: Cache a pointer to the indices, dont copy the data itself
+}
+
+/*
+ * Fetch output flags and update local cache
+ */
+void EventAnalysis::UpdateStateFlags() {
+    //  Get readonly reference to config singleton
+    OutputConfig const& outputConfig = OutputConfig::GetInstance();
     
-    // ...
+    // Get readonly reference to output flags object
+    StateFlags const& outputFlags = outputConfig.ReadStateFlags();
+    
+    // Cache flags relevant to this class
+    fEventFlags = &(outputFlags.fEventFlags);
 }
 
 /*

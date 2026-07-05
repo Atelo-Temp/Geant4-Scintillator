@@ -3,7 +3,7 @@
 
 // User lib
 #include "AnalysisRegistry.hh" // RegistryListener
-#include "OutputConfig.hh"
+#include "OutputConfig.hh" // OutputConfigListener, EventFlags
 
 // G4 lib
 #include "G4GenericAnalysisManager.hh"
@@ -21,7 +21,7 @@ class HitManager;
 /*
  * Handles writing output data to ntuples
  */
-class EventAnalysis : public RegistryListener { // TEST
+class EventAnalysis : public OutputConfigListener, RegistryListener { // TEST
     public:
         // Constructor
         EventAnalysis(HitManager* hitManager);
@@ -36,7 +36,12 @@ class EventAnalysis : public RegistryListener { // TEST
         void LogEventData() const; // NOTE: Readonly
         
         // TEST
+        
+        // ...
         void UpdateRegistryCache() override;
+        
+        // ...
+        void UpdateStateFlags() override;
         
     private:
         // Cached pointer to analysis manager singleton
