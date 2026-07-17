@@ -44,34 +44,35 @@ RunAnalysis::RunAnalysis() {
  * 
  * NOTE: Called internally at construction
  * 
+ * NOTE: Depending on which ntuples are enabled, the IDs are going to completely change,
+ * so will break code in EventAnalysis and SteppingAnalysis which relies on IDs, hence
+ * need to store IDs in OutputConfig, so EventAnalysis and SteppingAnalysis can query
+ * 
+ * NOTE: G4AnalysisManager is thread-local, hence need to create ntuples on master, and 
+ * all worker threads
+ * 
+ * TODO: AnalysisRegistry being updated 4 times
+ * ^ There is no need to update the AnalysisRegistry on master, and on each worker thread, 
+ * since ntuple instantiation order is consistent amongst all threads, once on master would
+ * be fine... but then id have to wrap every:
+ * ntupleIDs.xyz = { ... };
+ * in an IsMaster clause, passing said IsMaster variable or method from RunAction
+ * 
+ * 
  * TODO: Maybe method for each ntuple
  * 
- * TODO: Depending on which ntuples are enabled, the IDs are going to completely change,
- * so will break code in EventAnalysis and SteppingAnalysis which relies on IDs
- * ^^
- * ^^ going to need to store IDs
- *    ^^ potentially add them to OutputConfig, so EventAnalysis and SteppingAnalysis can query
  * 
+ * NOTE:
+ * analysisManager->CreateNtuple // method returns created ntuple ID
  * 
- * TODO:
- * analysisManager->CreateNtuple: returns ID
+ * analysisManager->CreateNtupleIColumn // method has (ntupleID, name) overload
  * 
- * analysisManager->CreateNtuple[...]Column: has (ntupleId, name) overload
+ * analysisManager->FinishNtuple // pass this the ID returned by CreateNtuple()
  * 
- * analysisManager->FinishNtuple: pass this returned ID of CreateNtuple()
- * 
- * OutputConfig->SetNtupleID (or something like this)
+ * OutputConfig->SetNtupleID // or something like this ...
  * 
  * 
  * TODO: Need to either have an individual ntuple for each bit of data, or group ntuples, and ntuple flags
- * 
- * TODO: If grouping, will also need to store column IDs ...
- * 
- * TODO: THIS GETS CALLED ON EVERY THREAD, SHOULD IT JUST BE MASTER THREAD ??
- * Pretty sure G4AnalysisManager instance is on master thread, so its not like im making these
- * for each thread, i think its just pinging master 3 times ....
- * 
- * ^ no, G4AnalysisManager is thread-local, need to create ntuples on master, and all worker threads
  */
 void RunAnalysis::InitialiseDataStructures() {
     // Get a pointer to the singleton analysis manager via the static method
@@ -119,13 +120,11 @@ void RunAnalysis::InitialiseDataStructures() {
 // void RunAnalysis::WriteAndClose() {} // writes stored data to outfile and closes it
 
 /*
- * ...
+ * Create ntuples that will be updated on a once per-event basis
  * 
- * TODO: Merge these into one ntuple
+ * TODO: Maybe merge these into one ntuple
  */
 void RunAnalysis::EventDataStructures(G4GenericAnalysisManager* analysisManager, EventNtupleIDs& ntupleIDs) {
-    // ...
-    
     ////////////////
     // PHOTON COUNTS
     ////////////////
@@ -134,11 +133,30 @@ void RunAnalysis::EventDataStructures(G4GenericAnalysisManager* analysisManager,
     
     // if (outputFlags.fDetectionNtuple) {
     // ...
-    G4int const ntupleIDDetection = analysisManager->CreateNtuple("EventData", "Detected Photons"); // Create Ntuple ID = 2
-    G4int const ntupleColIDDetection = analysisManager->CreateNtupleIColumn("NumPhotons"); // Column 0: integer count
-    analysisManager->FinishNtuple(ntupleIDDetection); // Finishes ID = 2
+    // ntupleIDs.fDetectionNtuple.fNtupleID = analysisManager->CreateNtuple("EventData", "Detected Photons");
+    G4int const ntupleIDDetection = analysisManager->CreateNtuple("EventData", "Detected Photons"); // name, title
+    // NOTE: This creates the Ntuple with: ID = 0
     
-    ntupleIDs.fDetectionNtuple = { ntupleIDDetection, ntupleColIDDetection };
+    // Define columns inside the Ntuple (each entry will contribute a row)
+    G4int const ntupleColIDDetection = analysisManager->CreateNtupleIColumn(
+        ntupleColIDDetection, // ntuple id
+        "NumPhotons" // column name
+    );
+    // NOTE: I = integer data type
+    
+    // Mark the definition of the tuple columns as completed
+    // analysisManager->FinishNtuple();
+    // analysisManager->FinishNtuple(0);
+    analysisManager->FinishNtuple(ntupleIDDetection); // ntuple id
+    // NOTE: Dont technically need to pass 0 here, automatically finishes working ntuple (ID = 0),
+    // however this explicit handling is useful for later modifications to data handling
+    
+    // Update the registry
+    ntupleIDs.fDetectionNtuple = { ntupleIDDetection, ntupleColIDDetection }; // ntuple id, column id
+    // }
+    // Ensure value is reset to -1 (TODO: Potential future change for multiple runs)
+    // else {
+        // ntupleIDs.fDetectionCoordsNtuple = -1;
     // }
     
     ///////////////////////
@@ -149,10 +167,13 @@ void RunAnalysis::EventDataStructures(G4GenericAnalysisManager* analysisManager,
     
     // if (outputFlags.fDetectionFractionNtuple) {
     // ...
-    // analysisManager->CreateNtuple("EventInfoEfficiency", "Detection Efficiency");
     G4int const ntupleIDEventData = analysisManager->CreateNtuple("EventDataOptical", "Detection Efficiency");
-    G4int const ntupleColIDDetectionFraction = analysisManager->CreateNtupleDColumn("DetectionEfficiency"); // Column = 0
-    // analysisManager->FinishNtuple(); // ID = 5
+    // NOTE: Second call to createNtuple automatically assigns ntuple ID = 1
+    
+    G4int const ntupleColIDDetectionFraction = analysisManager->CreateNtupleDColumn(ntupleIDEventData, "DetectionEfficiency"); // col id = 0
+    // NOTE: D = double (float maybe fine, but double gives increased precision)
+    
+    // analysisManager->FinishNtuple();
     
     ntupleIDs.fDetectionFractionNtuple = { ntupleIDEventData, ntupleColIDDetectionFraction };
     // }
@@ -165,9 +186,9 @@ void RunAnalysis::EventDataStructures(G4GenericAnalysisManager* analysisManager,
     
     // if (outputFlags.fBulkAbsorbFractionNtuple) {
     // ...
-    // analysisManager->CreateNtuple("EventInfoBulkAbsorption", "Bulk Absorption Losses");
-    G4int const ntupleColIDBulkAbsorbFraction = analysisManager->CreateNtupleDColumn("BulkAbsorptionLosses"); // Column = 1
-    // analysisManager->FinishNtuple(); // ID = 5
+    // G4int const ntupleIDEventData = analysisManager->CreateNtuple("EventInfoBulkAbsorption", "Bulk Absorption Losses");
+    G4int const ntupleColIDBulkAbsorbFraction = analysisManager->CreateNtupleDColumn(ntupleIDEventData, "BulkAbsorptionLosses"); // col id = 1
+    // analysisManager->FinishNtuple();
     
     ntupleIDs.fBulkAbsorbFractionNtuple = { ntupleIDEventData, ntupleColIDBulkAbsorbFraction };
     // }
@@ -180,65 +201,45 @@ void RunAnalysis::EventDataStructures(G4GenericAnalysisManager* analysisManager,
     
     // if (outputFlags.fBoundaryAbsorbFractionNtuple) {
     // ...
-    // analysisManager->CreateNtuple("EventInfoSurfaceAbsorption", "Surface Absorption Losses");
-    G4int const ntupleColIDBoundaryAbsorbFraction = analysisManager->CreateNtupleDColumn("SurfaceAbsorptionLosses"); // Column = 2
-    analysisManager->FinishNtuple(ntupleIDEventData); // ID = 5
+    // G4int const ntupleIDEventData = analysisManager->CreateNtuple("EventInfoSurfaceAbsorption", "Surface Absorption Losses");
+    G4int const ntupleColIDBoundaryAbsorbFraction = analysisManager->CreateNtupleDColumn(ntupleIDEventData, "SurfaceAbsorptionLosses"); // col id = 2
+    analysisManager->FinishNtuple(ntupleIDEventData);
     
     ntupleIDs.fBoundaryAbsorbFractionNtuple = { ntupleIDEventData, ntupleColIDBoundaryAbsorbFraction };
     // }
 }
 
 /*
- * ....
+ * Create ntuples that will be updated on a step-wise basis, for detection events
+ * 
+ * TODO: Consider merging these into one ntuple
  */
 void RunAnalysis::StepDataDetectionStructures(G4GenericAnalysisManager* analysisManager, StepDetectionNtupleIDs& ntupleIDs) {
-    // ...
-    
     //////////////////////////
     // PHOTON DETECTION COORDS
     //////////////////////////
 
-    // ...
+    // Coordinates of photons marked as detected at the photocathode
     
     // ...
     // if (outputFlags.fDetectionCoordsNtuple) {
     // ...
-    // analysisManager->CreateNtuple("StepData", "Photon Coordinates"); // name, title
-    // analysisManager->CreateNtuple("StepDataDetection", "Photon Coordinates"); // name, title
-    // ntupleIDs.fDetectionCoordsNtuple = analysisManager->CreateNtuple("StepDataDetection", "Photon Coordinates"); // name, title
     G4int const ntupleIDDetectionCoords = analysisManager->CreateNtuple("StepDataDetection", "Photon Coordinates"); // name, title
-    // NOTE: This creates the Ntuple with: ID = 1
-    
-    // Define columns iniside the Ntuple (each entry will conbtribute a row)
-    // analysisManager->CreateNtupleIColumn("iEvent"); // I = integer (event number)
     
     // Detection positions
-    G4int const ntupleXColIDDetectionCoords = analysisManager->CreateNtupleDColumn("fX"); // x position of the photon
-    G4int const ntupleYColIDDetectionCoords = analysisManager->CreateNtupleDColumn("fY"); // y position of the photon
-    G4int const ntupleZColIDDetectionCoords = analysisManager->CreateNtupleDColumn("fZ"); // y position of the photon
-    // NOTE: D = double (float maybe fine, but double gives increased precision)
+    G4int const ntupleXColIDDetectionCoords = analysisManager->CreateNtupleDColumn(ntupleIDDetectionCoords, "fX"); // x position of the photon
+    G4int const ntupleYColIDDetectionCoords = analysisManager->CreateNtupleDColumn(ntupleIDDetectionCoords, "fY"); // y position of the photon
+    G4int const ntupleZColIDDetectionCoords = analysisManager->CreateNtupleDColumn(ntupleIDDetectionCoords, "fZ"); // y position of the photon
     
-    // Mark the definition of the tuple columns as completed
-    // analysisManager->FinishNtuple(0); // NOTE: === FinishNtuple(0);
-    analysisManager->FinishNtuple(ntupleIDDetectionCoords); // NOTE: === FinishNtuple(0);
-    // NOTE: Dont need to pass 0 here, automatically finishes ID = 0
+    analysisManager->FinishNtuple(ntupleIDDetectionCoords);
     
-    // ..
-    ntupleIDs.fDetectionCoordsNtuple = { 
-        ntupleIDDetectionCoords, 
-        ntupleXColIDDetectionCoords, 
-        ntupleYColIDDetectionCoords, 
+    ntupleIDs.fDetectionCoordsNtuple = {
+        ntupleIDDetectionCoords,
+        ntupleXColIDDetectionCoords,
+        ntupleYColIDDetectionCoords,
         ntupleZColIDDetectionCoords
     };
     // }
-    // Ensure value is reset to -1 (TODO: Potential future change for multiple runs)
-    // else {
-        // ntupleIDs.fDetectionCoordsNtuple = -1;
-    // }
-    
-    // analysisManager->CreateNtupleDColumn("fGlobalTime"); // store the global time at the start of each event
-    // analysisManager->CreateNtupleDColumn("fWlen"); // wavelength
-    // NOTE: Could also define momentum, energy, etc ...
     
     ////////////////////////////////
     // DETECTED PHOTON TRACK LENGTHS
@@ -248,11 +249,9 @@ void RunAnalysis::StepDataDetectionStructures(G4GenericAnalysisManager* analysis
     
     // if (outputFlags.fDetectionDistanceNtuple) {
     // ...
-    G4int const ntupleIDDetectionMetrics = analysisManager->CreateNtuple("TrackData", "Detected Photon Metrics"); // ID = 3
-    G4int const ntupleColIDDetectionDistance = analysisManager->CreateNtupleDColumn("DetectionDistance"); // Column = 0
-    // analysisManager->FinishNtuple(); // ID = 3
-    // NOTE: Could just add this to Ntuple(0), as its still step based data, just do another column
-    // although, this and subsequent Ntuples are more macro track related than micro step related
+    G4int const ntupleIDDetectionMetrics = analysisManager->CreateNtuple("TrackData", "Detected Photon Metrics");
+    G4int const ntupleColIDDetectionDistance = analysisManager->CreateNtupleDColumn(ntupleIDDetectionMetrics, "DetectionDistance");
+    // analysisManager->FinishNtuple(ntupleIDDetectionMetrics);
     
     ntupleIDs.fDetectionDistanceNtuple = { ntupleIDDetectionMetrics, ntupleColIDDetectionDistance };
     // }
@@ -265,10 +264,9 @@ void RunAnalysis::StepDataDetectionStructures(G4GenericAnalysisManager* analysis
     
     // if (outputFlags.fDetectionTimeOfFlightNtuple) {
     // ...
-    // analysisManager->CreateNtuple("TrackData", "Detected Photon Lifetime");
-    G4int const ntupleColIDDetectionTimeOfFlight = analysisManager->CreateNtupleDColumn("TimeOfFlight"); // Column = 1
-    analysisManager->FinishNtuple(ntupleIDDetectionMetrics); // ID = 3
-    // NOTE: Could just add this to Ntuple(0), as its still step based data, just do another column
+    // G4int const ntupleIDDetectionMetrics = analysisManager->CreateNtuple("TrackData", "Detected Photon Lifetime");
+    G4int const ntupleColIDDetectionTimeOfFlight = analysisManager->CreateNtupleDColumn(ntupleIDDetectionMetrics, "TimeOfFlight");
+    analysisManager->FinishNtuple(ntupleIDDetectionMetrics);
     
     ntupleIDs.fDetectionTimeOfFlightNtuple = { ntupleIDDetectionMetrics, ntupleColIDDetectionTimeOfFlight };
     // }
@@ -282,8 +280,8 @@ void RunAnalysis::StepDataDetectionStructures(G4GenericAnalysisManager* analysis
     // if (outputFlags.fDetectionReflectionsNtuple) {
     // ...
     G4int const ntupleIDDetectionReflections = analysisManager->CreateNtuple("ReflectionInfoDetection", "Reflections Before Detection");
-    G4int const ntupleColIDDetectionReflections = analysisManager->CreateNtupleIColumn("ReflectionsDetect"); // Column = 0
-    analysisManager->FinishNtuple(ntupleIDDetectionReflections); // ID = 6
+    G4int const ntupleColIDDetectionReflections = analysisManager->CreateNtupleIColumn(ntupleIDDetectionReflections, "ReflectionsDetect");
+    analysisManager->FinishNtuple(ntupleIDDetectionReflections);
     
     ntupleIDs.fDetectionReflectionsNtuple = { ntupleIDDetectionReflections, ntupleColIDDetectionReflections };
     // }
@@ -297,15 +295,29 @@ void RunAnalysis::StepDataDetectionStructures(G4GenericAnalysisManager* analysis
     
     // Monitor incidence angle of optical photons when detected at the photocathode
         
-    // TODO ...
+    // TODO: ...
+    
+    /////////////////////////////
+    // DETECTED PHOTON WAVELENGTH
+    /////////////////////////////
+    
+    // Monitor where the bulk of detections are coming from in the electromagnetic spectrum
+    
+    // TODO: ...
+    // analysisManager->CreateNtupleDColumn("fWlen"); // wavelength
+    
+    // ...
+    
+    // analysisManager->CreateNtupleDColumn("fGlobalTime"); // store the global time at the start of each event
+    // NOTE: Could also define momentum, energy, etc ...
 }
 
 /*
- * ...
+ * Create ntuples that will be updated on a step-wise basis, for boundary absorption events
+ * 
+ * TODO: Consider merging these into one ntuple
  */
 void RunAnalysis::StepDataBoundaryAbsorbStructures(G4GenericAnalysisManager* analysisManager, StepBoundaryAbsorbNtupleIDs& ntupleIDs) {
-    // ...
-    
     ////////////////////////////////////
     // PHOTON BOUNDARY ABSORPTION COORDS
     ////////////////////////////////////
@@ -315,18 +327,15 @@ void RunAnalysis::StepDataBoundaryAbsorbStructures(G4GenericAnalysisManager* ana
     
     // if (outputFlags.fBoundaryAbsorbCoordsNtuple) {
     // ...
-    // analysisManager->CreateNtuple("StepData", "Photon Coordinates");
-    G4int const ntupleIDBoundaryAbsorbCoords = analysisManager->CreateNtuple("StepDataAbsorption", "Photon Coordinates"); // Create Ntuple ID = 1
-    // NOTE: Second call to createNtuple automatically assigns ID = 1
+    G4int const ntupleIDBoundaryAbsorbCoords = analysisManager->CreateNtuple("StepDataAbsorption", "Photon Coordinates");
     
     // Absorption positions
-    G4int const ntupleXColIDBoundaryAbsorbCoords = analysisManager->CreateNtupleDColumn("aX"); // x position of the photon
-    G4int const ntupleYColIDBoundaryAbsorbCoords = analysisManager->CreateNtupleDColumn("aY"); // y position of the photon
-    G4int const ntupleZColIDBoundaryAbsorbCoords = analysisManager->CreateNtupleDColumn("aZ"); // y position of the photon
+    G4int const ntupleXColIDBoundaryAbsorbCoords = analysisManager->CreateNtupleDColumn(ntupleIDBoundaryAbsorbCoords, "aX"); // x position of the photon
+    G4int const ntupleYColIDBoundaryAbsorbCoords = analysisManager->CreateNtupleDColumn(ntupleIDBoundaryAbsorbCoords, "aY"); // y position of the photon
+    G4int const ntupleZColIDBoundaryAbsorbCoords = analysisManager->CreateNtupleDColumn(ntupleIDBoundaryAbsorbCoords, "aZ"); // y position of the photon
     
     // Mark the definition of the tuple columns as completed
-    // analysisManager->FinishNtuple(1); // automatically finishes ID = 1
-    analysisManager->FinishNtuple(ntupleIDBoundaryAbsorbCoords); // automatically finishes ID = 1
+    analysisManager->FinishNtuple(ntupleIDBoundaryAbsorbCoords);
     
     // ...
     ntupleIDs.fBoundaryAbsorbCoordsNtuple = {
@@ -345,11 +354,11 @@ void RunAnalysis::StepDataBoundaryAbsorbStructures(G4GenericAnalysisManager* ana
 }
 
 /*
- * ...
+ * Create ntuples that will be updated on a step-wise basis, for bulk absorption events
+ * 
+ * TODO: Consider merging these into one ntuple
  */
 void RunAnalysis::StepDataBulkAbsorbStructures(G4GenericAnalysisManager* analysisManager, StepBulkAbsorbNtupleIDs& ntupleIDs) {
-    // ...
-    
     ////////////////////////////////
     // PHOTON BULK ABSORPTION COORDS
     ////////////////////////////////
@@ -367,9 +376,8 @@ void RunAnalysis::StepDataBulkAbsorbStructures(G4GenericAnalysisManager* analysi
     // if (outputFlags.fBulkAbsorbDistanceNtuple) {
     // ...
     G4int const ntupleIDBulkAbsorbDistance = analysisManager->CreateNtuple("TrackDataAbsorb", "Bulk Absorbed Photon Track Length");
-    G4int const ntupleColIDBulkAbsorbDistance = analysisManager->CreateNtupleDColumn("AbsorptionDistance"); // Column = 0
-    analysisManager->FinishNtuple(ntupleIDBulkAbsorbDistance); // ID = 4
-    // NOTE: Could just add this to Ntuple(0), as its still step based data, just do another column
+    G4int const ntupleColIDBulkAbsorbDistance = analysisManager->CreateNtupleDColumn(ntupleIDBulkAbsorbDistance, "AbsorptionDistance");
+    analysisManager->FinishNtuple(ntupleIDBulkAbsorbDistance);
     
     ntupleIDs.fBulkAbsorbDistanceNtuple = { ntupleIDBulkAbsorbDistance, ntupleColIDBulkAbsorbDistance };
     // }
@@ -389,8 +397,8 @@ void RunAnalysis::StepDataBulkAbsorbStructures(G4GenericAnalysisManager* analysi
     // if (outputFlags.fBulkAbsorbReflectionsNtuple) {
     // ...
     G4int const ntupleIDBulkAbsorbReflections = analysisManager->CreateNtuple("ReflectionInfoBulkAbsorption", "Reflections Before Bulk Absorption");
-    G4int const ntupleColIDBulkAbsorbReflections = analysisManager->CreateNtupleIColumn("ReflectionsBulkAbsorb"); // Column = 0
-    analysisManager->FinishNtuple(ntupleIDBulkAbsorbReflections); // ID = 7
+    G4int const ntupleColIDBulkAbsorbReflections = analysisManager->CreateNtupleIColumn(ntupleIDBulkAbsorbReflections, "ReflectionsBulkAbsorb");
+    analysisManager->FinishNtuple(ntupleIDBulkAbsorbReflections);
     
     ntupleIDs.fBulkAbsorbReflectionsNtuple = { ntupleIDBulkAbsorbReflections, ntupleColIDBulkAbsorbReflections };
     // }
