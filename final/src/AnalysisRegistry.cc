@@ -66,7 +66,7 @@ void AnalysisRegistry::AddListener(RegistryListener* callback) {
 /*
  * ...
  */
-void AnalysisRegistry::NotifyListeners() {
+void AnalysisRegistry::NotifyListeners() const {
     // ...
     for (int i = 0; i < fListeners.size(); i++) {
         fListeners[i]->UpdateRegistryCache();

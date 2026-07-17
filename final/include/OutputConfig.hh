@@ -151,7 +151,7 @@ class OutputConfig {
         void AddListener(OutputConfigListener* listener);
         
         // ...
-        void NotifyListeners();
+        void NotifyListeners() const;
         
     protected:
         // Business logic

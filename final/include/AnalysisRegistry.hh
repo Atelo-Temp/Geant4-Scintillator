@@ -146,7 +146,7 @@ class AnalysisRegistry {
         void AddListener(RegistryListener* callback);
         
         // ...
-        void NotifyListeners();
+        void NotifyListeners() const;
         
     protected:
         // Business logic

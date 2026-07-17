@@ -112,7 +112,7 @@ void OutputConfig::AddListener(OutputConfigListener* listener) {
 /*
  * ...
  */
-void OutputConfig::NotifyListeners() {
+void OutputConfig::NotifyListeners() const {
     // ...
     for (int i = 0; i < fListeners.size(); i++) {
         fListeners[i]->UpdateOutputFlagsCache();

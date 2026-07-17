@@ -77,16 +77,16 @@ void RunAnalysis::InitialiseDataStructures() {
     // Get a pointer to the singleton analysis manager via the static method
     G4GenericAnalysisManager* iAnalysisManager = G4AnalysisManager::Instance();
     
-    // ...
-    OutputConfig& iOutputConfig = OutputConfig::GetInstance();
+    // Get a read-only reference to the singleton output config manager
+    OutputConfig const& iOutputConfig = OutputConfig::GetInstance();
     
-    // ...
+    // Get read-only reference to the output data flags object
     // StateFlags const& outputFlags = iOutputConfig.ReadStateFlags(); // TODO: Unused
     
-    // ...
+    // Get a mutable reference to the singleton ntuple registry
     AnalysisRegistry& iAnalysisRegistry = AnalysisRegistry::GetInstance();
     
-    // ...
+    // Get mutable reference to ntuple id object
     NtupleIDs& ntupleIDs = iAnalysisRegistry.GetNtupleIDs();
     
     // TODO: Am i going to need to delay calling InitialiseDataStructures(), since RunAction is instantiated
