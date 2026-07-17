@@ -8,11 +8,10 @@
 #include "G4GenericAnalysisManager.hh"
 
 /*
- * Constructor
+ * Constructor (NOTE: Currently does nothing)
  * 
- * NOTE: Calls private method
  * 
- * Tree:
+ * > Tree:
  * 
  * 
  * RunAction constructor calls:
@@ -24,6 +23,10 @@
  *         |
  *         ├─ RunTimer
  *         └─ RunAnalysis
+ * 
+ * 
+ * TODO: Consider passing RunAction pointer to this classes constructor,
+ * or just a pointer to IsMaster variable in RunAction class
  */
 RunAnalysis::RunAnalysis() {
    // InitialiseDataStructures(); // NOTE: Creating data structures before run even starts is wasteful
@@ -39,6 +42,10 @@ RunAnalysis::RunAnalysis() {
    G4cout << "\n\n>>>>> RUN ANALYSIS INSTANTIATED\n\n" << G4endl;
 }
 
+// TODO: Extract file handling logic from RunAction
+// void RunAnalysis::CreateFile() {} // creates root outfile and opens it
+// void RunAnalysis::WriteAndClose() {} // writes stored data to outfile and closes it
+
 /*
  * Private method to initialise histogram and ntuples
  * 
@@ -51,17 +58,6 @@ RunAnalysis::RunAnalysis() {
  * NOTE: G4AnalysisManager is thread-local, hence need to create ntuples on master, and 
  * all worker threads
  * 
- * TODO: AnalysisRegistry being updated 4 times
- * ^ There is no need to update the AnalysisRegistry on master, and on each worker thread, 
- * since ntuple instantiation order is consistent amongst all threads, once on master would
- * be fine... but then id have to wrap every:
- * ntupleIDs.xyz = { ... };
- * in an IsMaster clause, passing said IsMaster variable or method from RunAction
- * 
- * 
- * TODO: Maybe method for each ntuple
- * 
- * 
  * NOTE:
  * analysisManager->CreateNtuple // method returns created ntuple ID
  * 
@@ -72,7 +68,26 @@ RunAnalysis::RunAnalysis() {
  * OutputConfig->SetNtupleID // or something like this ...
  * 
  * 
+ * TODO: AnalysisRegistry being updated 4 times
+ * ^ There is no need to update the AnalysisRegistry on master, and on each worker thread, 
+ * since ntuple instantiation order is consistent amongst all threads, once on master would
+ * be fine... but then id have to wrap every:
+ * ntupleIDs.xyz = { ... };
+ * in an IsMaster clause, passing said IsMaster variable or method from RunAction
+ * 
+ * 
  * TODO: Need to either have an individual ntuple for each bit of data, or group ntuples, and ntuple flags
+ * 
+ * 
+ * TODO: Consider method for each ntuple
+ * 
+ * 
+ * TODO: Maybe implement selective ntuple creation using output config flags
+ * ^ may potentially be worth keeping schema consistent though, always enabled, and just have empty ntuples/columns
+ * 
+ * 
+ * TODO: Instead of two publishers, maybe just a "RunStarting" notification publisher,
+ * removing pub/sub methods from registry and config
  */
 void RunAnalysis::InitialiseDataStructures() {
     // Get a pointer to the singleton analysis manager via the static method
@@ -82,7 +97,7 @@ void RunAnalysis::InitialiseDataStructures() {
     OutputConfig const& iOutputConfig = OutputConfig::GetInstance();
     
     // Get read-only reference to the output data flags object
-    // StateFlags const& outputFlags = iOutputConfig.ReadStateFlags(); // TODO: Unused
+    // StateFlags const& outputFlags = iOutputConfig.ReadStateFlags(); // TODO: Unused for now
     
     // Get a mutable reference to the singleton ntuple registry
     AnalysisRegistry& iAnalysisRegistry = AnalysisRegistry::GetInstance();
@@ -90,41 +105,47 @@ void RunAnalysis::InitialiseDataStructures() {
     // Get mutable reference to ntuple id object
     NtupleIDs& ntupleIDs = iAnalysisRegistry.GetNtupleIDs();
     
-    // TODO: Am i going to need to delay calling InitialiseDataStructures(), since RunAction is instantiated
-    
+    // ...
     G4cout << "\n\n>>>>>>>>>>>>>> CREATING DATA STRUCTURES NOW <<<<<<<<<<<<<<<<<<<\n\n" << G4endl;
     
     // ...
-    // EventDataStructures(iAnalysisManager, ntupleIDs);
     EventDataStructures(iAnalysisManager, ntupleIDs.fEventNtupleIDs);
     
     // ...
-    // StepDataDetectionStructures(iAnalysisManager, ntupleIDs);
     StepDataDetectionStructures(iAnalysisManager, ntupleIDs.fStepDetectionNtupleIDs);
     
     // ...
-    // StepDataBoundaryAbsorbStructures(iAnalysisManager, ntupleIDs);
     StepDataBoundaryAbsorbStructures(iAnalysisManager, ntupleIDs.fStepBoundaryAbsorbNtupleIDs);
     
     // ...
-    // StepDataBulkAbsorbStructures(iAnalysisManager, ntupleIDs);
     StepDataBulkAbsorbStructures(iAnalysisManager, ntupleIDs.fStepBulkAbsorbNtupleIDs);
     
     // Notify the EventAnalysis and SteppingAnalysis classes to update their caches
+    // if (!IsMaster) { // TODO
     iAnalysisRegistry.NotifyListeners(); // TEST
     iOutputConfig.NotifyListeners();
+    // TODO: Instead of two publishers, maybe just a "RunStarting" notification publisher,
+    // removing pub/sub methods from registry and config
+    // }
+    // NOTE: Since EventAnalysis and SteppingAnalysis instances dont exist on master thread,
+    // listeners will be empty, so avoid redundant call with master thread check
 }
-
-// TODO: Extract file handling logic from RunAction
-// void RunAnalysis::CreateFile() {} // creates root outfile and opens it
-// void RunAnalysis::WriteAndClose() {} // writes stored data to outfile and closes it
 
 /*
  * Create ntuples that will be updated on a once per-event basis
  * 
  * TODO: Maybe merge these into one ntuple
+ * 
+ * TODO: Consider another approach:
+ * 
+ * Create relevant ntuple id object on the stack, return it, and populate reference in InitialiseDataStructures
+ * EventNtupleIDs ntupleIds;
+ * 
+ * NOTE: This would make it easier to only update registry once, as wouldnt have to enclose every ntupleIDs
+ * assignment in an IsMaster logic check
  */
 void RunAnalysis::EventDataStructures(G4GenericAnalysisManager* analysisManager, EventNtupleIDs& ntupleIDs) {
+    
     ////////////////
     // PHOTON COUNTS
     ////////////////
