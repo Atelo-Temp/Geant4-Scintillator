@@ -21,7 +21,7 @@ class HitManager;
 /*
  * Handles writing output data to ntuples
  */
-class EventAnalysis : public OutputConfigListener, RegistryListener { // TEST
+class EventAnalysis : public OutputConfigListener, RegistryListener { // TEST // TODO: RunListener
     public:
         // Constructor
         EventAnalysis(HitManager* hitManager);
@@ -51,7 +51,8 @@ class EventAnalysis : public OutputConfigListener, RegistryListener { // TEST
         HitManager const* fHitManager = nullptr;
         
         // TEST ...
-        EventNtupleIDs const* fEventNtupleIDs = nullptr;
+        EventDataNtupleIDs const* fEventDataNtupleIDs = nullptr;
+        EventStatsNtupleIDs const* fEventStatsNtupleIDs = nullptr;
         
         // ...
         EventFlags const* fEventFlags = nullptr;

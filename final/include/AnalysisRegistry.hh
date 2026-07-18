@@ -119,14 +119,27 @@ struct ColumnIndicesCoords {
 };
 
 /*
- * Event ntuple indices
+ * Event ntuple indices (raw data)
+ * 
+ * NOTE: This needs to be separated out from other per-event statistics, since cases of
+ * optical photons being generated but zero detections do happen (uncommon, but ~1/125 events)
+ * 
+ * NOTE: For this reason, if the other raw values (total boundary absorptions) were to be written 
+ * to outfiles, they would likely need to be separated in to their own ntuples
  */
-struct EventNtupleIDs : public NtupleIndices {
-    // G4int fNtupleID;
-    
+struct EventDataNtupleIDs : public NtupleIndices {
     ColumnIndices fDetectionNtuple = {-1}; // Per-event detections
     // ColumnIndices fBoundaryAbsorbNtuple = {-1}; // NOTE: Not writing per-event boundary absorption counts
     // ColumnIndices fBulkAbsorbNtuple = {-1}; // NOTE: Not writing per-event bulk absorption counts
+};
+
+/*
+ * Event ntuple indices (loss mechanism statistics)
+ * 
+ * NOTE: Even in the case of zero detections, or absorptions, these are valid, since it is just
+ * painting a picture of what % was lost to each mechanism
+ */
+struct EventStatsNtupleIDs : public NtupleIndices {
     ColumnIndices fDetectionFractionNtuple = {-1}; // Per-event detections fraction
     ColumnIndices fBoundaryAbsorbFractionNtuple = {-1}; // Per-event boundary absorptions fraction
     ColumnIndices fBulkAbsorbFractionNtuple = {-1}; // Per-event bulk absorptions fraction
@@ -136,8 +149,6 @@ struct EventNtupleIDs : public NtupleIndices {
  * Step detection ntuple indices
  */
 struct StepDetectionNtupleIDs : public NtupleIndices {
-    // G4int fNtupleID;
-    
     ColumnIndicesCoords fDetectionCoordsNtuple = {-1, -1, -1};
     ColumnIndices fDetectionDistanceNtuple = {-1};
     ColumnIndices fDetectionTimeOfFlightNtuple = {-1};
@@ -148,8 +159,6 @@ struct StepDetectionNtupleIDs : public NtupleIndices {
  * Step boundary absorption ntuple indices
  */
 struct StepBoundaryAbsorbNtupleIDs : public NtupleIndices {
-    // G4int fNtupleID;
-    
     ColumnIndicesCoords fBoundaryAbsorbCoordsNtuple = {-1, -1, -1};
     // NtupleIndices fBoundaryAbsorbDistanceNtuple = {-1}; // NOTE: Not yet implemented
     // NtupleIndices fBoundaryAbsorbTimeOfFlightNtuple = {-1}; // NOTE: Not yet implemented
@@ -160,8 +169,6 @@ struct StepBoundaryAbsorbNtupleIDs : public NtupleIndices {
  * Step bulk absorption ntuple indices
  */
 struct StepBulkAbsorbNtupleIDs : public NtupleIndices {
-    // G4int fNtupleID;
-    
     // ColumnIndicesCoords fBulkAbsorbCoordsNtuple = {-1, -1, -1}; // NOTE: Not yet implemented
     ColumnIndices fBulkAbsorbDistanceNtuple = {-1};
     // ColumnIndices fBulkAbsorbTimeOfFlightNtuple = {-1}; // NOTE: Not yet implemented
@@ -183,7 +190,11 @@ struct StepBulkAbsorbNtupleIDs : public NtupleIndices {
  * std::unordered_map<std::string, NtupleIndices> fEventNtupleIDs;
  */
 struct NtupleIDs {
-    EventNtupleIDs fEventNtupleIDs;
+    // EventNtupleIDs fEventNtupleIDs;
+    // ...
+    EventDataNtupleIDs fEventDataNtupleIDs;
+    EventStatsNtupleIDs fEventStatsNtupleIDs;
+    // ...
     StepDetectionNtupleIDs fStepDetectionNtupleIDs;
     StepBulkAbsorbNtupleIDs fStepBulkAbsorbNtupleIDs;
     StepBoundaryAbsorbNtupleIDs fStepBoundaryAbsorbNtupleIDs;

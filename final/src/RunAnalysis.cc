@@ -109,7 +109,10 @@ void RunAnalysis::InitialiseDataStructures() {
     G4cout << "\n\n>>>>>>>>>>>>>> CREATING DATA STRUCTURES NOW <<<<<<<<<<<<<<<<<<<\n\n" << G4endl;
     
     // ...
-    EventDataStructures(iAnalysisManager, ntupleIDs.fEventNtupleIDs);
+    EventDataStructures(iAnalysisManager, ntupleIDs.fEventDataNtupleIDs);
+    
+    // ...
+    EventStatsStructures(iAnalysisManager, ntupleIDs.fEventStatsNtupleIDs);
     
     // ...
     StepDataDetectionStructures(iAnalysisManager, ntupleIDs.fStepDetectionNtupleIDs);
@@ -134,7 +137,7 @@ void RunAnalysis::InitialiseDataStructures() {
 /*
  * Create ntuples that will be updated on a once per-event basis
  * 
- * TODO: Maybe merge these into one ntuple
+ * (when non-zero photons are detected)
  * 
  * TODO: Consider another approach:
  * 
@@ -144,9 +147,9 @@ void RunAnalysis::InitialiseDataStructures() {
  * NOTE: This would make it easier to only update registry once, as wouldnt have to enclose every ntupleIDs
  * assignment in an IsMaster logic check
  */
-void RunAnalysis::EventDataStructures(G4GenericAnalysisManager* analysisManager, EventNtupleIDs& ntupleIDs) {
+void RunAnalysis::EventDataStructures(G4GenericAnalysisManager* analysisManager, EventDataNtupleIDs& ntupleIDs) {
     // ...
-    G4int const ntupleIdEventData = analysisManager->CreateNtuple("EventData", "Per-event Statistics"); // name, title
+    G4int const ntupleIdEventData = analysisManager->CreateNtuple("EventData", "Per-event Data"); // name, title
     // NOTE: This creates the Ntuple with: ID = 0
     
     // Update the registry
@@ -173,6 +176,25 @@ void RunAnalysis::EventDataStructures(G4GenericAnalysisManager* analysisManager,
         // ntupleIDs.fDetectionNtuple.fColumnID = -1;
     // }
     
+    // Mark the definition of the tuple columns as completed
+    analysisManager->FinishNtuple(ntupleIdEventData); // ntuple id
+    // NOTE: Dont technically need to pass 0 here, automatically finishes working ntuple (ID = 0),
+    // however this explicit handling is useful for later modifications to data handling
+}
+
+/*
+ * Create ntuples that will be updated on a once per-event basis
+ * 
+ * (when non-zero optical photons are generated)
+ */
+void RunAnalysis::EventStatsStructures(G4GenericAnalysisManager* analysisManager, EventStatsNtupleIDs& ntupleIDs) {
+    // ...
+    G4int const ntupleIdEventStats = analysisManager->CreateNtuple("EventStats", "Per-event Statistics"); // name, title
+    // NOTE: Second call to createNtuple automatically assigns ntuple ID = 1
+    
+    // Update the registry
+    ntupleIDs.fNtupleID = ntupleIdEventStats;
+    
     ///////////////////////
     // DETECTION EFFICIENCY
     ///////////////////////
@@ -181,7 +203,7 @@ void RunAnalysis::EventDataStructures(G4GenericAnalysisManager* analysisManager,
     
     // if (outputFlags.fDetectionFractionNtuple) {
     // ...
-    ntupleIDs.fDetectionFractionNtuple.fColumnID = analysisManager->CreateNtupleDColumn(ntupleIdEventData, "DetectionEfficiency"); // col id = 0
+    ntupleIDs.fDetectionFractionNtuple.fColumnID = analysisManager->CreateNtupleDColumn(ntupleIdEventStats, "DetectionEfficiency"); // col id = 0
     // NOTE: D = double (float maybe fine, but double gives increased precision)
     // }
     
@@ -193,7 +215,7 @@ void RunAnalysis::EventDataStructures(G4GenericAnalysisManager* analysisManager,
     
     // if (outputFlags.fBulkAbsorbFractionNtuple) {
     // ...
-    ntupleIDs.fBulkAbsorbFractionNtuple.fColumnID = analysisManager->CreateNtupleDColumn(ntupleIdEventData, "BulkAbsorptionLosses"); // col id = 1
+    ntupleIDs.fBulkAbsorbFractionNtuple.fColumnID = analysisManager->CreateNtupleDColumn(ntupleIdEventStats, "BulkAbsorptionLosses"); // col id = 1
     // }
     
     ////////////////////////////
@@ -204,13 +226,11 @@ void RunAnalysis::EventDataStructures(G4GenericAnalysisManager* analysisManager,
     
     // if (outputFlags.fBoundaryAbsorbFractionNtuple) {
     // ...
-    ntupleIDs.fBoundaryAbsorbFractionNtuple.fColumnID = analysisManager->CreateNtupleDColumn(ntupleIdEventData, "SurfaceAbsorptionLosses"); // col id = 2
+    ntupleIDs.fBoundaryAbsorbFractionNtuple.fColumnID = analysisManager->CreateNtupleDColumn(ntupleIdEventStats, "SurfaceAbsorptionLosses"); // col id = 2
     // }
     
     // Mark the definition of the tuple columns as completed
-    analysisManager->FinishNtuple(ntupleIdEventData); // ntuple id
-    // NOTE: Dont technically need to pass 0 here, automatically finishes working ntuple (ID = 0),
-    // however this explicit handling is useful for later modifications to data handling
+    analysisManager->FinishNtuple(ntupleIdEventStats);
 }
 
 /*
@@ -221,7 +241,6 @@ void RunAnalysis::EventDataStructures(G4GenericAnalysisManager* analysisManager,
 void RunAnalysis::StepDataDetectionStructures(G4GenericAnalysisManager* analysisManager, StepDetectionNtupleIDs& ntupleIDs) {
     // ...
     G4int const ntupleIdDetectionData = analysisManager->CreateNtuple("StepDataDetection", "Detected Photon Metrics"); // name, title
-    // NOTE: Second call to createNtuple automatically assigns ntuple ID = 1
     
     // ...
     ntupleIDs.fNtupleID = ntupleIdDetectionData;
