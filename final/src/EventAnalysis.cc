@@ -77,12 +77,10 @@ void EventAnalysis::WriteEventData() const {
             
             // Fill the per-event total detected photons ntuple
             fAnalysisManager->FillNtupleIColumn(
-                fEventNtupleIDs->fDetectionNtuple.fNtupleID, 
-                fEventNtupleIDs->fDetectionNtuple.fColumnID, 
-                fDetectedPhotons
-            ); // ntuple ID, column ID, fill value
-            // NOTE: Only 1 column, hence column ID = 0
-            fAnalysisManager->AddNtupleRow(fEventNtupleIDs->fDetectionNtuple.fNtupleID); // Save the row for Ntuple ID = 2
+                fEventNtupleIDs->fNtupleID,  // ntuple id
+                fEventNtupleIDs->fDetectionNtuple.fColumnID, // column id
+                fDetectedPhotons // value
+            );
             // }
             // TEST: DEBUGGING THE HIGH COUNTS OF NEAR-ZERO DETECTIONS SINCE ADDING Al2O3 RINDEX
             // if (fDetectedPhotons < 10) {
@@ -93,15 +91,15 @@ void EventAnalysis::WriteEventData() const {
         
         // ...
         if (fEventFlags->fDetectionFractionNtuple) {
-        // Calculate fractional detection efficiency and write to respective column
-        double const detectionEfficiency = (1. * fDetectedPhotons) / fTotalPhotons;
-        
-        fAnalysisManager->FillNtupleDColumn(
-            fEventNtupleIDs->fDetectionFractionNtuple.fNtupleID,
-            fEventNtupleIDs->fDetectionFractionNtuple.fColumnID,
-            detectionEfficiency
-        ); // ntuple ID = 5, column ID = 0
-        // NOTE: Cast to double (via 1. *)
+            // Calculate fractional detection efficiency and write to respective column
+            double const detectionEfficiency = (1. * fDetectedPhotons) / fTotalPhotons;
+            
+            fAnalysisManager->FillNtupleDColumn(
+                fEventNtupleIDs->fNtupleID,
+                fEventNtupleIDs->fDetectionFractionNtuple.fColumnID,
+                detectionEfficiency
+            ); // ntuple ID = 5, column ID = 0
+            // NOTE: Cast to double (via 1. *)
         }
         
         // ...
@@ -113,7 +111,7 @@ void EventAnalysis::WriteEventData() const {
             double const surfaceAbsoptionLosses = (1. * fBoundaryAbsorbedPhotons) / fTotalPhotons;
             
             fAnalysisManager->FillNtupleDColumn(
-                fEventNtupleIDs->fBoundaryAbsorbFractionNtuple.fNtupleID,
+                fEventNtupleIDs->fNtupleID,
                 fEventNtupleIDs->fBoundaryAbsorbFractionNtuple.fColumnID,
                 surfaceAbsoptionLosses
             ); // ntuple ID = 5, column ID = 2
@@ -128,14 +126,14 @@ void EventAnalysis::WriteEventData() const {
             double const bulkAbsoptionLosses = (1. * fBulkAbsorbedPhotons) / fTotalPhotons;
             
             fAnalysisManager->FillNtupleDColumn(
-                fEventNtupleIDs->fBulkAbsorbFractionNtuple.fNtupleID,
+                fEventNtupleIDs->fNtupleID,
                 fEventNtupleIDs->fBulkAbsorbFractionNtuple.fColumnID,
                 bulkAbsoptionLosses
             ); // ntuple ID = 5, column ID = 1
         }
         
         // Row complete
-        fAnalysisManager->AddNtupleRow(fEventNtupleIDs->fDetectionFractionNtuple.fNtupleID); // Save the row for Ntuple ID = 5
+        fAnalysisManager->AddNtupleRow(fEventNtupleIDs->fNtupleID); // Save the row for Ntuple ID = 5
         // NOTE: These columns share an ntuple, so any of their stored ntuple ids could be used
         // TODO: ^^ rethink this imo, feels a bit loose, only valid since i know its valid ...
         // maybe an if statement checking if their ntuple ids align, if not, add row for that id

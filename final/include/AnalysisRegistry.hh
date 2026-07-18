@@ -8,19 +8,111 @@
 // #include <functional>
 #include <vector>
 
+// /*
+//  * ...
+//  */
+// struct NtupleIndices {
+//     G4int fNtupleID;
+//     G4int fColumnID;
+// };
+// 
+// /*
+//  * ...
+//  */
+// struct NtupleIndicesCoords {
+//     G4int fNtupleID;
+//     G4int fXColumnID;
+//     G4int fYColumnID;
+//     G4int fZColumnID;
+// };
+// 
+// /*
+//  * Event ntuple indices
+//  */
+// struct EventNtupleIDs {
+//     NtupleIndices fDetectionNtuple = {-1, -1}; // Per-event detections
+//     // NtupleIndices fBoundaryAbsorbNtuple = {-1, -1}; // NOTE: Not writing per-event boundary absorption counts
+//     // NtupleIndices fBulkAbsorbNtuple = {-1, -1}; // NOTE: Not writing per-event bulk absorption counts
+//     NtupleIndices fDetectionFractionNtuple = {-1, -1}; // Per-event detections fraction
+//     NtupleIndices fBoundaryAbsorbFractionNtuple = {-1, -1}; // Per-event boundary absorptions fraction
+//     NtupleIndices fBulkAbsorbFractionNtuple = {-1, -1}; // Per-event bulk absorptions fraction
+// };
+// 
+// /*
+//  * Step detection ntuple indices
+//  */
+// struct StepDetectionNtupleIDs {
+//     NtupleIndicesCoords fDetectionCoordsNtuple = {-1, -1, -1, -1};
+//     NtupleIndices fDetectionDistanceNtuple = {-1, -1};
+//     NtupleIndices fDetectionTimeOfFlightNtuple = {-1, -1};
+//     NtupleIndices fDetectionReflectionsNtuple = {-1, -1};
+// };
+// 
+// /*
+//  * Step boundary absorption ntuple indices
+//  */
+// struct StepBoundaryAbsorbNtupleIDs {
+//     NtupleIndicesCoords fBoundaryAbsorbCoordsNtuple = {-1, -1, -1, -1};
+//     // NtupleIndices fBoundaryAbsorbDistanceNtuple = {-1, -1}; // NOTE: Not yet implemented
+//     // NtupleIndices fBoundaryAbsorbTimeOfFlightNtuple = {-1, -1}; // NOTE: Not yet implemented
+//     // NtupleIndices fBoundaryAbsorbReflectionsNtuple = {-1, -1};  // NOTE: Not yet implemented
+// };
+// 
+// /*
+//  * Step bulk absorption ntuple indices
+//  */
+// struct StepBulkAbsorbNtupleIDs {
+//     // 
+//     // NtupleIndicesCoords fBulkAbsorbCoordsNtuple = {-1, -1, -1, -1}; // NOTE: Not yet implemented
+//     NtupleIndices fBulkAbsorbDistanceNtuple = {-1, -1};
+//     // NtupleIndices fBulkAbsorbTimeOfFlightNtuple = {-1, -1}; // NOTE: Not yet implemented
+//     NtupleIndices fBulkAbsorbReflectionsNtuple = {-1, -1};
+// };
+// 
+// /*
+//  * ...
+//  * 
+//  * TODO: Consider a map based approach, to avoid having to explicitly hard code all names in structs...
+//  * 
+//  * In RunAnalysis you register a new ntuple in the map, i.e.:
+//  * 
+//  * AnalysisRegistry->Register("Column Name", { ntupleID, columnID }); 
+//  * // NOTE: col name, as thats whats unique, as some ntuples have multiple columns
+//  * 
+//  * under one of the four categories below, i.e.:
+//  * 
+//  * std::unordered_map<std::string, NtupleIndices> fEventNtupleIDs;
+//  */
+// struct NtupleIDs {
+//     EventNtupleIDs fEventNtupleIDs;
+//     StepDetectionNtupleIDs fStepDetectionNtupleIDs;
+//     StepBulkAbsorbNtupleIDs fStepBulkAbsorbNtupleIDs;
+//     StepBoundaryAbsorbNtupleIDs fStepBoundaryAbsorbNtupleIDs;
+// };
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////
+// TODO: Group all ntuples by event, step detection, etc
+
 /*
  * ...
  */
 struct NtupleIndices {
     G4int fNtupleID;
+    // G4int fColumnID;
+};
+
+/*
+ * ...
+ */
+struct ColumnIndices {
     G4int fColumnID;
 };
 
 /*
  * ...
  */
-struct NtupleIndicesCoords {
-    G4int fNtupleID;
+struct ColumnIndicesCoords {
+    // G4int fNtupleID;
     G4int fXColumnID;
     G4int fYColumnID;
     G4int fZColumnID;
@@ -29,49 +121,66 @@ struct NtupleIndicesCoords {
 /*
  * Event ntuple indices
  */
-struct EventNtupleIDs {
-    NtupleIndices fDetectionNtuple = {-1, -1}; // Per-event detections
-    // NtupleIndices fBoundaryAbsorbNtuple = {-1, -1}; // NOTE: Not writing per-event boundary absorption counts
-    // NtupleIndices fBulkAbsorbNtuple = {-1, -1}; // NOTE: Not writing per-event bulk absorption counts
-    NtupleIndices fDetectionFractionNtuple = {-1, -1}; // Per-event detections fraction
-    NtupleIndices fBoundaryAbsorbFractionNtuple = {-1, -1}; // Per-event boundary absorptions fraction
-    NtupleIndices fBulkAbsorbFractionNtuple = {-1, -1}; // Per-event bulk absorptions fraction
+struct EventNtupleIDs : public NtupleIndices {
+    // G4int fNtupleID;
+    
+    ColumnIndices fDetectionNtuple = {-1}; // Per-event detections
+    // ColumnIndices fBoundaryAbsorbNtuple = {-1}; // NOTE: Not writing per-event boundary absorption counts
+    // ColumnIndices fBulkAbsorbNtuple = {-1}; // NOTE: Not writing per-event bulk absorption counts
+    ColumnIndices fDetectionFractionNtuple = {-1}; // Per-event detections fraction
+    ColumnIndices fBoundaryAbsorbFractionNtuple = {-1}; // Per-event boundary absorptions fraction
+    ColumnIndices fBulkAbsorbFractionNtuple = {-1}; // Per-event bulk absorptions fraction
 };
 
 /*
  * Step detection ntuple indices
  */
-struct StepDetectionNtupleIDs {
-    NtupleIndicesCoords fDetectionCoordsNtuple = {-1, -1, -1, -1};
-    NtupleIndices fDetectionDistanceNtuple = {-1, -1};
-    NtupleIndices fDetectionTimeOfFlightNtuple = {-1, -1};
-    NtupleIndices fDetectionReflectionsNtuple = {-1, -1};
+struct StepDetectionNtupleIDs : public NtupleIndices {
+    // G4int fNtupleID;
+    
+    ColumnIndicesCoords fDetectionCoordsNtuple = {-1, -1, -1};
+    ColumnIndices fDetectionDistanceNtuple = {-1};
+    ColumnIndices fDetectionTimeOfFlightNtuple = {-1};
+    ColumnIndices fDetectionReflectionsNtuple = {-1};
 };
 
 /*
  * Step boundary absorption ntuple indices
  */
-struct StepBoundaryAbsorbNtupleIDs {
-    NtupleIndicesCoords fBoundaryAbsorbCoordsNtuple = {-1, -1, -1, -1};
-    // NtupleIndices fBoundaryAbsorbDistanceNtuple = {-1, -1}; // NOTE: Not yet implemented
-    // NtupleIndices fBoundaryAbsorbTimeOfFlightNtuple = {-1, -1}; // NOTE: Not yet implemented
-    // NtupleIndices fBoundaryAbsorbReflectionsNtuple = {-1, -1};  // NOTE: Not yet implemented
+struct StepBoundaryAbsorbNtupleIDs : public NtupleIndices {
+    // G4int fNtupleID;
+    
+    ColumnIndicesCoords fBoundaryAbsorbCoordsNtuple = {-1, -1, -1};
+    // NtupleIndices fBoundaryAbsorbDistanceNtuple = {-1}; // NOTE: Not yet implemented
+    // NtupleIndices fBoundaryAbsorbTimeOfFlightNtuple = {-1}; // NOTE: Not yet implemented
+    // NtupleIndices fBoundaryAbsorbReflectionsNtuple = {-1};  // NOTE: Not yet implemented
 };
 
 /*
  * Step bulk absorption ntuple indices
  */
-struct StepBulkAbsorbNtupleIDs {
-    // 
-    // NtupleIndicesCoords fBulkAbsorbCoordsNtuple = {-1, -1, -1, -1}; // NOTE: Not yet implemented
-    NtupleIndices fBulkAbsorbDistanceNtuple = {-1, -1};
-    // NtupleIndices fBulkAbsorbTimeOfFlightNtuple = {-1, -1}; // NOTE: Not yet implemented
-    NtupleIndices fBulkAbsorbReflectionsNtuple = {-1, -1};
+struct StepBulkAbsorbNtupleIDs : public NtupleIndices {
+    // G4int fNtupleID;
+    
+    // ColumnIndicesCoords fBulkAbsorbCoordsNtuple = {-1, -1, -1}; // NOTE: Not yet implemented
+    ColumnIndices fBulkAbsorbDistanceNtuple = {-1};
+    // ColumnIndices fBulkAbsorbTimeOfFlightNtuple = {-1}; // NOTE: Not yet implemented
+    ColumnIndices fBulkAbsorbReflectionsNtuple = {-1};
 };
-
 
 /*
  * ...
+ * 
+ * TODO: Consider a map based approach, to avoid having to explicitly hard code all names in structs...
+ * 
+ * In RunAnalysis you register a new ntuple in the map, i.e.:
+ * 
+ * AnalysisRegistry->Register("Column Name", { ntupleID, columnID }); 
+ * // NOTE: col name, as thats whats unique, as some ntuples have multiple columns
+ * 
+ * under one of the four categories below, i.e.:
+ * 
+ * std::unordered_map<std::string, NtupleIndices> fEventNtupleIDs;
  */
 struct NtupleIDs {
     EventNtupleIDs fEventNtupleIDs;
