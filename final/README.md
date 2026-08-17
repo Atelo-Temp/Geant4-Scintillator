@@ -1,22 +1,23 @@
 # About
 
-Basic gamma spectroscopy scintillator detector, with simulated radioactive decay, scintillation photon generation/transport, and output spectrum/ntuples
+Basic gamma spectroscopy scintillator detector, with simulated radioactive decay via GPS volumetric source, scintillation photon generation/transport/detection, and output spectrum/ntuples.
 
-Note, this version uses the GPS volume source instead of a point source
-
-This version also features improvements to the C++ code (such as extracting code blocks out to helper methods, etc)
-
-New features include:
+New features (compared to previous project - "GPS") include:
 - ability to randomise simulations via seeds (G4 defaults to a repeatable seed for development purposes)
 - automated run time tracking
-- 2048 channel binning (via per-event optical photons detected Ntuple output)
+- potential for 2048 channel binning (via per-event optical photons detected Ntuple output, instead of populating histogram at run time)
 - expanded statistics (distance travelled by detected photons, distance travelled by bulk absorbed photons, time of flight for optical photons, number of reflections before detection, etc)
 - ability to merge ntuples generated for each thread (although perhaps better to use hadd)
+- exposes statistics output control via messenger so that certain outputs can be enabled/disabled
 
 Potential features:
-- implementation of proper 1024 channel binning (converting photons detected to a channel number) (NOTE: May actually leave this to postprocessing, just output per-event data)
-- potentially introducing PMT statistics ?? (NOTE: May actually leave this to postprocessing, just output raw per-event data)
-- integration window for optical photon detection at the photocathode ?? (may reduce the photopeaks slight exponential tail, where sometimes, without it, many photons are eventually reaching photocathode and being detected)
+<!-- - implementation of proper 1024 channel binning (converting photons detected to a channel number) (NOTE: May actually leave this to postprocessing, just output per-event data) -->
+<!-- - potentially introducing PMT statistics ?? (NOTE: May actually leave this to postprocessing, just output raw per-event data) -->
+- integration time window for optical photon detection at the photocathode ?? (may reduce the photopeaks slight exponential tail, where sometimes, without it, many photons are eventually reaching photocathode and being detected)
+
+This version also features improvements to the C++ code:
+- extracting code blocks out to helper methods
+- creating a registry to store ntuple indices instead of relying on hardcoded integers and instantiation order
 
 ## Geometry
 
