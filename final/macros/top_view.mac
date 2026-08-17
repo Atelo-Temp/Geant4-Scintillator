@@ -1,0 +1,147 @@
+# Top-down Visualisation Macro
+
+######
+# INIT
+######
+
+/run/numberOfThreads 1
+
+# Initialise Geant4 framework
+/run/initialize
+
+# Initialise graphical output (qt window) OpenGL - 600 window
+/vis/open OGL 600x600-0+0
+#/vis/open OGLIQt 600x600-0+0 # OpenGLImmediateQt
+#/vis/open OGLI 600x600-0+0 # OpenGLImmediateQt
+
+#/vis/open OGL 600x600-0+0
+#/vis/open OGL 600x600-0+0
+#/vis/open OGL 600x600-0+0
+#/vis/open OGL 600x600-0+0
+
+# OpenGLStoredX
+#/vis/open OGLSX 600x600-0+0
+
+# TOOLSSG_X11_ZB (NOPE)
+#/vis/open TSG_X11_ZB 600x600-0+0
+#/vis/open TSGX11ZB 600x600-0+0
+
+# TOOLSSG_QT_GLES (Seems to fix z-fighting, but still not clean)
+# /vis/open TSG_QT_GLES 600x600-0+0
+# /vis/open TSGQt 600x600-0+0
+# /vis/open TSG 600x600-0+0
+
+# TOOLSSG_QT_ZB
+#/vis/open TSG_QT_ZB 600x600-0+0 # Seems to fix z-fighting  (but still not clean)
+#/vis/open TSGQtZB 600x600-0+0 # Seems to fix z-fighting  (but still not clean)
+
+# RayTracer
+# /vis/open RayTracer 600x600-0+0
+# /vis/open RayTracerX 600x600-0+0 # Need to add to cmake to use
+
+
+# ASCIITree ATree DAWNFILE G4HepRepFile HepRepFile RayTracer VRML2FILE gMocrenFile TOOLSSG_OFFSCREEN TSG_OFFSCREEN TSG_FILE 
+# OpenGLImmediateQt OGLIQt OGLI OpenGLStoredQt OGLSQt OGL OGLS OpenGLImmediateX OGLIX OpenGLStoredX OGLSX TOOLSSG_X11_GLES 
+# TSG_X11_GLES TSGX11 TOOLSSG_X11_ZB TSG_X11_ZB TSGX11ZB TOOLSSG_QT_GLES TSG_QT_GLES TSGQt TSG TOOLSSG_QT_ZB TSG_QT_ZB TSGQtZB
+
+# Registered graphics systems are:
+# ASCIITree (ATree)
+# DAWNFILE (DAWNFILE)
+# G4HepRepFile (HepRepFile)
+# RayTracer (RayTracer)
+# VRML2FILE (VRML2FILE)
+# gMocrenFile (gMocrenFile)
+# TOOLSSG_OFFSCREEN (TSG_OFFSCREEN, TSG_FILE)
+# OpenGLImmediateQt (OGLIQt, OGLI)
+# OpenGLStoredQt (OGLSQt, OGL, OGLS)
+# OpenGLImmediateX (OGLIX, OGLIQt_FALLBACK)
+# OpenGLStoredX (OGLSX, OGLSQt_FALLBACK)
+# TOOLSSG_X11_GLES (TSG_X11_GLES, TSGX11, TSG_QT_GLES_FALLBACK)
+# TOOLSSG_X11_ZB (TSG_X11_ZB, TSGX11ZB)
+# TOOLSSG_QT_GLES (TSG_QT_GLES, TSGQt, TSG)
+# TOOLSSG_QT_ZB (TSG_QT_ZB, TSGQtZB)
+
+# Disable auto refresh whilst scene is established:
+/vis/viewer/set/autoRefresh false
+
+# Draw the volumes (will be empty otherwise)
+/vis/drawVolume
+
+# Check for overlaps (the overlap warning doesnt abort sim, and the normal warning is lost in stdout)
+/geometry/test/run
+
+#######
+# SCENE
+#######
+
+# Display a scale for the scene
+/vis/scene/add/scale 10 cm
+# NOTE: Without adding scale zoom messes up randomly
+
+# Display coordinate system
+#/vis/scene/add/axes
+/vis/scene/add/axes 0 0 0 5 cm # at xyz(0,0,0), 5cm long axis line
+
+# Hide volumes
+/vis/geometry/set/visibility World 0 false
+/vis/geometry/set/visibility Table 0 false
+/vis/geometry/set/visibility Casing 0 false
+
+# Set colours (args: volume, depth, red, green, blue, opacity)
+/vis/geometry/set/colour Scintillator 0 1. 1. 1. 1. # white (semi-transparent)
+/vis/geometry/set/colour Reflector 0 0. 0. 1. 1. # blue (opaque)
+/vis/geometry/set/colour OpticalGrease 0 1. 1. 1. 1. # white (mostly-transparent)
+/vis/geometry/set/colour OpticalWindow 0 0.8 0.8 0.8 1. # mid-light gray (mostly-transparent)
+/vis/geometry/set/colour Photocathode 0 1. 0. 0. 1. # red
+/vis/geometry/set/colour Enclosure 0 0.8 0.8 0.8 1. # mid-light gray (opaque)
+/vis/geometry/set/colour HermeticSeal 0 0.8 0.8 0.8 1. # mid-light gray (opaque)
+
+# Section cut (Half cut)
+/vis/viewer/addCutawayPlane 0 0 0 cm 0 -1 0 # along y-axis
+
+########
+# CAMERA
+########
+
+# ....
+/vis/viewer/set/projection orthogonal
+
+# Specify style (surface or wireframe):
+/vis/viewer/set/style surface
+#/vis/viewer/set/style wireframe
+
+# ...
+/vis/viewer/set/auxiliaryEdge true
+/vis/viewer/set/lineSegmentsPerCircle 100
+
+# Centre camera on detector origin
+/vis/viewer/centreOn Scintillator
+
+# Zoom in on detector origin
+# /vis/viewer/zoom 7
+/vis/viewer/zoom 6
+
+# Top down view
+# /vis/viewer/set/upVector 0 0 10
+# /vis/viewer/set/viewpointThetaPhi 270. 270.
+#
+/vis/viewer/set/viewpointVector 0 1 0
+/vis/viewer/set/upVector 0 0 1
+# NOTE: This achieves the same view
+
+# ...
+/vis/viewer/refresh
+
+# If changes are made, viewer will automatically be updated
+/vis/viewer/set/autoRefresh true
+
+####
+#
+####
+
+#/vis/open RayTracer
+#/vis/viewer/copyViewFrom viewer-0
+#/vis/viewer/set/all viewer-0
+##/vis/rayTracer/trace
+#/vis/viewer/refresh
+#/vis/viewer/refresh viewer-1

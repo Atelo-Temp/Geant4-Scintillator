@@ -1,0 +1,62 @@
+# Top-down Visualisation Macro
+
+######
+# INIT
+######
+
+# Initialise Geant4 framework
+/run/initialize
+
+# Initialise graphical output (qt window) OpenGL - 600 window
+/vis/open OGL 600x600-0+0
+# /vis/open OGL 900x900-0+0
+#/vis/open OGL 1440x1080-0+0
+
+# If changes are made, viewer will automatically be updated
+/vis/viewer/set/autoRefresh true
+
+# Draw the volumes (will be empty otherwise)
+/vis/drawVolume
+
+# Check for overlaps (the overlap warning doesnt abort sim, and the normal warning is lost in stdout)
+/geometry/test/run
+
+#######
+# SCENE
+#######
+
+# Display a scale for the scene
+/vis/scene/add/scale 10 cm
+# NOTE: Without adding scale zoom messes up randomly
+
+# Display coordinate system
+#/vis/scene/add/axes
+/vis/scene/add/axes 0 0 0 5 cm # at xyz(0,0,0), 5cm long axis line
+
+# Hide volumes
+/vis/geometry/set/visibility World 0 false
+/vis/geometry/set/visibility Table 0 false
+/vis/geometry/set/visibility Casing 0 false
+
+# Set colours (args: volume, depth, red, green, blue, opacity)
+/vis/geometry/set/colour Scintillator 0 1. 1. 1. 0.5 # white (semi-transparent)
+/vis/geometry/set/colour Reflector 0 0. 0. 1. 1. # blue (opaque)
+/vis/geometry/set/colour OpticalGrease 0 1. 1. 1. 0.1 # white (mostly-transparent)
+/vis/geometry/set/colour OpticalWindow 0 0.8 0.8 0.8 0.25 # mid-light gray (mostly-transparent)
+/vis/geometry/set/colour Photocathode 0 1. 0. 0. 0.5 # red
+/vis/geometry/set/colour Enclosure 0 0.8 0.8 0.8 1. # mid-light gray (opaque)
+/vis/geometry/set/colour HermeticSeal 0 0.8 0.8 0.8 1. # mid-light gray (opaque)
+
+########
+# CAMERA
+########
+
+# Centre camera on detector origin
+/vis/viewer/centreOn Scintillator
+
+# Zoom in on detector origin
+# /vis/viewer/zoom 7
+/vis/viewer/zoom 6
+
+# Front face view
+/vis/viewer/set/viewpointThetaPhi 0. 0.
