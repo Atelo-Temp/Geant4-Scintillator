@@ -2,7 +2,7 @@
 # Setup the project
 #
 cmake_minimum_required(VERSION 3.16...3.27) # always first
-project(final)
+project(penultimate)
 
 #----------------------------------------------------------------------------
 # Enforce c++17 globally
@@ -31,16 +31,16 @@ file(GLOB headers ${PROJECT_SOURCE_DIR}/include/*.hh)
 #----------------------------------------------------------------------------
 # Add the executable, use our local headers, and link it to the Geant4 libraries
 #
-add_executable(final final.cc ${sources} ${headers})
-target_include_directories(final PRIVATE include)
-target_link_libraries(final PRIVATE ${Geant4_LIBRARIES})
+add_executable(penultimate penultimate.cc ${sources} ${headers})
+target_include_directories(penultimate PRIVATE include)
+target_link_libraries(penultimate PRIVATE ${Geant4_LIBRARIES})
 
 #----------------------------------------------------------------------------
 # Copy all scripts to the build directory, i.e. the directory in which we
 # build the executable. This is so that we can run the executable directly 
 # because it relies on these scripts being in the current working directory.
 #
-set(FINAL_SCRIPTS
+set(PENULTIMATE_SCRIPTS
   run.mac
   vis.mac
   gui.mac
@@ -50,9 +50,9 @@ set(FINAL_SCRIPTS
   241Am.mac
   22Na.mac
   68Ge.mac
-  )
+)
 
-foreach(_script ${FINAL_SCRIPTS})
+foreach(_script ${PENULTIMATE_SCRIPTS})
   configure_file(
     # ${PROJECT_SOURCE_DIR}/${_script}
     ${PROJECT_SOURCE_DIR}/macros/${_script}

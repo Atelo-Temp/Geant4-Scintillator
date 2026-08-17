@@ -92,7 +92,11 @@ Uses general particle source (GPS) for volumetric source with isotope assigned t
 
 > NOTE: Extension of "Spectroscopy"
 
-- 13) FINAL
+- 13) Penultimate    (PREVIOUSLY NAMED: Final)
+
+Per-event detected photon output to allow for finer grained binning that 1024 channel upper limit of native G4 histograms, plus other changes. See project README.
+
+- 14) Final
 
 ...
 
