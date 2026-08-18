@@ -1023,8 +1023,18 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     // Dimensions for cylindrical scintillator crystal (radii, height, span)
     G4double const crystalInnerRad = 0. * cm; // No centre hole
-    G4double const crystalOuterRad = (7.62 * 0.5) * cm; // 3 inch = 7.62 cm diameter => (diameter / 2) = 3.81 cm outer radius
-    G4double const crystalHeight = 7.62 * cm; // 3 inch height (this arg will be doubled, so will need to * 0.5)
+    
+    G4double const inchToCM = 2.54;
+    
+    G4double const crystalSize = 3 * inchToCM; // 3 inch crystal = 7.62 cm diameter => (diameter / 2) = 3.81 cm outer radius
+    // G4double const crystalSize = 2 * inchToCM; // 2 inch crystal = 5.08 cm diameter => (diameter / 2) = 2.54 cm outer radius
+    
+    // G4double const crystalOuterRad = (7.62 * 0.5) * cm; // 3 inch = 7.62 cm diameter => (diameter / 2) = 3.81 cm outer radius
+    // G4double const crystalHeight = 7.62 * cm; // 3 inch height (this arg will be doubled, so will need to * 0.5)
+    
+    G4double const crystalOuterRad = (crystalSize * 0.5) * cm; // 2 inch = 7.62 cm diameter => (diameter / 2) = 3.81 cm outer radius
+    G4double const crystalHeight = crystalSize * cm; // 3 inch height (this arg will be doubled, so will need to * 0.5)
+    
     G4double const startAngle = 0. * deg;
     G4double const endAngle = 360. * deg; // Full circumference cylinder
 
@@ -1079,6 +1089,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     // Inner rad can (4.04495 cm) - outer rad crystal (3.81 cm) => 0.23495 cm reflector thickness
     G4double const reflectorThickness = 0.23495 * cm;
+    
     G4double const reflectorOuterRad = crystalOuterRad + reflectorThickness;
     G4double const reflectorHeight = crystalHeight + (reflectorThickness * 2);
     // NOTE: Same as crystal height, with reflector thickness added to both ends
@@ -1277,9 +1288,16 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Enclosure is 3.225' outer diameter according to ortec spec, and 0.2' thickness (0.508mm)
     // G4double const inchToCM = 2.54;
     G4double const enclosureThick = 0.0508 * cm; // NOTE: 0.02' => 0.508 mm (added to both sides in Z direction)
-    G4double const enclosureOuterRad = ((3.225 * 2.54) / 2) * cm; // NOTE: 3.225' dia => 8.1915cm dia => 4.09575 cm outer rad
-    G4double const enclosureLength = reflectorHeight + (enclosureThick * 2); // NOTE: Same height as reflector, with thickness added to both end
+    
+    // G4double const enclosureOuterRad = ((3.225 * 2.54) / 2) * cm; // NOTE: 3.225' dia => 8.1915cm dia => 4.09575 cm outer rad
+    // G4double const enclosureOuterRad = ((3.225 * inchToCM) / 2) * cm; // NOTE: 3.225' dia => 8.1915cm dia => 4.09575 cm outer rad
+    
+    G4double const enclosureOuterRad = reflectorOuterRad + enclosureThick; // NOTE: 3.225' dia => 8.1915cm dia => 4.09575 cm outer rad
+    G4double const enclosureLength = reflectorHeight + (enclosureThick * 2); // NOTE: Same height as reflector, with thickness added to both ends
     // NOTE: 4.04495 cm inner rad
+    
+    // TODO: THIS IS HARDCODED CURRENTLY, SHOULD AUTOMATICALLY ADJUST WITH CHANGES TO CRYSTAL SIZE
+    // 
     
     // Base volume which will be cut
     auto enclosureSolid = new G4Tubs(
