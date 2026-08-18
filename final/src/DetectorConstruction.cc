@@ -1161,8 +1161,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // NOTE: OST Photonics 2" NaI schematic states 2mm gel thickness
         
     // ... the optical grease will then be pressed against the PMT window
-    // G4double const greaseThickness = reflectorThickness; // Same thickness as reflector (2.3495 mm)
-    G4double const greaseThickness = 25 * um; // TEST
+    G4double const greaseThickness = reflectorThickness; // Same thickness as reflector (2.3495 mm)
+    // G4double const greaseThickness = 25 * um; // TEST
     
     // Optical grease (transmitting incident optical photons to the PMT window)
     auto grease = new G4Tubs(
@@ -1582,12 +1582,17 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // TODO: Border back from reflectorPhys->crystalPhys
     // auto reflectorCrystalBorder = new G4LogicalBorderSurface("ReflectorToCrystal", reflectorPhys, crystalPhys, reflectorSurface);
     
-    // NOTE: ^^^ I DONT THINK THESE ARE ACTUALLY NEEDED
+    // NOTE: ^^^ I DONT THINK THESE ARE ACTUALLY NEEDED (borders work both ways as is)
+    
+    // Define the border between the optical grease and the reflector
+    auto greaseReflectorBorder = new G4LogicalBorderSurface("GreaseToReflector", greasePhys, reflectorPhys, reflectorSurface); // TEST (FIXES LOST PHOTONS)
+    // TODO: Is the crystal->reflector surface sufficient here?
     
     // Define the border between the optical window and the hermetic seal
-    // auto windowSealBorder = new G4LogicalBorderSurface("WindowToSeal", windowPhys, sealPhys, aluminiumSurface); // NOTE: UNCOMMENT ME
+    auto windowSealBorder = new G4LogicalBorderSurface("WindowToSeal", windowPhys, sealPhys, aluminiumSurface); // NOTE: UNCOMMENT ME
     
-    auto windowSealBorder = new G4LogicalBorderSurface("WindowToReflector", windowPhys, reflectorPhys, reflectorSurface); // TEST (for 25 um grease geom)
+    // ...
+    auto windowReflectorBorder = new G4LogicalBorderSurface("WindowToReflector", windowPhys, reflectorPhys, reflectorSurface); // TEST (for 25 um grease geom)
     
     // Define the border between the optical window and the photocathode
     auto windowPhotocathodeBorder = new G4LogicalBorderSurface("WindowToPhotocathode", windowPhys, photocathodePhys, photocathodeSurface);
