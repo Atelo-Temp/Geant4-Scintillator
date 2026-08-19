@@ -209,7 +209,7 @@ Re-introduces:
 
 > NOTE: Extension of oop_plot.cc
 
-25) oop_save.cc
+27) oop_save.cc
 
 Re-introduces:
 - Axis title addition
@@ -220,17 +220,17 @@ Introduces:
 
 > NOTE: Extension of oop_replot.cc
 
-## TODOS
-
-26) oop_spectrum.cc
+28) oop_fit.cc (alt: oop_spectrum.cc)
 
 Re-introduces:
 - Peak fitting
-- Exponential, etc, fitting ? (maybe save this for a later macro tbh, as its far less developed than peak fitting, so an extension of exponential_fit.cc with simplified file loading etc likely best stepping stone first)
+<!-- - Exponential, etc, fitting ? (maybe save this for a later macro tbh, as its far less developed than peak fitting, so an extension of exponential_fit.cc with simplified file loading etc likely best stepping stone first) -->
 
 > NOTE: Extension of oop_sav.cc & spectra_fit.cc
 
-25) residuals.cc
+## TODOS
+
+29) residuals.cc
 
 ...
 
@@ -238,7 +238,7 @@ Either uses ROOT builtin residual plotter, or calculates residuals and plots the
 
 > NOTE: Extension of exponential_fit.cc (most likely)
 
-26) dataframe.cc
+30) dataframe.cc
 
 ...
 
@@ -246,7 +246,7 @@ Leveraging ROOT multithreaded capabilities to read large datasets (>10m entries)
 
 ...
 
-27) any_fit.cc (alt: fit_any.cc, fitter.cc)             <<< TODO: This has largely been addressed by previous macros
+31) any_fit.cc (alt: fit_any.cc, fitter.cc)             <<< TODO: This has largely been addressed by previous macros
 
 Hybrid fitting, able to handle both ascii files (lab) and root files (simulation)
 
@@ -260,7 +260,7 @@ that is a good stepping stone to a comprehensive fitting macro
 - Takes .root / .Spe filename as argument rather than hardcoded
 - Parses the filename to identify whether its .root or .Spe, runs histogramming pipeline for respective file type
 
-28) hybrid_fit.cc (alt: smart_fit.cc)                   <<< TODO: This has largely been addressed by previous macros
+32) hybrid_fit.cc (alt: smart_fit.cc)                   <<< TODO: This has largely been addressed by previous macros
 
 Hybrid fitting, able to handle both ascii files (lab) and root files (simulation)
 ^ maybe also able to determine whether it needs a gaussian or gaus + pol fit
@@ -271,21 +271,21 @@ NOTE: I think this main functionality should be determining whether to use gaus 
 ^ maybe even whether to use exponential etc
 ^ sinice 17) kinda ticks most of these other boxes, but trying to fit smart fitting would overcrowd 17)
 
-29) omni_fit.cc
+33) omni_fit.cc
 
 Full functionality of all previous fitting capabilities, plus final touches
 
 TODO: Maybe think of a way to determine if input data has aliasing issue, and needs gaussian smearing
 
-30) dimension_plotter.cc
+34) dimension_plotter.cc
 
 Introduce 2D and 3D histogramming
 
-31) dimension_fitter.cc
+35) dimension_fitter.cc
 
 Introduce 2D and 3D fitting
 
-32) smart_plot.cc
+36) smart_plot.cc
 
 - Uses bin formulas to determine number of bins (i.e. sqrt(num entries), albeit that specifically is not versatile enough)
 
@@ -299,13 +299,13 @@ Potentially uses some sort of anchoring mechanism (95% quartile value + 5-10% to
 NOTE: Not sure how productive/useful this would be in practice (basically useless for energy spectra, limited use for other functions where data changes too), but would be an interesting exploration nonetheless
 ^ perhaps for one shot datasets, where it doesnt have to be compared with similar axis values
 
-33) context.cc
+37) context.cc
 
 Rewriting core plotting code without the use of globals, instead using a context object in this case.
 
 > NOTE: Extension of replot.cc
 
-34) functional.cc
+38) functional.cc
 
 Rewriting core plotting code without the use of globals, instead using functional programming return pipeline in this case.
 
@@ -313,7 +313,7 @@ Rewriting core plotting code without the use of globals, instead using functiona
 
 > NOTE: This may be the messiest of the possible options tbh, will have to have so many optional return types, args, deep levels of abstraction to ensure individual function params stay compact, etc - maybe im missing a blatant solution though idk
 
-35) compiled_plot.cc
+39) compiled_plot.cc
 
 Exploring alternative methodology which works with compiled code.
 
