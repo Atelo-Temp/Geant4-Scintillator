@@ -680,9 +680,16 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // NOTE: Dont need this... photons dont enter the medium
     
     // TEST
-    Al2O3->SetMaterialPropertiesTable(MPTReflector);
+    // Al2O3->SetMaterialPropertiesTable(MPTReflector);
     
-    // NOTE: UNCOMMENT ME ^^^^^^^^^^^^^^^^^^^
+    // BUG: ADDING THIS TO THE ALUMINA MATERIAL CAUSES HIGH FREQUENCY SINGLE PHOTON DETECTED EVENTS
+    // ground back painted surface with rindex air (for dry packed powder air gap) 
+    // and reflectivity of alumina is sufficient to model the physics
+    // NOTE: there doesnt need to be a rindex assigned to the material itself, 
+    // since reflection is almost entirely diffuse, so snells law, fresnel eqs, etc
+    // doesnt need to be strictly calculated to determine angle of reflection
+    
+    // TODO: REMOVE THIS SECTION ^^
     
     
     /*
@@ -760,14 +767,23 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // NOTE: Absorption length not needed with dielectric_metal interface, photon can only
     // be absorbed or reflected (not refracted)
     
+    // TODO: THIS SECTION CAN BE REMOVED ^^
+    // dielectric_metal interface doesnt need rindex of material, or absorption length
+    // subsequent aluminium surface mpt is fine
+    
     ///////////////////////////////////////////////
     // ENCLOSURE & HERMETIC SEAL SURFACE PROPERTIES
     ///////////////////////////////////////////////
     
     auto MPTAlSurface = new G4MaterialPropertiesTable();
     auto aluminiumSurface = new G4OpticalSurface("Aluminium", unified, polished, dielectric_metal);
+    
     std::vector<G4double> const reflectivityAl = {0.9, 0.9, 0.9};
     MPTAlSurface->AddProperty("REFLECTIVITY", energy, reflectivityAl);
+    
+    // std::vector<G4double> rindexAl = {0.59062, 0.33593, 0.22053};
+    // MPTAlSurface->AddProperty("RINDEX", energy, rindexAl);
+    
     aluminiumSurface->SetMaterialPropertiesTable(MPTAlSurface);
     
     // TODO: USE REAL/IMAGINARY RINDICES INSTEAD OF FLAT VALUE (refractiveindex.info - Al)
@@ -1026,8 +1042,9 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     G4double const inchToCM = 2.54;
     
-    G4double const crystalSize = 3 * inchToCM; // 3 inch crystal = 7.62 cm diameter => (diameter / 2) = 3.81 cm outer radius
+    // G4double const crystalSize = 3 * inchToCM; // 3 inch crystal = 7.62 cm diameter => (diameter / 2) = 3.81 cm outer radius
     // G4double const crystalSize = 2 * inchToCM; // 2 inch crystal = 5.08 cm diameter => (diameter / 2) = 2.54 cm outer radius
+    G4double const crystalSize = 1 * inchToCM; // 1 inch crystal = 2.54 cm diameter => (diameter / 2) = 1.27 cm outer radius
     
     // G4double const crystalOuterRad = (7.62 * 0.5) * cm; // 3 inch = 7.62 cm diameter => (diameter / 2) = 3.81 cm outer radius
     // G4double const crystalHeight = 7.62 * cm; // 3 inch height (this arg will be doubled, so will need to * 0.5)
@@ -1161,8 +1178,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // NOTE: OST Photonics 2" NaI schematic states 2mm gel thickness
         
     // ... the optical grease will then be pressed against the PMT window
-    G4double const greaseThickness = reflectorThickness; // Same thickness as reflector (2.3495 mm)
-    // G4double const greaseThickness = 25 * um; // TEST
+    // G4double const greaseThickness = reflectorThickness; // Same thickness as reflector (2.3495 mm)
+    G4double const greaseThickness = 25 * um; // TEST
     
     // Optical grease (transmitting incident optical photons to the PMT window)
     auto grease = new G4Tubs(
@@ -1586,7 +1603,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     // Define the border between the optical grease and the reflector
     auto greaseReflectorBorder = new G4LogicalBorderSurface("GreaseToReflector", greasePhys, reflectorPhys, reflectorSurface); // TEST (FIXES LOST PHOTONS)
-    // TODO: Is the crystal->reflector surface sufficient here?
+    // TODO: Is the crystal->reflector surface sufficient here? Not really as the sigma alpha value is for crystal surface, and uses rindex air for gap
     
     // Define the border between the optical window and the hermetic seal
     auto windowSealBorder = new G4LogicalBorderSurface("WindowToSeal", windowPhys, sealPhys, aluminiumSurface); // NOTE: UNCOMMENT ME
