@@ -680,9 +680,16 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // NOTE: Dont need this... photons dont enter the medium
     
     // TEST
-    Al2O3->SetMaterialPropertiesTable(MPTReflector);
+    // Al2O3->SetMaterialPropertiesTable(MPTReflector);
     
-    // NOTE: UNCOMMENT ME ^^^^^^^^^^^^^^^^^^^
+    // BUG: ADDING THIS TO THE ALUMINA MATERIAL CAUSES HIGH FREQUENCY SINGLE PHOTON DETECTED EVENTS
+    // ground back painted surface with rindex air (for dry packed powder air gap) 
+    // and reflectivity of alumina is sufficient to model the physics
+    // NOTE: there doesnt need to be a rindex assigned to the material itself, 
+    // since reflection is almost entirely diffuse, so snells law, fresnel eqs, etc
+    // doesnt need to be strictly calculated to determine angle of reflection
+    
+    // TODO: REMOVE THIS SECTION ^^
     
     
     /*
@@ -759,6 +766,10 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     // NOTE: Absorption length not needed with dielectric_metal interface, photon can only
     // be absorbed or reflected (not refracted)
+    
+    // TODO: THIS SECTION CAN BE REMOVED ^^
+    // dielectric_metal interface doesnt need rindex of material, or absorption length
+    // subsequent aluminium surface mpt is fine
     
     ///////////////////////////////////////////////
     // ENCLOSURE & HERMETIC SEAL SURFACE PROPERTIES
@@ -1566,10 +1577,14 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     // NOTE: ^^^ I DONT THINK THESE ARE ACTUALLY NEEDED
     
-    // Define the border between the optical window and the hermetic seal
-    // auto windowSealBorder = new G4LogicalBorderSurface("WindowToSeal", windowPhys, sealPhys, aluminiumSurface); // NOTE: UNCOMMENT ME
+    // Define the border between the optical grease and the reflector
+    auto greaseReflectorBorder = new G4LogicalBorderSurface("GreaseToReflector", greasePhys, reflectorPhys, reflectorSurface); // TEST (FIXES LOST PHOTONS)
+    // TODO: Is the crystal->reflector surface sufficient here? Not really as the sigma alpha value is for crystal surface, and uses rindex air for gap
     
-    auto windowSealBorder = new G4LogicalBorderSurface("WindowToReflector", windowPhys, reflectorPhys, reflectorSurface); // TEST (for 25 um grease geom)
+    // Define the border between the optical window and the hermetic seal
+    auto windowSealBorder = new G4LogicalBorderSurface("WindowToSeal", windowPhys, sealPhys, aluminiumSurface); // NOTE: UNCOMMENT ME
+    
+    auto windowReflectorBorder = new G4LogicalBorderSurface("WindowToReflector", windowPhys, reflectorPhys, reflectorSurface); // TEST (for 25 um grease geom)
     
     // Define the border between the optical window and the photocathode
     auto windowPhotocathodeBorder = new G4LogicalBorderSurface("WindowToPhotocathode", windowPhys, photocathodePhys, photocathodeSurface);
