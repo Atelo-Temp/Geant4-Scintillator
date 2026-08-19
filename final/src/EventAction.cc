@@ -50,9 +50,13 @@ EventAction::~EventAction() {
  * 
  * NOTE: Event object param unused
  */
-void EventAction::BeginOfEventAction(G4Event const* /*event*/) {
+// void EventAction::BeginOfEventAction(G4Event const* /*event*/) {
+void EventAction::BeginOfEventAction(G4Event const* event) {
     // Reset counters between events
     fHitManager->ResetCounters();
+    
+    // TEST: Cache current event id (for debugging)
+    fEventID = event->GetEventID();
 }
 
 /*

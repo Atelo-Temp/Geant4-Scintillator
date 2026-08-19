@@ -52,6 +52,9 @@ class EventAction : public G4UserEventAction {
         // EventAnalysis* GetEventAnalysisPtr() const;
         HitManager* GetHitManagerPtr() const;
         
+        // Cached current event id (for debugging)
+        int fEventID; // TEST
+        
     private:
         // Pointer to current run object
         RunAction* fRunAction = nullptr;
