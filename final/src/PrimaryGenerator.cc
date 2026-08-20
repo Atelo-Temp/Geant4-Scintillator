@@ -7,6 +7,10 @@
 #include "G4IonTable.hh" // Get acces to predefinied ions (decay physics)
 #include "G4GeneralParticleSource.hh"
 
+// TODO:
+// #include "DetectorConstruction.hh"
+// #include "G4RunManager.hh"
+
 // NOTE: Cannot hand this class directly to the run manager as with the others,
 // must hand this to "ActionInitialization" which will use it
 
@@ -91,4 +95,52 @@ void PrimaryGenerator::Cesium137Source() {
     // positron will not reach rest inside of source volume otherwise
     // and will always go in Z direction
     // NOTE: GPS removes SetParticleCharge method (only applicable to gun)
+    
+    
+    ///////////////////////////////////////////////////
+    // TODO: Extract to new method (but only call once)
+    ///////////////////////////////////////////////////
+    
+    // ...
+    // fParticleGun->GetCurrentSource()->GetPosDist()->SetCentreCoords(G4ThreeVector(0., -1 * cm, 2.90425 * cm));
+    
+    G4SingleParticleSource* particle = fParticleGun->GetCurrentSource();
+    G4SPSPosDistribution* position = particle->GetPosDist();
+    
+    // TEST ...
+    // auto const detConst = static_cast<const DetectorConstruction*>(
+    //     G4RunManager::GetRunManager()->GetUserDetectorConstruction()
+    // );
+    // G4double const z = detConst->GetCrystalFaceZ();
+    // TEST ...
+    
+    G4double const crystalFaceZ = 5.90425 * cm; // TODO: calculate this as: crystal origin - 1/2 crystal height - reflector thick - enclosure thick
+    // ^^^ use acquired detector construction instance above
+    
+    G4double const sourceDetectorDist = 3 * cm; // TODO: expose messenger to alter this via macros, get the best of both worlds,
+    // able to alter it on the fly instead of hardcoding/recompiling, and automatically derived based on detector geometry
+    // ^^ will also allow for a change in macro source-detector dist to move the source holder, casing, and physical source itself
+    
+    // Define the position of the particle
+    G4double const x = 0. * cm;
+    G4double const y = -1 * cm;
+    // G4double z = 2.90425 * cm; // small 1cm offset for visibility
+    G4double const z = crystalFaceZ - sourceDetectorDist; // small 1cm offset for visibility
+
+    // Create a position vector with the defined components
+    G4ThreeVector const sourceOrigin(x, y, z);
+    
+    position->SetCentreCoords(sourceOrigin);
+    
+    // position->SetPosDisType("Volume"); // volumetric source // TODO
+    // position->ConfineSourceToVolume("Source"); // confine start positions to particular volume // TODO
+    
+    // ...
+    // position->SetPosDisShape("Cylinder"); // TODO
+    
+    // For cylinder, user gives redius and z-half length
+    // position->SetRadius(0. * cm); // TODO: derive these from detector construction
+    // position->SetHalfZ(0. * cm);
+    
+    // TODO: Remove all these from test.mac and 137Cs.mac (just leave isotope selection to the macro)
 }
