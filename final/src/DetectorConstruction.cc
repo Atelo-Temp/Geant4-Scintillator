@@ -62,6 +62,8 @@
 
 #include "G4Types.hh"
 
+#include "G4UserLimits.hh"
+
 // NOTE: Uses consistent units throughout (cm probably easiest to adhere to)
 
 // TODO: There is overhang of the encapsulation at the back of the crystal 
@@ -838,6 +840,25 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Assign the refractive index and absorption length to the optical grease material
     PDMS->SetMaterialPropertiesTable(MPTGrease);
     
+    // TEST TEST TEST
+    // ...
+//     auto MPTGreaseSurface = new G4MaterialPropertiesTable();
+// 
+//     // Refractive index of optical grease (1.46 @ 589.3 nm)
+//     std::vector<G4double> const rindexGrease = {1.46, 1.46, 1.46}; // TODO: Refractive index matching ...
+//     // TODO: Refine this across 300-550 nm emission range
+//     
+//     // ...
+//     MPTGreaseSurface->AddProperty("RINDEX", energy, rindexGrease);
+//     
+//     // Dielectric polished surface, allowing refraction
+//     auto windowSurface = new G4OpticalSurface("WindowGreaseSurface", unified, polished, dielectric_dielectric);
+//     
+//     // ...
+//     windowSurface->SetMaterialPropertiesTable(MPTGreaseSurface);
+    // TEST TEST TEST
+
+    
     /////////////////////////////////////
     // OPTICAL WINDOW MATERIAL PROPERTIES
     /////////////////////////////////////
@@ -845,12 +866,10 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // PMT Glass MPT (Optical window)
     auto MPTWindow = new G4MaterialPropertiesTable();
     
-    // Dielectric polished surface, allowing refraction
+    // // Dielectric polished surface, allowing refraction
     auto windowSurface = new G4OpticalSurface("WindowSurface", unified, polished, dielectric_dielectric);
     
     // Refractive index of borosilicate glass (1.53024 @ 404.7 nm - SCHOTT BK7 Datasheet)
-    // std::vector<G4double> const rindexBorosilicate = {1.53, 1.53, 1.53};
-    // TODO: Refine this across 300-550 nm emission range
     std::vector<G4double> const rindexBorosilicate = {1.51872, 1.53024, 1.54272}; // NOTE: From SCOTT BK7 datasheet
     // NOTE: Closest indices for (550 nm, 415 nm, 325 nm) => (546.1 nm, 404.7 nm, 334.1 nm)
     
@@ -1042,9 +1061,9 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     G4double const inchToCM = 2.54;
     
-    // G4double const crystalSize = 3 * inchToCM; // 3 inch crystal = 7.62 cm diameter => (diameter / 2) = 3.81 cm outer radius
+    G4double const crystalSize = 3 * inchToCM; // 3 inch crystal = 7.62 cm diameter => (diameter / 2) = 3.81 cm outer radius
     // G4double const crystalSize = 2 * inchToCM; // 2 inch crystal = 5.08 cm diameter => (diameter / 2) = 2.54 cm outer radius
-    G4double const crystalSize = 1 * inchToCM; // 1 inch crystal = 2.54 cm diameter => (diameter / 2) = 1.27 cm outer radius
+    // G4double const crystalSize = 1 * inchToCM; // 1 inch crystal = 2.54 cm diameter => (diameter / 2) = 1.27 cm outer radius
     
     // G4double const crystalOuterRad = (7.62 * 0.5) * cm; // 3 inch = 7.62 cm diameter => (diameter / 2) = 3.81 cm outer radius
     // G4double const crystalHeight = 7.62 * cm; // 3 inch height (this arg will be doubled, so will need to * 0.5)
@@ -1198,8 +1217,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     G4double const greaseZ = crystalZ + (crystalHeight * 0.5) + (greaseThickness * 0.5); // TEST
     // NOTE: Places it on crystal Z (centre of the crystal), 
     // translates it by half the crystal height (to account for it being centre of crystal),
-    // due to 0.5 reflector thickness being placed either side of its origin,
-    // need to shift it by 0.5 * its thickness
+    // due to 0.5 grease thickness being placed either side of this components origin,
+    // need to shift it by a further 0.5 * grease thickness
     
     // Placed on the back side of the crystal
     G4VPhysicalVolume* greasePhys = new G4PVPlacement(
@@ -1213,6 +1232,12 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
         checkOverlaps
     );
     
+    // TEST TEST TEST
+    // Set maximum step size inside of grease volume
+    // auto greaseStepLimit = new G4UserLimits(5. * um);
+    // greaseLog->SetUserLimits(greaseStepLimit);
+    // NOTE: Seems to have zero impact on spectrum compared to omitting this
+    // TEST TEST TEST
     
     ////////////////////////
     // PHOTOMULTIPLIER TUBE:
@@ -1241,6 +1266,11 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // translates it by half the grease height (to account for it being centre of grease),
     // due to 0.5 window thickness being placed either side of window origin,
     // need to shift it by 0.5 * its thickness
+    
+    // TEST
+    // Translation along Z axis (relative to crystal origin)
+    // G4double const windowZ = crystalZ + (crystalHeight * 0.5) + (windowThick * 0.5); // TEST
+    // TEST
     
     // Placed against the optical grease
     G4VPhysicalVolume* windowPhys = new G4PVPlacement(
@@ -1415,6 +1445,45 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
         0, // one copy
         checkOverlaps
     );
+    
+    
+    ////////////
+    // TABLETOP:
+    ////////////
+
+    // MDF style wood proxy, ~1' -> 2' thick
+    
+    // Table geometry parameters
+    G4double const tableSize = 50. * cm; // 1m probably better but dont wanna make world massive (also is rectangle not square)
+    G4double const tableHeight = 5. * cm; // 5cm ? TODO: spitballing, need to refine this
+    
+    // ...
+    auto table = new G4Box("Table", tableSize * 0.5, tableSize * 0.5, tableHeight * 0.5);
+    
+    // Using wood as a proxy for MDF (which would actually be slightly different)
+    auto tableLog = new G4LogicalVolume(table, wood, "Table");
+    
+    // Rotate about z-axis 90 degrees
+    auto tableRot = new G4RotationMatrix();
+    tableRot->rotateX(90. * deg);
+    // NOTE: Could just change xyz lengths, but leaving this here as example of rotation matrix
+    
+    // Translate in -y direction by radius of can + half thickness of table
+    G4double const tableTransY = -1. * (enclosureOuterRad + (tableHeight * 0.5));
+    // NOTE: So that bottom of enclosure rests on table
+    
+    // Place the table below the detector
+    G4VPhysicalVolume* tablePhys = new G4PVPlacement(
+        tableRot, // Rotated 90 degrees in Z direction
+        // nullptr,
+        G4ThreeVector(0., tableTransY, 0.), 
+        tableLog,
+        "Table",
+        worldLog,
+        false,
+        0,
+        checkOverlaps
+    );
 
     
     //////////
@@ -1468,7 +1537,6 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     //     checkOverlaps
     // );
     
-    
     /////////////////
     // SOURCE CASING:
     /////////////////
@@ -1480,23 +1548,28 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // likely slightly different in reality but itll do
     
     // Source encapsulation dimensions
-    G4double const casingSizeX = 3. * cm;
-    G4double const casingSizeY = enclosureOuterRad * 2; // Same height as diameter of detector enclosure
-    G4double const casingSizeZ = 0.5 * cm;
+    // G4double const casingSizeX = 3. * cm;
+    // G4double const casingSizeY = enclosureOuterRad * 2; // Same height as diameter of detector enclosure
+    // G4double const casingSizeZ = 0.5 * cm;
+    
+    G4double const casingSizeX = 3. * cm; // 3cm wide
+    G4double const casingSizeY = 3. * cm; // 3cm high
+    G4double const casingSizeZ = 1 * cm; // 1cm thick
     
     // Base geometry which will be cut
     auto casingBase = new G4Box("CasingBase", casingSizeX * 0.5, casingSizeY * 0.5, casingSizeZ * 0.5);
     
     // Cut to be made in base geometry
-    auto casingCut = new G4Sphere(
-        "CasingCut", // name
-        0., // minmum radius (0 = not hollow),
-        sourceRadius, // maximum radius
-        0. * deg, // minimum phi angle
-        360. * deg, // maximum phi angle (NOTE: Assuming this is like span angle ?)
-        0. * deg, // minimum theta angle
-        180. * deg // maximum theta angle (NOTE: What are these last two for ?)
-    );
+    // auto casingCut = new G4Sphere(
+    //     "CasingCut", // name
+    //     0., // minmum radius (0 = not hollow),
+    //     sourceRadius, // maximum radius
+    //     0. * deg, // minimum phi angle
+    //     360. * deg, // maximum phi angle (NOTE: Assuming this is like span angle ?)
+    //     0. * deg, // minimum theta angle
+    //     180. * deg // maximum theta angle (NOTE: What are these last two for ?)
+    // );
+    auto casingCut = new G4Box("CasingBase", casingSizeX * 0.25, casingSizeY * 0.25, casingSizeZ * 0.25);
     
     // Create new solid with cut subtracted from base
     auto casing = new G4SubtractionSolid(
@@ -1510,60 +1583,129 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Assign a material to the casing solid
     auto casingLog = new G4LogicalVolume(
         casing, // subtraction solid acts same as any other geometry here
-        PVC, // casing material (aluminium)
+        PVC, // casing material (G4_POLYVINYL_CHLORIDE)
         "Casing"
     );
+    
+//     auto const casingTrans = G4ThreeVector(crystalX, crystalY, sourceZ);
+//     
+//     // Place the casing
+//     G4VPhysicalVolume* casingPhys = new G4PVPlacement(
+//         nullptr, // no rotation
+//         sourceTrans, // same position as source
+//         casingLog, // logical volume
+//         "Casing", // name
+//         worldLog, // mother volume (logical)
+//         false, // no boolean ops
+//         0, // one copy
+//         checkOverlaps
+//     );
+    
+    // TODO: Could get bit spicy and add top section too
+    
+    /////////////////
+    // SOURCE HOLDER:
+    /////////////////
+    
+    // Base geometry which will be cut
+    G4double const holderSizeX = 4. * cm; // 4cm wide
+    G4double const holderSizeY = 2. * cm; // 2cm high
+    G4double const holderSizeZ = 1.95 * cm; // 1.95cm thick
+    
+    auto holderBase = new G4Box("HolderBase", holderSizeX * 0.5, holderSizeY * 0.5, holderSizeZ * 0.5);
+    
+    // Make the 1st cut where source casing goes
+    // (width of source casing @~3cm, half the height of the holder, thickness of source casing @~1cm)
+    auto holderCut1 = new G4Box("HolderCut1", ((casingSizeX * 0.5) + 0.05 * cm), holderSizeY * 0.25, casingSizeZ * 0.5);
+    
+    // Translation for 1st cut relative to base:
+    // Translate the box to cut from the origin of the base, up by half the bases height, so that the origin of the cut box
+    // is aligned with the top of the base in y direction, then translate it down by half the cuts height so that the cut
+    // is fully inside of the base
+    // G4double const holderCutTransY = (0.5 * casingSizeY) - (0.5 * holderSizeY);
+    G4double const holderCutTransY = (0.5 * holderSizeY) - (0.25 * holderSizeY);
+    // G4double const holderCutTransY = (0.75 * holderSizeY);
+    auto const holderCut1Trans = G4ThreeVector(0., holderCutTransY, 0.);
+    
+    // ...
+    auto holderSubtracted = new G4SubtractionSolid(
+        "Holder",
+        holderBase, // base solid to make cut in
+        holderCut1, // cut to make in base
+        nullptr,
+        holderCut1Trans // holder cut translation
+    );
+    
+    // Dimensions for 2nd cut where the faces in the z direction are fully removed
+    G4double const cut2SizeX = 2.6 * cm; // make a cut 2.6cm wide
+    // G4double const cut2SizeY = holderSizeY * 0.5; // cut half way into the holder in y direction (same as 1st cut)
+    G4double const cut2SizeY = (holderSizeY * 0.5) + (0.1 * cm); // cut half way into the holder in y direction (same as 1st cut)
+    G4double const cut2SizeZ = holderSizeZ * 1.1; // cut the full length of the holder in z direction (plus a little extra to trim paper thin leftovers from same sized cut)
+    
+    auto holderCut2 = new G4Box("HolderCut2", cut2SizeX * 0.5, cut2SizeY * 0.5, cut2SizeZ * 0.5);
+    
+    // Translation for 2nd cut relative to base:
+    // 
+    
+    // G4double const holderCut2TransY = 0.75 * holderSizeY;
+    G4double const holderCut2TransY = (0.5 * holderSizeY) - ((0.5 * cut2SizeY) - (0.1 * cm));
+    auto const holderCut2Trans = G4ThreeVector(0., holderCut2TransY, 0.);
+    
+    // Make the 2nd cut
+    
+    auto holder = new G4SubtractionSolid(
+        "Holder",
+        holderSubtracted, // base solid to make cut in
+        holderCut2, // cut to make in base
+        nullptr,
+        holderCut2Trans
+    );
+    
+    // Logical volume
+    
+    auto holderLog = new G4LogicalVolume(
+        holder,
+        PVC,
+        "Holder"
+    );
+    
+    // Physical volume
+    
+    G4double const holderY = tableTransY + (0.5 * tableHeight) + (0.5 * holderSizeY);
+    
+    auto const holderTrans = G4ThreeVector(crystalX, holderY, sourceZ);
+    
+    G4VPhysicalVolume* holderPhys = new G4PVPlacement(
+        nullptr,
+        holderTrans,
+        holderLog,
+        "Holder",
+        worldLog,
+        false,
+        0,
+        checkOverlaps
+    );
+    
+    // ...
+    /// ...
+    //// ....
+    
+    // need to align the bottom of the casing with the centre of the holder
+    // translating bottom of casing to aling with bottom of holder: 1/2 of casing height - 1/2 of holder height
+    // then translating that up by half of the holder
+    
+    G4double const casingTransY = holderY + ((0.5 * casingSizeY) - (0.5 * holderSizeY)) + (0.5 * holderSizeY);
+    auto const casingTrans = G4ThreeVector(crystalX, casingTransY, sourceZ);
     
     // Place the casing
     G4VPhysicalVolume* casingPhys = new G4PVPlacement(
         nullptr, // no rotation
-        sourceTrans, // same position as crystal
+        casingTrans, // same position as source
         casingLog, // logical volume
         "Casing", // name
         worldLog, // mother volume (logical)
         false, // no boolean ops
         0, // one copy
-        checkOverlaps
-    );
-    
-    // TODO: Could get bit spicy and add top section too
-    
-    
-    ////////////
-    // TABLETOP:
-    ////////////
-
-    // MDF style wood proxy, ~1' -> 2' thick
-    
-    // Table geometry parameters
-    G4double const tableSize = 50. * cm; // 1m probably better but dont wanna make world massive (also is rectangle not square)
-    G4double const tableHeight = 5. * cm; // 5cm ? TODO: spitballing, need to refine this
-    
-    // ...
-    auto table = new G4Box("Table", tableSize * 0.5, tableSize * 0.5, tableHeight * 0.5);
-    
-    // Using wood as a proxy for MDF (which would actually be slightly different)
-    auto tableLog = new G4LogicalVolume(table, wood, "Table");
-    
-    // Rotate about z-axis 90 degrees
-    auto tableRot = new G4RotationMatrix();
-    tableRot->rotateX(90. * deg);
-    // NOTE: Could just change xyz lengths, but leaving this here as example of rotation matrix
-    
-    // Translate in -y direction by radius of can + half thickness of table
-    G4double const tableTransY = -1. * (enclosureOuterRad + (tableHeight * 0.5));
-    // NOTE: So that bottom of enclosure rests on table
-    
-    // Place the table below the detector
-    G4VPhysicalVolume* tablePhys = new G4PVPlacement(
-        tableRot, // Rotated 90 degrees in Z direction
-        // nullptr,
-        G4ThreeVector(0., tableTransY, 0.), 
-        tableLog,
-        "Table",
-        worldLog,
-        false,
-        0,
         checkOverlaps
     );
 
@@ -1582,6 +1724,13 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     auto greaseWindowBorder = new G4LogicalBorderSurface("GreaseToWindow", greasePhys, windowPhys, windowSurface);
     // NOTE: After testing, adding these two borders produces an identical spectrum to just 
     // leaving these two borders as default
+    
+    
+    // TEST
+    // auto crystalWindowBorder = new G4LogicalBorderSurface("CrystalToWindow", crystalPhys, windowPhys, greaseSurface);
+    // auto crystalWindowBorder = new G4LogicalBorderSurface("CrystalToWindow", crystalPhys, windowPhys, windowSurface);
+    // TEST
+    
     
     // TEST \/\/\/\/
     // Define the border between the reflector and enclosure
@@ -1605,11 +1754,11 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     auto greaseReflectorBorder = new G4LogicalBorderSurface("GreaseToReflector", greasePhys, reflectorPhys, reflectorSurface); // TEST (FIXES LOST PHOTONS)
     // TODO: Is the crystal->reflector surface sufficient here? Not really as the sigma alpha value is for crystal surface, and uses rindex air for gap
     
-    // Define the border between the optical window and the hermetic seal
-    auto windowSealBorder = new G4LogicalBorderSurface("WindowToSeal", windowPhys, sealPhys, aluminiumSurface); // NOTE: UNCOMMENT ME
-    
     // ...
     auto windowReflectorBorder = new G4LogicalBorderSurface("WindowToReflector", windowPhys, reflectorPhys, reflectorSurface); // TEST (for 25 um grease geom)
+    
+    // Define the border between the optical window and the hermetic seal
+    auto windowSealBorder = new G4LogicalBorderSurface("WindowToSeal", windowPhys, sealPhys, aluminiumSurface); // NOTE: UNCOMMENT ME
     
     // Define the border between the optical window and the photocathode
     auto windowPhotocathodeBorder = new G4LogicalBorderSurface("WindowToPhotocathode", windowPhys, photocathodePhys, photocathodeSurface);
@@ -1671,6 +1820,11 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     auto casingVisAtt = new G4VisAttributes(G4Color(0.8, 0.8, 0.8, 0.25)); // mid-light gray (transparent)
     casingVisAtt->SetForceSolid(true);
     casingLog->SetVisAttributes(casingVisAtt);
+    
+    // Source holder geometry
+    auto holderVisAtt = new G4VisAttributes(G4Color(0.1, 0.1, 0.1, 1)); // charcoal (opaque)
+    holderVisAtt->SetForceSolid(true);
+    holderLog->SetVisAttributes(holderVisAtt);
     
     // Tabletop geometry
     auto tableVisAtt = new G4VisAttributes(G4Color(0.95, 0.95, 0.95, 1.)); // light gray
