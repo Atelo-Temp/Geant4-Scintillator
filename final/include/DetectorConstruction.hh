@@ -6,9 +6,12 @@
 // #include "G4LogicalVolume.hh"
 // #include "G4VPhysicalVolume.hh"
 
+#include "G4ThreeVector.hh" // NOTE: TEMP
+
 // Forward declarations
 class G4VPhysicalVolume;
 // class G4LogicalVolume;
+// class G4ThreeVector;
 
 /*
  * ...
@@ -33,13 +36,26 @@ class DetectorConstruction : public G4VUserDetectorConstruction {
         
         // Public method to get stored pointer to scoring region
         // G4LogicalVolume* GetScoringVolume() const { return fScoringVolume; };
+        
+        
+        // TEST
+        G4LogicalVolume* GetSourceVolume() const { return fSourceVolume; }; // NOTE: TEMP UNTIL PLACING PHYSICAL SOURCE VOL
+        G4ThreeVector GetSourceOrigin() const { return fSourceCoords; }; // NOTE: TEMP UNTIL PLACING PHYSICAL SOURCE VOL
+        // G4VPhysicalVolume* GetSourceVolume() const { return fSourceVolume; };
 
-    // private:
+    private:
         // Local storage to access scoring volume outside the scope of "Construct()"
         // G4LogicalVolume* fScoringVolume = nullptr; // logical volume
 
         // Construct sensitive detector (SD) or field (electronic, magnetic, etc..)
         // void ConstructSDandField() override; // Will ignore field for now
+        
+        
+        // TEST
+        G4LogicalVolume* fSourceVolume = nullptr; // NOTE: TEMP UNTIL PLACING PHYSICAL SOURCE VOL
+        G4ThreeVector fSourceCoords; // NOTE: TEMP UNTIL PLACING PHYSICAL SOURCE VOL
+        
+        // G4VPhysicalVolume* fSourceVolume = nullptr;
 };
 
 #endif
