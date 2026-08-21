@@ -1145,28 +1145,6 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Define the scintillator crystal material as sodium iodide
     auto scintillatorLog = new G4LogicalVolume(scintillator, NaI, "Scintillator");
     
-//     // Define coordinates for scintillator crystal (offset from mother origin)
-//     G4double const crystalX = 0. * cm;
-//     G4double const crystalY = 0. * cm;
-//     // G4double const crystalZ = 10. * cm; // 10cm (maybe 3cm as i have a lot of data for that distance)
-//     G4double const crystalZ = 0. * cm; // 10cm (maybe 3cm as i have a lot of data for that distance)
-//     
-//     // Define translation vector (relative to mother origin)
-//     auto const crystalTrans = G4ThreeVector(crystalX, crystalY, crystalZ);
-// 
-//     // Place the sodium iodide scintillator crystal (inside of the world)
-//     G4VPhysicalVolume* crystalPhys = new G4PVPlacement(
-//         nullptr, // No rotation
-//         crystalTrans, // Translation
-//         scintillatorLog, // The logical volume
-//         "Scintillator", // Name
-//         worldLog, // Mother volume (logical)
-//         false, // No boolean ops
-//         0, // Copy number
-//         checkOverlaps
-//     );
-//     // NOTE: This places the scintillator at the origin of the mother volume, shifted by 0.5 meter along Z
-    
     // TEST: Create a region for the crystal (for 100 um cuts only in detector volume)
     auto crystalRegion = new G4Region("Scintillator"); // NOTE: Havent imported this ?
     scintillatorLog->SetRegion(crystalRegion);
@@ -1228,22 +1206,11 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
         "Reflector"
     );
     
-    // // Place the reflector
-    // G4VPhysicalVolume* reflectorPhys = new G4PVPlacement(
-    //     nullptr, // no rotation
-    //     crystalTrans, // same position as crystal
-    //     reflectorLog, // logical volume
-    //     "Reflector", // name
-    //     worldLog, // mother volume (logical)
-    //     false, // no boolean ops
-    //     0, // one copy
-    //     checkOverlaps
-    // );
-    
     // NOTE: This current setup works, but leaves an overhang of reflector,
     // this isnt really an issue and maybe worth keeping,
     // but may also want reflector to stop in line with back of crystal,
-    // just need to give "ReflectorSolid" (crystalheight + 0.5 * reflectorThick)
+    // just need to give "ReflectorSolid" (crystalheight + 0.5 * reflectorThick),
+    // but it also kinda needs to 
     
     
     //////////////////
@@ -1272,31 +1239,13 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // PDMS (proxy for silicone gel)
     auto greaseLog = new G4LogicalVolume(grease, PDMS, "OpticalGrease");
     
-//     // Translation along Z axis (relative to crystal origin)
-//     G4double const greaseZ = crystalZ + (crystalHeight * 0.5) + (greaseThickness * 0.5); // TEST
-//     // NOTE: Places it on crystal Z (centre of the crystal), 
-//     // translates it by half the crystal height (to account for it being centre of crystal),
-//     // due to 0.5 grease thickness being placed either side of this components origin,
-//     // need to shift it by a further 0.5 * grease thickness
-//     
-//     // Placed on the back side of the crystal
-//     G4VPhysicalVolume* greasePhys = new G4PVPlacement(
-//         nullptr, // No rotation
-//         G4ThreeVector(crystalX, crystalY, greaseZ), // Translation
-//         greaseLog, // The logical volume
-//         "OpticalGrease", // Name
-//         worldLog, // Mother volume (logical)
-//         false, // No boolean ops
-//         0, // Copy number
-//         checkOverlaps
-//     );
-    
     // TEST TEST TEST
     // Set maximum step size inside of grease volume
     // auto greaseStepLimit = new G4UserLimits(5. * um);
     // greaseLog->SetUserLimits(greaseStepLimit);
     // NOTE: Seems to have zero impact on spectrum compared to omitting this
     // TEST TEST TEST
+    
     
     ////////////////////////
     // PHOTOMULTIPLIER TUBE:
@@ -1318,30 +1267,6 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     // Borosilicate glass (high optical performance)
     auto windowLog = new G4LogicalVolume(window, borosilicate, "OpticalWindow");
-    
-//     // Translation along Z axis (relative to optical grease origin)
-//     G4double const windowZ = greaseZ + (greaseThickness * 0.5) + (windowThick * 0.5); // TEST
-//     // NOTE: Places it on grease Z (centre of the grease),
-//     // translates it by half the grease height (to account for it being centre of grease),
-//     // due to 0.5 window thickness being placed either side of window origin,
-//     // need to shift it by 0.5 * its thickness
-//     
-//     // TEST
-//     // Translation along Z axis (relative to crystal origin)
-//     // G4double const windowZ = crystalZ + (crystalHeight * 0.5) + (windowThick * 0.5); // TEST
-//     // TEST
-//     
-//     // Placed against the optical grease
-//     G4VPhysicalVolume* windowPhys = new G4PVPlacement(
-//         nullptr, // No rotation
-//         G4ThreeVector(crystalX, crystalY, windowZ), // Translation
-//         windowLog, // The logical volume
-//         "OpticalWindow", // Name
-//         worldLog, // Mother volume (logical)
-//         false, // No boolean ops
-//         0, // Copy number
-//         checkOverlaps
-//     );
     
     
     ////////////////
@@ -1366,25 +1291,6 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     // Lithium (alkali metal due to low binding energy of outer shell electron)
     auto photocathodeLog = new G4LogicalVolume(photocathode, Li, "Photocathode");
-    
-//     // Translation along Z axis (relative to optical window origin)
-//     G4double const photocathodeZ = windowZ + (windowThick * 0.5) + (photocathodeThick * 0.5);
-//     // NOTE: Places it on window Z (centre of the window),
-//     // translates it by half the window height (to account for it being centre of window),
-//     // due to 0.5 window thickness being placed either side of window origin,
-//     // need to shift it by 0.5 * its thickness
-//     
-//     // Placed on the inside of the PMT window
-//     G4VPhysicalVolume* photocathodePhys = new G4PVPlacement(
-//         nullptr, // No rotation
-//         G4ThreeVector(crystalX, crystalY, photocathodeZ), // Translation
-//         photocathodeLog, // The logical volume
-//         "Photocathode", // Name
-//         worldLog, // Mother volume (logical)
-//         false, // No boolean ops
-//         0, // Copy number
-//         checkOverlaps
-//     );
     
     
     ///////////////////////
@@ -1444,18 +1350,6 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
         "Enclosure"
     );
     
-    // // Place the enclosure
-    // G4VPhysicalVolume* enclosurePhys = new G4PVPlacement(
-    //     nullptr, // no rotation
-    //     crystalTrans, // same position as crystal
-    //     enclosureLog, // logical volume
-    //     "Enclosure", // name
-    //     worldLog, // mother volume (logical)
-    //     false, // no boolean ops
-    //     0, // one copy
-    //     checkOverlaps
-    // );
-    
     
     /////////////////
     // HERMETIC SEAL:
@@ -1488,22 +1382,6 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
         Al, // seal material (aluminium)
         "HermeticSeal"
     );
-    
-//     // Translation along Z axis (relative to optical window origin)
-//     // G4double const sealZ = windowZ;
-//     G4double const sealZ = crystalZ + (crystalHeight * 0.5) + reflectorThickness + (sealLength * 0.5); // TEST
-//     
-//     // Place the seal
-//     G4VPhysicalVolume* sealPhys = new G4PVPlacement(
-//         nullptr, // no rotation
-//         G4ThreeVector(crystalX, crystalY, sealZ), // same position as crystal
-//         sealLog, // logical volume
-//         "HermeticSeal", // name
-//         worldLog, // mother volume (logical)
-//         false, // no boolean ops
-//         0, // one copy
-//         checkOverlaps
-//     );
     
     
     //////////////////////////////////////
@@ -1651,51 +1529,6 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
         0, // one copy
         checkOverlaps
     );
-    
-    
-//     ////////////
-//     // TABLETOP:
-//     ////////////
-//     
-//     // TODO: MOVE THIS BEFORE DETECTOR, INTEAD OF TABLE MOVING IN Y DIRECTION WITH CHANGE IN CRYSTAL SIZE,
-//     // CRYSTAL Y = (0.5 * table height) + (0.5 * crystal diameter)
-//     // (it makes logical sense that the table would be present in the world volume first anyways, then
-//     // you place the detector on the table, then the source on the table)
-// 
-//     // MDF style wood proxy, ~1' -> 2' thick
-//     
-//     // Table geometry parameters
-//     G4double const tableWidth = 50. * cm; // x
-//     G4double const tableHeight = 5. * cm; // y 5cm ? TODO: spitballing, need to refine this
-//     G4double const tableLength = 100. * cm; // z
-//     
-//     // ...
-//     auto table = new G4Box("Table", tableWidth * 0.5, tableLength * 0.5, tableHeight * 0.5);
-//     
-//     // Using wood as a proxy for MDF (which would actually be slightly different)
-//     auto tableLog = new G4LogicalVolume(table, wood, "Table");
-//     
-//     // Rotate about z-axis 90 degrees
-//     auto tableRot = new G4RotationMatrix();
-//     tableRot->rotateX(90. * deg);
-//     // NOTE: Could just change xyz lengths, but leaving this here as example of rotation matrix
-//     
-//     // Translate in -y direction by radius of can + half thickness of table
-//     G4double const tableTransY = -1. * (enclosureOuterRad + (tableHeight * 0.5));
-//     // NOTE: So that bottom of enclosure rests on table
-//     
-//     // Place the table below the detector
-//     G4VPhysicalVolume* tablePhys = new G4PVPlacement(
-//         tableRot, // Rotated 90 degrees in Z direction
-//         // nullptr,
-//         G4ThreeVector(0., tableTransY, 0.), 
-//         tableLog,
-//         "Table",
-//         worldLog,
-//         false,
-//         0,
-//         checkOverlaps
-//     );
 
     
     //////////
@@ -1717,37 +1550,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     );
     
     // Define the radioactive source with the created material
-    auto* sourceLog = new G4LogicalVolume(solidSource, sourceMat, "Source");
-    
-    // Define translation (offset from origin by 1cm => so 11cm from detector)
-    // auto sourceTrans = G4ThreeVector(0 * cm, 0 * cm, -1. * cm);
-    // NOTE: This Z should be crystalZ + (crystalHeight * 0.5) + (reflectorThick) + (enclosureThick) + (sourceDetectorDist)
-    
-    // NOTE: Face of the detector is 5.90425 cm from world origin (0, 0, 0)
-    // so, source had been 6.90425 cm from face of detector in all prior sims
-    
-    // 3cm source-detector (face) distance, as it was in lab work (and my recorded spectra)
-    G4double const sourceDetectorDist = 3. * cm;
-    G4double const sourceZ = detectorZ - ((crystalHeight * 0.5) + reflectorThickness + enclosureThick) - sourceDetectorDist;
-
-    // ...
-    // auto const sourceTrans = G4ThreeVector(crystalX, crystalY, sourceZ);
-    // NOTE: Source is placed exactly in line with crystal in (x, y) plane, and specified distance in z
-    
-    // TODO: I NEED THIS IN PRIMARY GENERATOR ACTION TOO ...
-    // TODO: THE LAST SPECTRUM ONLY MOVED THE CASING LOL NOT THE SOURCE
-    
-    // Place the radioactive source 
-    // G4VPhysicalVolume* sourcePhys = new G4PVPlacement(
-    //     nullptr,
-    //     sourceTrans,
-    //     sourceLog,
-    //     "Source",
-    //     worldLog,
-    //     false,
-    //     0,
-    //     checkOverlaps
-    // );
+    auto sourceLog = new G4LogicalVolume(solidSource, sourceMat, "Source");
     
     // Assign the logical source volume to the class member
     // fSourceVolume = sourceLog;
@@ -1764,10 +1567,6 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // likely slightly different in reality but itll do
     
     // Source encapsulation dimensions
-    // G4double const casingSizeX = 3. * cm;
-    // G4double const casingSizeY = enclosureOuterRad * 2; // Same height as diameter of detector enclosure
-    // G4double const casingSizeZ = 0.5 * cm;
-    
     G4double const casingSizeX = 3. * cm; // 3cm wide
     G4double const casingSizeY = 3. * cm; // 3cm high
     G4double const casingSizeZ = 1 * cm; // 1cm thick
@@ -1776,15 +1575,6 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     auto casingBase = new G4Box("CasingBase", casingSizeX * 0.5, casingSizeY * 0.5, casingSizeZ * 0.5);
     
     // Cut to be made in base geometry
-    // auto casingCut = new G4Sphere(
-    //     "CasingCut", // name
-    //     0., // minmum radius (0 = not hollow),
-    //     sourceRadius, // maximum radius
-    //     0. * deg, // minimum phi angle
-    //     360. * deg, // maximum phi angle (NOTE: Assuming this is like span angle ?)
-    //     0. * deg, // minimum theta angle
-    //     180. * deg // maximum theta angle (NOTE: What are these last two for ?)
-    // );
     auto casingCut = new G4Box("CasingBase", casingSizeX * 0.25, casingSizeY * 0.25, casingSizeZ * 0.25);
     
     // Create new solid with cut subtracted from base
@@ -1803,22 +1593,6 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
         PMMA, // casing material (acrylic - PMMA)
         "Casing"
     );
-    
-//     auto const casingTrans = G4ThreeVector(crystalX, crystalY, sourceZ);
-//     
-//     // Place the casing
-//     G4VPhysicalVolume* casingPhys = new G4PVPlacement(
-//         nullptr, // no rotation
-//         sourceTrans, // same position as source
-//         casingLog, // logical volume
-//         "Casing", // name
-//         worldLog, // mother volume (logical)
-//         false, // no boolean ops
-//         0, // one copy
-//         checkOverlaps
-//     );
-    
-    // TODO: Could get bit spicy and add top section too
     
     /////////////////
     // SOURCE HOLDER:
@@ -1855,8 +1629,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     // Dimensions for 2nd cut where the faces in the z direction are fully removed
     G4double const cut2SizeX = 2.6 * cm; // make a cut 2.6cm wide
-    // G4double const cut2SizeY = holderSizeY * 0.5; // cut half way into the holder in y direction (same as 1st cut)
-    G4double const cut2SizeY = (holderSizeY * 0.5) + (0.1 * cm); // cut half way into the holder in y direction (same as 1st cut)
+    G4double const cut2SizeY = (holderSizeY * 0.5) + (0.1 * cm); // cut half way into the holder in y direction (same as 1st cut) (plus extra 0.1cm to trim leftovers)
     G4double const cut2SizeZ = holderSizeZ * 1.1; // cut the full length of the holder in z direction (plus a little extra to trim paper thin leftovers from same sized cut)
     
     auto holderCut2 = new G4Box("HolderCut2", cut2SizeX * 0.5, cut2SizeY * 0.5, cut2SizeZ * 0.5);
@@ -1889,6 +1662,17 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     ////////////////////////////////////
     // SOURCE PHYSICAL VOLUME PLACEMENT:
     ////////////////////////////////////
+    
+    // Define translation (offset from origin by 1cm => so 11cm from detector)
+    // auto sourceTrans = G4ThreeVector(0 * cm, 0 * cm, -1. * cm);
+    // NOTE: This Z should be crystalZ + (crystalHeight * 0.5) + (reflectorThick) + (enclosureThick) + (sourceDetectorDist)
+    
+    // NOTE: Face of the detector is 5.90425 cm from world origin (0, 0, 0)
+    // so, source had been 6.90425 cm from face of detector in all prior sims
+    
+    // 3cm source-detector (face) distance, as it was in lab work (and my recorded spectra)
+    G4double const sourceDetectorDist = 3. * cm;
+    G4double const sourceZ = detectorZ - ((crystalHeight * 0.5) + reflectorThickness + enclosureThick) - sourceDetectorDist;
     
     // Source Holder
     
