@@ -30,10 +30,21 @@ class PrimaryGenerator : public G4VUserPrimaryGeneratorAction {
         
         // Assign cesium 137 as gps ion
         void Cesium137Source();
+        
+        // TODO:
+        // 60CoSource
+        // 22NaSource
+        // 241AmSource
+        
+        // Assign coordinates to gps ion, specify distribution, etc
+        void PlaceSource();
 
     private:
         // Pointer to particle generator
         G4GeneralParticleSource* fParticleGun = nullptr;
+        
+        // Logic check to see whether gps has been assinged coordinates etc
+        bool fPlaced = false;
 };
 
 #endif
