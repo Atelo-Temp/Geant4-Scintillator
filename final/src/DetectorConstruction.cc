@@ -43,7 +43,7 @@
 
 #include "G4Box.hh"
 #include "G4Tubs.hh"
-#include "G4Sphere.hh"
+// #include "G4Sphere.hh"
 #include "G4SubtractionSolid.hh"
 
 #include "G4LogicalVolume.hh"
@@ -1536,25 +1536,21 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     //////////
     
     // Source geometry specification
-    G4double const sourceRadius = 0.1 * cm; // 1mm
+    G4double const sourceRadius = 0.5 * cm; // 1cm diameter
+    G4double const sourceThickness = 0.1 * cm; // 1mm thickness
     
-    // Source geometry definition (modelled as sphere in "decay", but apparently is cylinder)
-    auto* solidSource = new G4Sphere(
+    // Source geometry definition (modelled as cylinder)
+    auto solidSource = new G4Tubs(
         "Source", // name
-        0., // minmum radius (0 = not hollow),
-        sourceRadius, // maximum radius
-        0. * deg, // minimum phi angle
-        360. * deg, // maximum phi angle (NOTE: Assuming this is like span angle ?)
-        0. * deg, // minimum theta angle
-        180. * deg // maximum theta angle (NOTE: What are these last two for ?)
+        0., // inner radius (0 = not hollow),
+        sourceRadius, // outer radius
+        sourceThickness * 0.5, // thickness
+        0. * deg, // start angle
+        360 * deg // end angle (full span here)
     );
     
     // Define the radioactive source with the created material
     auto sourceLog = new G4LogicalVolume(solidSource, sourceMat, "Source");
-    
-    // Assign the logical source volume to the class member
-    // fSourceVolume = sourceLog;
-    // TODO: This should be sourcePhys so that x,y,z can be extracted
     
     /////////////////
     // SOURCE CASING:
@@ -1569,13 +1565,19 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Source encapsulation dimensions
     G4double const casingSizeX = 3. * cm; // 3cm wide
     G4double const casingSizeY = 3. * cm; // 3cm high
-    G4double const casingSizeZ = 1 * cm; // 1cm thick
+    // G4double const casingSizeZ = 1 * cm; // 1cm thick
+    G4double const casingSizeZ = 0.7 * cm; // 7mm thick (the front and back windows then make up the extra 3mm, at 1.5mm thickness each)
     
     // Base geometry which will be cut
     auto casingBase = new G4Box("CasingBase", casingSizeX * 0.5, casingSizeY * 0.5, casingSizeZ * 0.5);
     
     // Cut to be made in base geometry
-    auto casingCut = new G4Box("CasingBase", casingSizeX * 0.25, casingSizeY * 0.25, casingSizeZ * 0.25);
+    // auto casingCut = new G4Box("CasingBase", casingSizeX * 0.25, casingSizeY * 0.25, casingSizeZ * 0.25);
+    // auto casingCut = new G4Box("CasingBase", casingSizeX * 0.25, casingSizeY * 0.25, casingSizeZ * 0.6);
+    G4double const casingCutSizeX = casingSizeX - (2 * (0.3 * cm)); // thickness of remaining material on either side of cut ~3mm, so ~6mm total
+    G4double const casingCutSizeY = casingSizeY - (2 * (0.3 * cm)); // likewise
+    G4double const casingCutSizeZ = casingSizeZ * 1.1; // z cut slightly larger than z thickness to ensure no thin skin leftovers
+    auto casingCut = new G4Box("CasingCut", casingCutSizeX * 0.5, casingCutSizeY * 0.5, casingCutSizeZ * 0.5);
     
     // Create new solid with cut subtracted from base
     auto casing = new G4SubtractionSolid(
@@ -1594,6 +1596,24 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
         "Casing"
     );
     
+    /////////////////////////
+    // SOURCE CASING WINDOWS:
+    /////////////////////////
+    
+    // Two of these will be placed, one on the front of the casing and one on the back
+    G4double const casingWindowSizeZ = 0.15 * cm;
+    
+    // ...
+    auto casingWindow = new G4Box("CasingWindow", casingSizeX * 0.5, casingSizeY * 0.5, casingWindowSizeZ * 0.5);
+    
+    // ...
+    auto casingWindowLog = new G4LogicalVolume(
+        casingWindow,
+        PMMA, // casing material (acrylic - PMMA)
+        "Casing"
+    );
+    
+    
     /////////////////
     // SOURCE HOLDER:
     /////////////////
@@ -1607,7 +1627,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     
     // Make the 1st cut where source casing goes
     // (width of source casing @~3cm, half the height of the holder, thickness of source casing @~1cm)
-    auto holderCut1 = new G4Box("HolderCut1", ((casingSizeX * 0.5) + 0.05 * cm), holderSizeY * 0.25, casingSizeZ * 0.5);
+    // auto holderCut1 = new G4Box("HolderCut1", ((casingSizeX * 0.5) + 0.05 * cm), holderSizeY * 0.25, casingSizeZ * 0.5);
+    auto holderCut1 = new G4Box("HolderCut1", ((casingSizeX * 0.5) + 0.05 * cm), holderSizeY * 0.25, 0.5 * cm);
     
     // Translation for 1st cut relative to base:
     // Translate the box to cut from the origin of the base, up by half the bases height, so that the origin of the cut box
@@ -1663,18 +1684,20 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // SOURCE PHYSICAL VOLUME PLACEMENT:
     ////////////////////////////////////
     
-    // Define translation (offset from origin by 1cm => so 11cm from detector)
-    // auto sourceTrans = G4ThreeVector(0 * cm, 0 * cm, -1. * cm);
-    // NOTE: This Z should be crystalZ + (crystalHeight * 0.5) + (reflectorThick) + (enclosureThick) + (sourceDetectorDist)
-    
     // NOTE: Face of the detector is 5.90425 cm from world origin (0, 0, 0)
-    // so, source had been 6.90425 cm from face of detector in all prior sims
     
     // 3cm source-detector (face) distance, as it was in lab work (and my recorded spectra)
     G4double const sourceDetectorDist = 3. * cm;
-    G4double const sourceZ = detectorZ - ((crystalHeight * 0.5) + reflectorThickness + enclosureThick) - sourceDetectorDist;
     
+    // Define translation along the z axis
+    G4double const sourceZ = detectorZ - ((crystalHeight * 0.5) + reflectorThickness + enclosureThick) - sourceDetectorDist;
+    // NOTE: place the source at the detector origin, shift it by half the crystal length,
+    // then by reflector thickness, then by enclosure thickness (now resides at detector face)
+    // -> then use source detector distance to specify distance from detector face
+    
+    ////
     // Source Holder
+    ////
     
     G4double const holderY = tableTransY + (0.5 * tableHeight) + (0.5 * holderSizeY);
     
@@ -1691,7 +1714,9 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
         checkOverlaps
     );
     
+    ////
     // Source Casing
+    ////
     
     // need to align the bottom of the casing with the centre of the holder
     // translating bottom of casing to aling with bottom of holder: 1/2 of casing height - 1/2 of holder height
@@ -1712,7 +1737,9 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
         checkOverlaps
     );
     
+    ////
     // Radioactive Source Volume
+    ////
     
     // ...
     auto const sourceTrans = G4ThreeVector(detectorX, casingTransY, sourceZ); // NOTE: SAME AS CASING TRANSLATION VECTOR ...
@@ -1720,17 +1747,57 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // y is determined by table and source enclosure, 
     // and is a specified distance from detector face in z
     
-    // Place the radioactive source 
-    // G4VPhysicalVolume* sourcePhys = new G4PVPlacement(
-    //     nullptr,
-    //     sourceTrans,
-    //     sourceLog,
-    //     "Source",
-    //     worldLog,
-    //     false,
-    //     0,
-    //     checkOverlaps
-    // );
+    // Place the radioactive source (TODO TODO TODO TODO)
+    G4VPhysicalVolume* sourcePhys = new G4PVPlacement(
+        nullptr,
+        sourceTrans,
+        sourceLog,
+        "Source",
+        worldLog,
+        false,
+        0,
+        checkOverlaps
+    );
+    
+    
+    ////
+    // Casing Windows
+    ////
+    
+    G4double const frontCasingWindowZ = sourceZ + (0.5 * casingSizeZ) + (0.5 * casingWindowSizeZ);
+    auto const frontCasingWindowTrans = G4ThreeVector(detectorX, casingTransY, frontCasingWindowZ);
+    
+    G4VPhysicalVolume* frontCasingWindowPhys = new G4PVPlacement(
+        nullptr,
+        frontCasingWindowTrans,
+        casingWindowLog,
+        "FrontCasingWindow",
+        worldLog,
+        false,
+        0,
+        checkOverlaps
+    );
+    
+    G4double const backCasingWindowZ = sourceZ - (0.5 * casingSizeZ) - (0.5 * casingWindowSizeZ);
+    auto const backCasingWindowTrans = G4ThreeVector(detectorX, casingTransY, backCasingWindowZ);
+    G4VPhysicalVolume* backCasingWindowPhys = new G4PVPlacement(
+        nullptr,
+        backCasingWindowTrans,
+        casingWindowLog,
+        "BackCasingWindow",
+        worldLog,
+        false,
+        0,
+        checkOverlaps
+    );
+    
+    //////
+    //
+    //////
+    
+    // Assign the logical source volume to the class member
+    // fSourceVolume = sourceLog;
+    // TODO: This should be sourcePhys so that x,y,z can be extracted
     
     fSourceVolume = sourceLog; // NOTE: TEMP UNTIL PLACING PHYSICAL VOLUME
     fSourceCoords = sourceTrans; // NOTE: TEMP UNTIL PLACING PHYSICAL VOLUME
@@ -1844,9 +1911,14 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     sourceLog->SetVisAttributes(sourceVisAtt);
     
     // Source casing geometry
-    auto casingVisAtt = new G4VisAttributes(G4Color(0.8, 0.8, 0.8, 0.25)); // mid-light gray (transparent)
+    auto casingVisAtt = new G4VisAttributes(G4Color(0.8, 0.8, 0.8, 1)); // mid-light gray (opaque)
     casingVisAtt->SetForceSolid(true);
     casingLog->SetVisAttributes(casingVisAtt);
+    
+    // Source casing windows geometry
+    auto casingWindowsVisAtt = new G4VisAttributes(G4Color(0.8, 0.8, 0.8, 0.25)); // mid-light gray (transparent)
+    casingWindowsVisAtt->SetForceSolid(true);
+    casingWindowLog->SetVisAttributes(casingWindowsVisAtt);
     
     // Source holder geometry
     auto holderVisAtt = new G4VisAttributes(G4Color(0.1, 0.1, 0.1, 1)); // charcoal (opaque)
