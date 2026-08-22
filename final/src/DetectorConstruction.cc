@@ -64,6 +64,8 @@
 
 // #include "G4UserLimits.hh"
 
+#include "G4RunManager.hh"
+
 // NOTE: Uses consistent units throughout (cm probably easiest to adhere to)
 
 // TODO: There is overhang of the encapsulation at the back of the crystal 
@@ -1536,8 +1538,13 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     //////////
     
     // Source geometry specification
-    G4double const sourceRadius = 0.5 * cm; // 1cm diameter
-    G4double const sourceThickness = 0.1 * cm; // 1mm thickness
+    // G4double const sourceRadius = 0.5 * cm; // 1cm diameter
+    // G4double const sourceThickness = 0.1 * cm; // 1mm thickness
+    
+    // G4double const sourceRadius = (2.54 * 0.5) * cm; // 1" -> 2.54cm diameter -> 1.27cm radius (typical of disk sources)
+    // NOTE: Lab sources must have smaller diameters as this wouldnt fit casing (they are made in house tbf)
+    G4double const sourceRadius = (1.905 * 0.5) * cm; // 1" -> 2.54cm diameter -> 1.27cm radius (typical of disk sources)
+    G4double const sourceThickness = 0.3175 * cm; // 0.125" -> 3.175mm thickness (typical of disk sources)
     
     // Source geometry definition (modelled as cylinder)
     auto solidSource = new G4Tubs(
@@ -1947,4 +1954,37 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
 
     // Always return world
     return worldPhys;
+}
+
+/*
+ * ...
+ */
+void DetectorConstruction::SetCrystalDiameter(G4double diameterInInches) {
+    fCrystalDiameter = diameterInInches * 2.54;
+    
+    G4RunManager::GetRunManager()->ReinitializeGeometry();
+}
+
+/*
+ * ...
+ */
+void DetectorConstruction::SetSourceDetectorDistance(G4double distance) {
+    fSourceDetectorDistance = distance;
+    
+    G4RunManager::GetRunManager()->ReinitializeGeometry();
+}
+
+/*
+ * ...
+ */
+void DetectorConstruction::SetSource(G4String isotope) {
+    if (isotope == "137Cs") {
+        
+    } else if (isotope == "60Co") {
+        
+    } else if (isotope == "22Na") {
+        
+    } else if (isotope == "241Am") {
+        
+    }
 }

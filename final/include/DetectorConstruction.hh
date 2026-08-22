@@ -42,6 +42,12 @@ class DetectorConstruction : public G4VUserDetectorConstruction {
         G4LogicalVolume* GetSourceVolume() const { return fSourceVolume; }; // NOTE: TEMP UNTIL PLACING PHYSICAL SOURCE VOL
         G4ThreeVector GetSourceOrigin() const { return fSourceCoords; }; // NOTE: TEMP UNTIL PLACING PHYSICAL SOURCE VOL
         // G4VPhysicalVolume* GetSourceVolume() const { return fSourceVolume; };
+        
+        
+        // TEST
+        void SetCrystalDiameter(G4double const diameterInInches);
+        void SetSourceDetectorDistance(G4double const distance);
+        void SetSource(G4String const isotope);
 
     private:
         // Local storage to access scoring volume outside the scope of "Construct()"
@@ -56,6 +62,12 @@ class DetectorConstruction : public G4VUserDetectorConstruction {
         G4ThreeVector fSourceCoords; // NOTE: TEMP UNTIL PLACING PHYSICAL SOURCE VOL
         
         // G4VPhysicalVolume* fSourceVolume = nullptr;
+        
+        // TEST
+        
+        G4double fCrystalDiameter;
+        G4double fSourceDetectorDistance;
+        G4String fSource;
 };
 
 #endif
