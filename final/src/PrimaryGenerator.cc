@@ -150,7 +150,7 @@ void PrimaryGenerator::PlaceSource() {
     position->SetPosDisType("Volume"); // volumetric source // TODO
     
     // ...
-    // position->ConfineSourceToVolume("Source"); // confine start positions to particular volume // TODO
+    position->ConfineSourceToVolume("Source"); // confine start positions to particular volume // TODO
     
     // ...
     position->SetPosDisShape("Cylinder"); // TODO

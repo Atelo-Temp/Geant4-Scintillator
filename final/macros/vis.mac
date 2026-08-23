@@ -1,3 +1,12 @@
+###################
+# EXPERIMENT CONFIG
+###################
+
+/experiment/detector/crystalSize 1 inch
+/experiment/source/sourceDetectorDist 10 cm
+# /experiment/source/isotope 137Cs # TODO
+
+
 ######
 # INIT
 ######

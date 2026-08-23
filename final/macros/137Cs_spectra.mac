@@ -1,6 +1,14 @@
 # For batch mode
 # Call: ./gps run.mac
 
+###################
+# EXPERIMENT CONFIG
+###################
+
+/experiment/detector/crystalSize 2 inch
+/experiment/source/sourceDetectorDist 3 cm
+# /experiment/source/isotope 137Cs # TODO
+
 #######
 # Setup
 #######
@@ -24,13 +32,15 @@
 # /gps/ion 55 137 # (Z, Atomic Mass, Charge, Excitation Energy)
 #
 # Specify volumetric source and spherical volume
-/gps/pos/type Volume
-/gps/pos/shape Sphere
+#/gps/pos/type Volume
+#/gps/pos/shape Sphere
 # Specify the origin and radius of the sphere
-/gps/pos/centre 0. 0. 2.90425 cm
-/gps/pos/radius 1 mm
+#/gps/pos/centre 0. 0. 2.90425 cm
+#/gps/pos/radius 1 mm
 # Confine the volumetric source to the geometry with the name "Source"
 #/gps/pos/confine Source
+
+# TODO: REMOVE MOST OF THIS ^^
 
 
 #############
@@ -63,11 +73,12 @@
 
 # Run for X events (1024 bins)
 # due to decay, and optical photons, sim time could fluctuate a lot for same amount of events
-## /run/beamOn 10000 # (~2m)
+# /run/beamOn 10000 # (~2m)
 # /run/beamOn 50000 # (~9m)
-# /run/beamOn 100000 # (~17m) (~21m) (~19m) (~18m) (~22m) (~27m w/ reflections & ntuple merging) (~24m w/ reflections & no ntuple merging) (~24m w/ reflections v2 & ntuple merging) (~22m w/ reflections v2 & ntuple merging & absorb process caching)
-# /run/beamOn 200000 # (~38m)
+/run/beamOn 100000 # (~17m) (~21m) (~19m) (~18m) (~22m) (~27m w/ reflections & ntuple merging) (~24m w/ reflections & no ntuple merging) (~24m w/ reflections v2 & ntuple merging) (~22m w/ reflections v2 & ntuple merging & absorb process caching) (~18-19m for 3' crystal w/ all but spectra output disabled) (~17m no grease)
+#/run/beamOn 200000 # (~38m) (~15m for 2' crystal)
 # /run/beamOn 300000 # (~56m)
 # /run/beamOn 400000 # (~1hr 14m)
-/run/beamOn 500000 # (~1hr 30m) (~1hr 40m)
+# /run/beamOn 500000 # (~1hr 30m) (~1hr 40m)
+#/run/beamOn 800000 # (~19m for 1' crystal)
 # /run/beamOn 1000000 # (~3hr 35m)

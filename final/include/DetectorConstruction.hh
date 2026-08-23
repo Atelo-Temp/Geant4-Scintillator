@@ -7,11 +7,13 @@
 // #include "G4VPhysicalVolume.hh"
 
 #include "G4ThreeVector.hh" // NOTE: TEMP
+#include "G4SystemOfUnits.hh"
 
 // Forward declarations
 class G4VPhysicalVolume;
 // class G4LogicalVolume;
 // class G4ThreeVector;
+class DetectorMessenger;
 
 /*
  * ...
@@ -23,10 +25,12 @@ class G4VPhysicalVolume;
 class DetectorConstruction : public G4VUserDetectorConstruction {
     public:
         // Default constructor
-        DetectorConstruction() = default;
+        // DetectorConstruction() = default;
+        DetectorConstruction();
         
         // Default destructor
-        ~DetectorConstruction() override = default;
+        // ~DetectorConstruction() override = default;
+        ~DetectorConstruction() override;
 
         // Main entry point, called by run manager to construct detector volume
         G4VPhysicalVolume* Construct() override;
@@ -65,9 +69,13 @@ class DetectorConstruction : public G4VUserDetectorConstruction {
         
         // TEST
         
-        G4double fCrystalDiameter;
-        G4double fSourceDetectorDistance;
-        G4String fSource;
+        G4double fCrystalDiameter = 3. * (2.54 * cm); // 3 inches default (unit doesnt exist, will be converted in .cc file though)
+        G4double fSourceDetectorDistance = 3. * cm;
+        G4String fSource = "137Cs";
+        
+        
+        // 
+        DetectorMessenger* fDetectorMessenger;
 };
 
 #endif

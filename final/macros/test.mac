@@ -4,13 +4,17 @@
 # Set up the general particle source
 #
 # Specify volumetric source and spherical volume
-/gps/pos/type Volume
-/gps/pos/shape Sphere
+#/gps/pos/type Volume
+#/gps/pos/shape Sphere
 # Specify the origin and radius of the sphere
-/gps/pos/centre 0. 0. 2.90425 cm
-/gps/pos/radius 1 mm
+# /gps/pos/centre 0. 0. 2.90425 cm
+#/gps/pos/centre 0. 0. 2.90425 cm
+#/gps/pos/radius 1 mm
 # Confine the volumetric source to the geometry with the name "Source"
 #/gps/pos/confine Source
 
 # Run a single event (Could omit this, and just use this as init command in visualiser, then press run button)
 /run/beamOn 1
+
+# Only show most recent event (dont accumulate)
+# /vis/scene/endOfEventAction refresh

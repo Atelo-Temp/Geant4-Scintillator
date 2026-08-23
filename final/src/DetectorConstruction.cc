@@ -33,6 +33,8 @@
 #include "DetectorConstruction.hh"
 #include "MaterialDefinitions.hh"
 
+#include "DetectorMessenger.hh"
+
 // G4 lib
 #include "G4NistManager.hh"
 #include "G4Element.hh"
@@ -66,10 +68,33 @@
 
 #include "G4RunManager.hh"
 
+
+// TEST
+#include "G4VVisManager.hh" // TEST
+#include "G4GeometryManager.hh"
+#include "G4PhysicalVolumeStore.hh"
+#include "G4LogicalVolumeStore.hh"
+#include "G4SolidStore.hh"
+#include "G4UImanager.hh"
+
 // NOTE: Uses consistent units throughout (cm probably easiest to adhere to)
 
 // TODO: There is overhang of the encapsulation at the back of the crystal 
 // (of thickness = encapsulation thickness, as that was added to front for beta shield)
+
+/*
+ * Constructor
+ */
+DetectorConstruction::DetectorConstruction() {
+    fDetectorMessenger = new DetectorMessenger(this);
+}
+
+/*
+ * Destructor
+ */
+DetectorConstruction::~DetectorConstruction() {
+    delete fDetectorMessenger;
+}
 
 /*
  * The light leakage problem.
@@ -111,7 +136,14 @@
 G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Flag for checking geometry overlap
     G4bool checkOverlaps = true;
-
+    
+    
+    // ...
+    // G4GeometryManager::GetInstance()->OpenGeometry();
+    // G4PhysicalVolumeStore::GetInstance()->Clean();
+    // G4LogicalVolumeStore::GetInstance()->Clean();
+    // G4SolidStore::GetInstance()->Clean();
+    
     
     //////////////////////
     // GEOMETRY MATERIALS:
@@ -1118,17 +1150,20 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // Dimensions for cylindrical scintillator crystal (radii, height, span)
     G4double const crystalInnerRad = 0. * cm; // No centre hole
     
-    G4double const inchToCM = 2.54;
+    // G4double const inchToCM = 2.54;
     
-    G4double const crystalSize = 3 * inchToCM; // 3 inch crystal = 7.62 cm diameter => (diameter / 2) = 3.81 cm outer radius
+    // G4double const crystalSize = 3 * inchToCM; // 3 inch crystal = 7.62 cm diameter => (diameter / 2) = 3.81 cm outer radius
     // G4double const crystalSize = 2 * inchToCM; // 2 inch crystal = 5.08 cm diameter => (diameter / 2) = 2.54 cm outer radius
     // G4double const crystalSize = 1 * inchToCM; // 1 inch crystal = 2.54 cm diameter => (diameter / 2) = 1.27 cm outer radius
     
     // G4double const crystalOuterRad = (7.62 * 0.5) * cm; // 3 inch = 7.62 cm diameter => (diameter / 2) = 3.81 cm outer radius
     // G4double const crystalHeight = 7.62 * cm; // 3 inch height (this arg will be doubled, so will need to * 0.5)
     
-    G4double const crystalOuterRad = (crystalSize * 0.5) * cm; // 2 inch = 7.62 cm diameter => (diameter / 2) = 3.81 cm outer radius
-    G4double const crystalHeight = crystalSize * cm; // 3 inch height (this arg will be doubled, so will need to * 0.5)
+    // G4double const crystalOuterRad = (crystalSize * 0.5) * cm; // 2 inch = 7.62 cm diameter => (diameter / 2) = 3.81 cm outer radius
+    // G4double const crystalHeight = crystalSize * cm; // 3 inch height (this arg will be doubled, so will need to * 0.5)
+    
+    G4double const crystalOuterRad = (fCrystalDiameter * 0.5); // 2 inch = 7.62 cm diameter => (diameter / 2) = 3.81 cm outer radius
+    G4double const crystalHeight = fCrystalDiameter; // 3 inch height (this arg will be doubled, so will need to * 0.5)
     
     G4double const startAngle = 0. * deg;
     G4double const endAngle = 360. * deg; // Full circumference cylinder
@@ -1694,10 +1729,11 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // NOTE: Face of the detector is 5.90425 cm from world origin (0, 0, 0)
     
     // 3cm source-detector (face) distance, as it was in lab work (and my recorded spectra)
-    G4double const sourceDetectorDist = 3. * cm;
+    // G4double const sourceDetectorDist = 3. * cm;
     
     // Define translation along the z axis
-    G4double const sourceZ = detectorZ - ((crystalHeight * 0.5) + reflectorThickness + enclosureThick) - sourceDetectorDist;
+    // G4double const sourceZ = detectorZ - ((crystalHeight * 0.5) + reflectorThickness + enclosureThick) - sourceDetectorDist;
+    G4double const sourceZ = detectorZ - ((crystalHeight * 0.5) + reflectorThickness + enclosureThick) - fSourceDetectorDistance;
     // NOTE: place the source at the detector origin, shift it by half the crystal length,
     // then by reflector thickness, then by enclosure thickness (now resides at detector face)
     // -> then use source detector distance to specify distance from detector face
@@ -1918,7 +1954,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     sourceLog->SetVisAttributes(sourceVisAtt);
     
     // Source casing geometry
-    auto casingVisAtt = new G4VisAttributes(G4Color(0.8, 0.8, 0.8, 1)); // mid-light gray (opaque)
+    auto casingVisAtt = new G4VisAttributes(G4Color(0.8, 0.8, 0.8, 1.)); // mid-light gray (opaque)
     casingVisAtt->SetForceSolid(true);
     casingLog->SetVisAttributes(casingVisAtt);
     
@@ -1928,7 +1964,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     casingWindowLog->SetVisAttributes(casingWindowsVisAtt);
     
     // Source holder geometry
-    auto holderVisAtt = new G4VisAttributes(G4Color(0.1, 0.1, 0.1, 1)); // charcoal (opaque)
+    auto holderVisAtt = new G4VisAttributes(G4Color(0.1, 0.1, 0.1, 1.)); // charcoal (opaque)
     holderVisAtt->SetForceSolid(true);
     holderLog->SetVisAttributes(holderVisAtt);
     
@@ -1959,10 +1995,53 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
 /*
  * ...
  */
-void DetectorConstruction::SetCrystalDiameter(G4double diameterInInches) {
-    fCrystalDiameter = diameterInInches * 2.54;
+// void DetectorConstruction::SetCrystalDiameter(G4double diameterInInches) {
+void DetectorConstruction::SetCrystalDiameter(G4double diameter) {
+    // fCrystalDiameter = diameterInInches * 2.54;
     
-    G4RunManager::GetRunManager()->ReinitializeGeometry();
+    // fCrystalDiameter = diameterInInches;
+    fCrystalDiameter = diameter;
+    
+    // ...
+    // ...
+    
+    // G4RunManager::GetRunManager()->GeometryHasBeenModified();
+    // G4RunManager::GetRunManager()->ReinitializeGeometry();
+    // G4RunManager::GetRunManager()->ReinitializeGeometry(true);
+    
+    // G4VVisManager* visManager = G4VVisManager::GetConcreteInstance();
+    // if (visManager) {
+    //     visManager->GeometryHasChanged();
+    //     visManager->NotifyHandlers();
+    //     G4cout << "UPDATING VIS" << G4endl;
+    // }
+    
+    // ...
+    // ...
+    
+    
+    // // clean-up previous geometry
+    // G4SolidStore::GetInstance()->Clean();
+    // G4LogicalVolumeStore::GetInstance()->Clean();
+    // G4PhysicalVolumeStore::GetInstance()->Clean();
+    // 
+    // //define new one
+    // G4RunManager::GetRunManager()->DefineWorldVolume(Construct());
+    // G4RunManager::GetRunManager()->GeometryHasBeenModified();
+    
+    // ...
+    // ...
+    
+    // G4RunManager::GetRunManager()->ReinitializeGeometry(true);
+    // G4RunManager::GetRunManager()->GeometryHasBeenModified();
+//     
+//     G4UImanager* UImanager = G4UImanager::GetUIpointer();
+//     if (UImanager) {
+//         UImanager->ApplyCommand("/vis/scene/clear");
+//         UImanager->ApplyCommand("/vis/add/volume");
+//         UImanager->ApplyCommand("/vis/viewer/rebuild");
+//         UImanager->ApplyCommand("/vis/viewer/update");
+//     }
 }
 
 /*
@@ -1971,7 +2050,7 @@ void DetectorConstruction::SetCrystalDiameter(G4double diameterInInches) {
 void DetectorConstruction::SetSourceDetectorDistance(G4double distance) {
     fSourceDetectorDistance = distance;
     
-    G4RunManager::GetRunManager()->ReinitializeGeometry();
+    // G4RunManager::GetRunManager()->ReinitializeGeometry();
 }
 
 /*
@@ -1987,4 +2066,6 @@ void DetectorConstruction::SetSource(G4String isotope) {
     } else if (isotope == "241Am") {
         
     }
+    
+    G4RunManager::GetRunManager()->ReinitializeGeometry();
 }

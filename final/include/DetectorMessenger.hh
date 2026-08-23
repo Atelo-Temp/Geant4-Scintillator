@@ -8,6 +8,7 @@
 
 // forward declarations
 class DetectorConstruction;
+class G4UIcmdWithADoubleAndUnit;
 
 /*
  * ...
@@ -29,7 +30,6 @@ class DetectorMessenger : public G4UImessenger {
         // std::unordered_map<std::string, G4UIcommand*> fCommands;
         std::unordered_map<G4UIcommand*, std::string> fCommands;
         // std::unordered_set<G4UIcommand*> fCommands;
-    
 };
 
 #endif
