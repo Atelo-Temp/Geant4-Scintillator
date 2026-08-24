@@ -79,6 +79,29 @@
 # Check for overlaps (the overlap warning doesnt abort sim, and the normal warning is lost in stdout)
 /geometry/test/run
 
+###########
+# COLOURING
+###########
+
+# Set colours (args: volume, depth, red, green, blue, opacity)
+/vis/geometry/set/colour World 0 0. 0. 1. 0.1 // blue (transparent)
+/vis/geometry/set/colour Table 0 0.95 0.95 0.95 1. // light gray
+
+/vis/geometry/set/colour Scintillator 0 1. 1. 1. 0.5 // white (part-transparent)
+/vis/geometry/set/colour Reflector 0 0. 0. 1.0 0.5 // blue
+/vis/geometry/set/colour Enclosure 0 0.8 0.8 0.8 1. // mid-light gray (solid)
+/vis/geometry/set/colour OpticalGrease 0 1.0 1.0 0. 0.75 // yellow
+/vis/geometry/set/colour OpticalWindow 0 0.8 0.8 0.8 0.25 // mid-light gray (transparent)
+/vis/geometry/set/colour Photocathode 0 1. 0. 0. 0.5 // red
+/vis/geometry/set/colour HermeticSeal 0 0.9 0.9 0.9 1. // light gray (opaque)
+
+/vis/geometry/set/colour Source 0 0.0 1.0 0.0 0.5 // green
+/vis/geometry/set/colour SourceCasing 0 0.8 0.8 0.8 1. // mid-light gray (opaque)
+/vis/geometry/set/colour SourceCasingWindow 0 0.8 0.8 0.8 0.25 // mid-light gray (transparent)
+/vis/geometry/set/colour SourceHolder 0 0.1 0.1 0.1 1. // charcoal (opaque)
+
+/vis/geometry/set/forceSolid all
+
 ########
 # CAMERA
 ########

@@ -14,6 +14,26 @@ class G4VPhysicalVolume;
 // class G4LogicalVolume;
 // class G4ThreeVector;
 class DetectorMessenger;
+class DetectorMaterials;
+class SourceMaterials;
+
+/*
+ * ...
+ */
+struct DetectorGeometry {
+    // ...
+    G4VPhysicalVolume* crystalPhys;
+    G4VPhysicalVolume* reflectorPhys;
+    G4VPhysicalVolume* enclosurePhys;
+    G4VPhysicalVolume* greasePhys;
+    G4VPhysicalVolume* windowPhys;
+    G4VPhysicalVolume* photocathodePhys;
+    G4VPhysicalVolume* sealPhys;
+    
+    // ...
+    G4double detectorFaceZ;
+    G4double detectorX;
+};
 
 /*
  * ...
@@ -76,6 +96,21 @@ class DetectorConstruction : public G4VUserDetectorConstruction {
         
         // 
         DetectorMessenger* fDetectorMessenger;
+        
+        
+        // TEST
+        // Flag for checking geometry overlap
+        G4bool fCheckOverlaps = true;
+        
+        DetectorMaterials* fDetectorMaterials;
+        SourceMaterials* fSourceMaterials;
+        
+        // ...
+        G4VPhysicalVolume* BuildWorld();
+        G4VPhysicalVolume* BuildTable(G4LogicalVolume* worldLog);
+        DetectorGeometry BuildDetector(G4LogicalVolume* worldLog, G4double tableTopY);
+        void BuildSource(G4LogicalVolume* worldLog, G4double tableTopY, G4double detectorFaceZ, G4double detectorX);
+        void DefineBorderSurfaces(DetectorGeometry detectorVolumes);
 };
 
 #endif
