@@ -668,7 +668,7 @@ void DetectorMaterials::DefineOpticalProperties() {
     
     auto MPTAlSurface = new G4MaterialPropertiesTable();
     
-    auto fAluminiumSurface = new G4OpticalSurface("Aluminium", unified, polished, dielectric_metal);
+    fAluminiumSurface = new G4OpticalSurface("Aluminium", unified, polished, dielectric_metal);
     
     std::vector<G4double> const reflectivityAl = {0.9, 0.9, 0.9};
     MPTAlSurface->AddProperty("REFLECTIVITY", energy, reflectivityAl);
