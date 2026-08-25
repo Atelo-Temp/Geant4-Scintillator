@@ -1,9 +1,14 @@
 #ifndef MyDetectorMaterials_HH
 #define MyDetectorMaterials_HH
 
+// ...
+#include "G4OpticalSurface.hh"
+// NOTE: Include instead of forward declaration else G4LogicalBorderSurface wont 
+// recognise the type without importing G4OpticalSurface in DetectorGeometry.cc,
+// but the type isnt explicitly used anywhere in that file
+
 // Forward declarations
 class G4Material;
-class G4OpticalSurface;
 
 /*
  * ...

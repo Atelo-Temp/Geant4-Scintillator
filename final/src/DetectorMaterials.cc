@@ -8,7 +8,6 @@
 #include "G4SystemOfUnits.hh"
 #include "G4MaterialPropertiesTable.hh" // for optical photons
 // #include "G4MaterialPropertyVector.hh" // can use instead of 2x std::vector
-#include "G4OpticalSurface.hh"
 
 /*
  * Destructor

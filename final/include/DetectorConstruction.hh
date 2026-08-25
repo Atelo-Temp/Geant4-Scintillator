@@ -13,27 +13,30 @@
 class G4VPhysicalVolume;
 // class G4LogicalVolume;
 // class G4ThreeVector;
+
 class DetectorMessenger;
 class DetectorMaterials;
 class SourceMaterials;
+class DetectorGeometry;
+class SourceGeometry;
 
-/*
- * ...
- */
-struct DetectorGeometry {
-    // ...
-    G4VPhysicalVolume* crystalPhys;
-    G4VPhysicalVolume* reflectorPhys;
-    G4VPhysicalVolume* enclosurePhys;
-    G4VPhysicalVolume* greasePhys;
-    G4VPhysicalVolume* windowPhys;
-    G4VPhysicalVolume* photocathodePhys;
-    G4VPhysicalVolume* sealPhys;
-    
-    // ...
-    G4double detectorFaceZ;
-    G4double detectorX;
-};
+// /*
+//  * ...
+//  */
+// struct DetectorGeometry {
+//     // ...
+//     G4VPhysicalVolume* crystalPhys;
+//     G4VPhysicalVolume* reflectorPhys;
+//     G4VPhysicalVolume* enclosurePhys;
+//     G4VPhysicalVolume* greasePhys;
+//     G4VPhysicalVolume* windowPhys;
+//     G4VPhysicalVolume* photocathodePhys;
+//     G4VPhysicalVolume* sealPhys;
+//     
+//     // ...
+//     G4double detectorFaceZ;
+//     G4double detectorX;
+// };
 
 /*
  * ...
@@ -95,23 +98,26 @@ class DetectorConstruction : public G4VUserDetectorConstruction {
         
         
         // 
-        DetectorMessenger* fDetectorMessenger;
+        DetectorMessenger* fDetectorMessenger = nullptr;
         
         
         // TEST
         // Flag for checking geometry overlap
         G4bool fCheckOverlaps = true;
         
-        DetectorMaterials* fDetectorMaterials;
-        SourceMaterials* fSourceMaterials;
+        DetectorMaterials* fDetectorMaterials = nullptr;
+        SourceMaterials* fSourceMaterials = nullptr;
         
         // ...
         G4VPhysicalVolume* BuildWorld();
         // G4VPhysicalVolume* BuildTable(G4LogicalVolume* worldLog);
         G4double BuildTable(G4LogicalVolume* worldLog);
-        DetectorGeometry BuildDetector(G4LogicalVolume* worldLog, G4double tableTopY);
-        void BuildSource(G4LogicalVolume* worldLog, G4double tableTopY, G4double detectorFaceZ, G4double detectorX);
-        void DefineBorderSurfaces(DetectorGeometry detectorVolumes);
+        // DetectorGeometry BuildDetector(G4LogicalVolume* worldLog, G4double tableTopY);
+        // void BuildSource(G4LogicalVolume* worldLog, G4double tableTopY, G4double detectorFaceZ, G4double detectorX);
+        // void DefineBorderSurfaces(DetectorGeometry detectorVolumes);
+        
+        DetectorGeometry* fDetectorGeometry = nullptr;
+        SourceGeometry* fSourceGeometry = nullptr;
 };
 
 #endif
