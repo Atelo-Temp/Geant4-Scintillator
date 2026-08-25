@@ -171,12 +171,14 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     ////////
     
     // ...
-    G4VPhysicalVolume* tablePhys = BuildTable(worldLog);
+//     G4VPhysicalVolume* tablePhys = BuildTable(worldLog);
+//     
+//     G4double tableTransY = tablePhys->GetTranslation().y();
+//     G4double tableHalfHeight = static_cast<G4Box*>(tablePhys->GetLogicalVolume()->GetSolid())->GetYHalfLength() / cm; // TODO: Maybe rethink this, bit messy
+//     // (NOTE: half length in mm, convert to cm with division by cm unit)
+//     G4double tableTopY = tableTransY + tableHalfHeight; // (0.5 * tableHeight)
     
-    G4double tableTransY = tablePhys->GetTranslation().y();
-    G4double tableHalfHeight = static_cast<G4Box*>(tablePhys->GetLogicalVolume()->GetSolid())->GetYHalfLength() / cm; // TODO: Maybe rethink this, bit messy
-    // (NOTE: half length in mm, convert to cm with division by cm unit)
-    G4double tableTopY = tableTransY + tableHalfHeight; // (0.5 * tableHeight)
+    G4double tableTopY = BuildTable(worldLog);
     
     ////////////
     // DETECTOR:
@@ -276,7 +278,8 @@ G4VPhysicalVolume* DetectorConstruction::BuildWorld() {
 /*
  * ...
  */
-G4VPhysicalVolume* DetectorConstruction::BuildTable(G4LogicalVolume* worldLog) {
+// G4VPhysicalVolume* DetectorConstruction::BuildTable(G4LogicalVolume* worldLog) {
+G4double DetectorConstruction::BuildTable(G4LogicalVolume* worldLog) {
     ////////////
     // TABLETOP:
     ////////////
@@ -327,7 +330,11 @@ G4VPhysicalVolume* DetectorConstruction::BuildTable(G4LogicalVolume* worldLog) {
         fCheckOverlaps
     );
     
-    return tablePhys;
+    // return tablePhys;
+    
+    G4double tableTopY = tableTransY + (0.5 * tableHeight);
+    
+    return tableTopY;
 }
 
 /*

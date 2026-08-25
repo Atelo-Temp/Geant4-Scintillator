@@ -107,7 +107,8 @@ class DetectorConstruction : public G4VUserDetectorConstruction {
         
         // ...
         G4VPhysicalVolume* BuildWorld();
-        G4VPhysicalVolume* BuildTable(G4LogicalVolume* worldLog);
+        // G4VPhysicalVolume* BuildTable(G4LogicalVolume* worldLog);
+        G4double BuildTable(G4LogicalVolume* worldLog);
         DetectorGeometry BuildDetector(G4LogicalVolume* worldLog, G4double tableTopY);
         void BuildSource(G4LogicalVolume* worldLog, G4double tableTopY, G4double detectorFaceZ, G4double detectorX);
         void DefineBorderSurfaces(DetectorGeometry detectorVolumes);
