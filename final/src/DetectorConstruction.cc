@@ -161,6 +161,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     /////////////
     
     fDetectorMaterials->DefineDetectorMats();
+    fDetectorMaterials->DefineOpticalProperties();
     fSourceMaterials->DefineSourceMats();
     
     /////////
