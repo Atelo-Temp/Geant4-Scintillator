@@ -892,90 +892,90 @@ void DetectorMaterials::DefineOpticalProperties() {
 /*
  * TODO: Not a detector material
  */
-G4Material* DetectorMaterials::Air() {
+G4Material* DetectorMaterials::Air() const {
     return fAir;
 };
 
 /*
  * TODO: Not a detector material
  */
-G4Material* DetectorMaterials::Wood() {
+G4Material* DetectorMaterials::Wood() const {
     return fWood;
 };
 
 /*
  * ...
  */
-G4Material* DetectorMaterials::NaI() {
+G4Material* DetectorMaterials::NaI() const {
     return fNaI;
 };
 
 /*
  * ...
  */
-G4Material* DetectorMaterials::Al2O3() {
+G4Material* DetectorMaterials::Al2O3() const {
     return fAl2O3;
 };
 
 /*
  * ...
  */
-G4Material* DetectorMaterials::Al() {
+G4Material* DetectorMaterials::Al() const {
     return fAl;
 };
 
 /*
  * ...
  */
-G4Material* DetectorMaterials::PDMS() {
+G4Material* DetectorMaterials::PDMS() const {
     return fPDMS;
 };
 
 /*
  * ...
  */
-G4Material* DetectorMaterials::Borosilicate() {
+G4Material* DetectorMaterials::Borosilicate() const {
     return fBorosilicate;
 };
 
 /*
  * ...
  */
-G4Material* DetectorMaterials::Li() {
+G4Material* DetectorMaterials::Li() const {
     return fLi;
 };
 
 /*
  * ...
  */
-G4OpticalSurface* DetectorMaterials::ReflectorSurface() {
+G4OpticalSurface* DetectorMaterials::ReflectorSurface() const {
     return fReflectorSurface;
 };
 
 /*
  * ...
  */
-G4OpticalSurface* DetectorMaterials::AluminiumSurface() {
+G4OpticalSurface* DetectorMaterials::AluminiumSurface() const {
     return fAluminiumSurface;
 };
 
 /*
  * ...
  */
-G4OpticalSurface* DetectorMaterials::GreaseSurface() {
+G4OpticalSurface* DetectorMaterials::GreaseSurface() const {
     return fGreaseSurface;
 };
 
 /*
  * ...
  */
-G4OpticalSurface* DetectorMaterials::WindowSurface() {
+G4OpticalSurface* DetectorMaterials::WindowSurface() const {
     return fWindowSurface;
 };
 
 /*
  * ...
  */
-G4OpticalSurface* DetectorMaterials::PhotocathodeSurface() {
+G4OpticalSurface* DetectorMaterials::PhotocathodeSurface() const {
     return fPhotocathodeSurface;
 };

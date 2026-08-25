@@ -142,13 +142,13 @@ void SourceMaterials::DefineSourceMats() {
 /*
  * ...
  */
-G4Material* SourceMaterials::PMMA() {
+G4Material* SourceMaterials::PMMA() const {
     return fPMMA;
 };
 
 /*
  * ...
  */
-G4Material* SourceMaterials::PLA() {
+G4Material* SourceMaterials::PLA() const {
     return fPLA;
 };

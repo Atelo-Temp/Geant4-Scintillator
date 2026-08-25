@@ -25,8 +25,8 @@ class SourceMaterials {
         void DefineSourceMats();
         
         // Getters
-        G4Material* PMMA();
-        G4Material* PLA();
+        G4Material* PMMA() const;
+        G4Material* PLA() const;
         
     private:
         G4Material* fPMMA;

@@ -28,22 +28,22 @@ class DetectorMaterials {
         void DefineOpticalProperties();
         
         // Material Getters
-        G4Material* Air();
-        G4Material* Wood();
+        G4Material* Air() const;
+        G4Material* Wood() const;
         
-        G4Material* NaI();
-        G4Material* Al2O3();
-        G4Material* Al();
-        G4Material* PDMS();
-        G4Material* Borosilicate();
-        G4Material* Li();
+        G4Material* NaI() const;
+        G4Material* Al2O3() const;
+        G4Material* Al() const;
+        G4Material* PDMS() const;
+        G4Material* Borosilicate() const;
+        G4Material* Li() const;
         
         // Surface Getters
-        G4OpticalSurface* ReflectorSurface();
-        G4OpticalSurface* AluminiumSurface();
-        G4OpticalSurface* GreaseSurface(); // technically not needed
-        G4OpticalSurface* WindowSurface(); // technically not needed
-        G4OpticalSurface* PhotocathodeSurface();
+        G4OpticalSurface* ReflectorSurface() const;
+        G4OpticalSurface* AluminiumSurface() const;
+        G4OpticalSurface* GreaseSurface() const; // technically not needed
+        G4OpticalSurface* WindowSurface() const; // technically not needed
+        G4OpticalSurface* PhotocathodeSurface() const;
         
         
     private:
