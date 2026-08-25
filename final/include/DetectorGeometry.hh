@@ -34,6 +34,8 @@ struct DetectorBuild {
 
 /*
  * ...
+ * 
+ * TODO: Ordering of members and methods has gotten bit loose across the board in recent updates, enforce constant style
  */
 class DetectorGeometry {
     public:
@@ -44,7 +46,7 @@ class DetectorGeometry {
         ~DetectorGeometry() = default;
         
         // ...
-        DetectorBuild BuildDetector(G4LogicalVolume* worldLog, G4double tableTopY, G4double const fCrystalDiameter, bool const fCheckOverlaps);
+        DetectorBuild BuildDetector(G4LogicalVolume* worldLog, G4double const tableTopY, G4double const fCrystalDiameter, bool const fCheckOverlaps);
         
     private:
         // ...

@@ -18,7 +18,7 @@ DetectorGeometry::DetectorGeometry(DetectorMaterials& detectorMaterials) : fDete
 /*
  * ...
  */
-DetectorBuild DetectorGeometry::BuildDetector(G4LogicalVolume* worldLog, G4double tableTopY, G4double const fCrystalDiameter, bool const fCheckOverlaps) {
+DetectorBuild DetectorGeometry::BuildDetector(G4LogicalVolume* worldLog, G4double const tableTopY, G4double const fCrystalDiameter, bool const fCheckOverlaps) {
     ////////////////////////
     // SCINTILLATOR CRYSTAL:
     ////////////////////////
@@ -462,19 +462,18 @@ DetectorBuild DetectorGeometry::BuildDetector(G4LogicalVolume* worldLog, G4doubl
     );
     
     // ...
-    G4double detectorFaceZ = detectorZ - ((crystalHeight * 0.5) + reflectorThickness + enclosureThick);
-    
     DefineOpticalInterfaces(crystalPhys, reflectorPhys, enclosurePhys, greasePhys, windowPhys, photocathodePhys, sealPhys);
     
     // ...
-    // return { crystalPhys, reflectorPhys, enclosurePhys, greasePhys, windowPhys, photocathodePhys, sealPhys };
+    G4double detectorFaceZ = detectorZ - ((crystalHeight * 0.5) + reflectorThickness + enclosureThick);
+    
+    // ...
     return { detectorFaceZ, detectorX };
 }
 
 /*
  * ....
  */
-// void DetectorGeometry::DefineOpticalInterfaces(DetectorVolumes detectorVolumes) {
 void DetectorGeometry::DefineOpticalInterfaces(
     G4VPhysicalVolume* crystalPhys, 
     G4VPhysicalVolume* reflectorPhys, 
@@ -484,9 +483,6 @@ void DetectorGeometry::DefineOpticalInterfaces(
     G4VPhysicalVolume* photocathodePhys, 
     G4VPhysicalVolume* sealPhys
 ) {
-    // ...
-    // auto [crystalPhys, reflectorPhys, enclosurePhys, greasePhys, windowPhys, photocathodePhys, sealPhys] = detectorVolumes;
-    
     // Define the border between the crystal and the reflector
     auto crystalReflectorBorder = new G4LogicalBorderSurface("CrystalToReflector", crystalPhys, reflectorPhys, fDetectorMaterials.ReflectorSurface());
 

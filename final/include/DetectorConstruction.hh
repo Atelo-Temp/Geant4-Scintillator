@@ -44,22 +44,20 @@ class SourceGeometry;
  * Inherits from the abstract base class "G4VUserDetectorConstruction" (denoted by the colon)
  * 
  * NOTE: Mandatory user initialisation class (no default behaviour provided)
+ * 
+ * 
+ * TODO: Ordering of members and methods has gotten bit loose across the board in recent updates, enforce constant style
  */
 class DetectorConstruction : public G4VUserDetectorConstruction {
     public:
         // Default constructor
-        // DetectorConstruction() = default;
         DetectorConstruction();
         
         // Default destructor
-        // ~DetectorConstruction() override = default;
         ~DetectorConstruction() override;
 
         // Main entry point, called by run manager to construct detector volume
         G4VPhysicalVolume* Construct() override;
-        
-        // virtual G4VPhysicalVolume *Construction();
-        // G4VPhysicalVolume *Construction();
         
         // Public method to get stored pointer to scoring region
         // G4LogicalVolume* GetScoringVolume() const { return fScoringVolume; };
@@ -71,7 +69,7 @@ class DetectorConstruction : public G4VUserDetectorConstruction {
         // G4VPhysicalVolume* GetSourceVolume() const { return fSourceVolume; };
         
         
-        // TEST
+        // TEST - Methods to be exposed by and called by detector messenger
         void SetCrystalDiameter(G4double const diameterInInches);
         void SetSourceDetectorDistance(G4double const distance);
         void SetSource(G4String const isotope);
@@ -83,39 +81,31 @@ class DetectorConstruction : public G4VUserDetectorConstruction {
         // Construct sensitive detector (SD) or field (electronic, magnetic, etc..)
         // void ConstructSDandField() override; // Will ignore field for now
         
-        
         // TEST
         G4LogicalVolume* fSourceVolume = nullptr; // NOTE: TEMP UNTIL PLACING PHYSICAL SOURCE VOL
         G4ThreeVector fSourceCoords; // NOTE: TEMP UNTIL PLACING PHYSICAL SOURCE VOL
-        
         // G4VPhysicalVolume* fSourceVolume = nullptr;
         
         // TEST
-        
         G4double fCrystalDiameter = 3. * (2.54 * cm); // 3 inches default (unit doesnt exist, will be converted in .cc file though)
         G4double fSourceDetectorDistance = 3. * cm;
         G4String fSource = "137Cs";
         
-        
-        // 
+        // ...
         DetectorMessenger* fDetectorMessenger = nullptr;
         
-        
-        // TEST
         // Flag for checking geometry overlap
         G4bool fCheckOverlaps = true;
         
+        // TEST
         DetectorMaterials* fDetectorMaterials = nullptr;
         SourceMaterials* fSourceMaterials = nullptr;
         
         // ...
         G4VPhysicalVolume* BuildWorld();
-        // G4VPhysicalVolume* BuildTable(G4LogicalVolume* worldLog);
         G4double BuildTable(G4LogicalVolume* worldLog);
-        // DetectorGeometry BuildDetector(G4LogicalVolume* worldLog, G4double tableTopY);
-        // void BuildSource(G4LogicalVolume* worldLog, G4double tableTopY, G4double detectorFaceZ, G4double detectorX);
-        // void DefineBorderSurfaces(DetectorGeometry detectorVolumes);
         
+        // ...
         DetectorGeometry* fDetectorGeometry = nullptr;
         SourceGeometry* fSourceGeometry = nullptr;
 };
