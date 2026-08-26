@@ -19,19 +19,26 @@ SourceGeometry::SourceGeometry(SourceMaterials& sourceMaterials) : fSourceMateri
 /*
  * ...
  */
-G4VPhysicalVolume* SourceGeometry::BuildSource(G4LogicalVolume* worldLog, G4double const tableTopY, G4double const detectorFaceZ, G4double const detectorX, G4double const fSourceDetectorDistance, bool const fCheckOverlaps) {
+G4VPhysicalVolume* SourceGeometry::BuildSource(
+    G4LogicalVolume* worldLog,
+    G4double const tableTopY,
+    G4double const detectorFaceZ,
+    G4double const detectorX,
+    G4double const fSourceDetectorDistance,
+    bool const fCheckOverlaps
+) {
     //////////
     // SOURCE:
     //////////
     
     // Source geometry specification
-    // G4double const sourceRadius = 0.5 * cm; // 1cm diameter
-    // G4double const sourceThickness = 0.1 * cm; // 1mm thickness
+    G4double const sourceRadius = 0.5 * cm; // 1cm diameter
+    G4double const sourceThickness = 0.1 * cm; // 1mm thickness
     
     // G4double const sourceRadius = (2.54 * 0.5) * cm; // 1" -> 2.54cm diameter -> 1.27cm radius (typical of disk sources)
     // NOTE: Lab sources must have smaller diameters as this wouldnt fit casing (they are made in house tbf)
-    G4double const sourceRadius = (1.905 * 0.5) * cm; // 1" -> 2.54cm diameter -> 1.27cm radius (typical of disk sources)
-    G4double const sourceThickness = 0.3175 * cm; // 0.125" -> 3.175mm thickness (typical of disk sources)
+    // G4double const sourceRadius = (1.905 * 0.5) * cm; // 1" -> 2.54cm diameter -> 1.27cm radius (typical of disk sources)                                        .......................................................
+    // G4double const sourceThickness = 0.3175 * cm; // 0.125" -> 3.175mm thickness (typical of disk sources)                                                       ....................................................
     
     // Source geometry definition (modelled as cylinder)
     auto solidSource = new G4Tubs(
@@ -76,6 +83,8 @@ G4VPhysicalVolume* SourceGeometry::BuildSource(G4LogicalVolume* worldLog, G4doub
     G4double const casingCutSizeX = casingSizeX - (2 * (0.3 * cm)); // thickness of remaining material on either side of cut ~3mm, so ~6mm total
     G4double const casingCutSizeY = casingSizeY - (2 * (0.3 * cm)); // likewise
     G4double const casingCutSizeZ = casingSizeZ * 1.1; // z cut slightly larger than z thickness to ensure no thin skin leftovers
+    
+    // ..
     auto casingCut = new G4Box("SourceCasingCut", casingCutSizeX * 0.5, casingCutSizeY * 0.5, casingCutSizeZ * 0.5);
     
     // Create new solid with cut subtracted from base
@@ -87,14 +96,13 @@ G4VPhysicalVolume* SourceGeometry::BuildSource(G4LogicalVolume* worldLog, G4doub
         G4ThreeVector(0., 0., 0.) // cut translation (relative to base solid, not world)
     );
     
-    // ...
+    // Acrylic
     G4Material* PMMA = fSourceMaterials.PMMA();
     
     // Assign a material to the casing solid
     auto casingLog = new G4LogicalVolume(
         casing, // subtraction solid acts same as any other geometry here
-        // PVC, // casing material (G4_POLYVINYL_CHLORIDE)
-        PMMA, // casing material (acrylic - PMMA)
+        PMMA, // casing material (acrylic - PMMA) (was opaque)
         "SourceCasing"
     );
     
@@ -111,7 +119,7 @@ G4VPhysicalVolume* SourceGeometry::BuildSource(G4LogicalVolume* worldLog, G4doub
     // ...
     auto casingWindowLog = new G4LogicalVolume(
         casingWindow,
-        PMMA, // casing material (acrylic - PMMA)
+        PMMA, // casing material (acrylic - PMMA) (was transparent)
         "SourceCasingWindow"
     );
     
@@ -125,6 +133,7 @@ G4VPhysicalVolume* SourceGeometry::BuildSource(G4LogicalVolume* worldLog, G4doub
     G4double const holderSizeY = 2. * cm; // 2cm high
     G4double const holderSizeZ = 1.95 * cm; // 1.95cm thick
     
+    // ...
     auto holderBase = new G4Box("SourceHolderBase", holderSizeX * 0.5, holderSizeY * 0.5, holderSizeZ * 0.5);
     
     // Make the 1st cut where source casing goes
@@ -155,6 +164,7 @@ G4VPhysicalVolume* SourceGeometry::BuildSource(G4LogicalVolume* worldLog, G4doub
     G4double const cut2SizeY = (holderSizeY * 0.5) + (0.1 * cm); // cut half way into the holder in y direction (same as 1st cut) (plus extra 0.1cm to trim leftovers)
     G4double const cut2SizeZ = holderSizeZ * 1.1; // cut the full length of the holder in z direction (plus a little extra to trim paper thin leftovers from same sized cut)
     
+    // ...
     auto holderCut2 = new G4Box("SourceHolderCut2", cut2SizeX * 0.5, cut2SizeY * 0.5, cut2SizeZ * 0.5);
     
     // Translation for 2nd cut relative to base:
@@ -165,7 +175,6 @@ G4VPhysicalVolume* SourceGeometry::BuildSource(G4LogicalVolume* worldLog, G4doub
     auto const holderCut2Trans = G4ThreeVector(0., holderCut2TransY, 0.);
     
     // Make the 2nd cut
-    
     auto holder = new G4SubtractionSolid(
         "SourceHolder",
         holderSubtracted, // base solid to make cut in
@@ -176,7 +185,8 @@ G4VPhysicalVolume* SourceGeometry::BuildSource(G4LogicalVolume* worldLog, G4doub
     
     // ...
     G4Material* PLA = fSourceMaterials.PLA();
-    // the source holder looked 3D printed (and distinctly different from source casing and windows), likely PLA or ABS
+    // the source holder looked 3D printed (and distinctly different from source casing and windows which were opaque and transparent acrylic respectively), 
+    // likely PLA or ABS (going for PLA as it just the more commonly used material)
     
     // Logical volume
     auto holderLog = new G4LogicalVolume(
@@ -206,10 +216,13 @@ G4VPhysicalVolume* SourceGeometry::BuildSource(G4LogicalVolume* worldLog, G4doub
     // Source Holder
     ////
     
+    // ...
     G4double const holderY = tableTopY + (0.5 * holderSizeY);
     
+    // ...
     auto const holderTrans = G4ThreeVector(detectorX, holderY, sourceZ);
     
+    // ...
     G4VPhysicalVolume* holderPhys = new G4PVPlacement(
         nullptr,
         holderTrans,
@@ -271,9 +284,11 @@ G4VPhysicalVolume* SourceGeometry::BuildSource(G4LogicalVolume* worldLog, G4doub
     // Casing Windows
     ////
     
+    // ...
     G4double const frontCasingWindowZ = sourceZ + (0.5 * casingSizeZ) + (0.5 * casingWindowSizeZ);
     auto const frontCasingWindowTrans = G4ThreeVector(detectorX, casingTransY, frontCasingWindowZ);
     
+    // ...
     G4VPhysicalVolume* frontCasingWindowPhys = new G4PVPlacement(
         nullptr,
         frontCasingWindowTrans,
@@ -285,8 +300,11 @@ G4VPhysicalVolume* SourceGeometry::BuildSource(G4LogicalVolume* worldLog, G4doub
         fCheckOverlaps
     );
     
+    // ...
     G4double const backCasingWindowZ = sourceZ - (0.5 * casingSizeZ) - (0.5 * casingWindowSizeZ);
     auto const backCasingWindowTrans = G4ThreeVector(detectorX, casingTransY, backCasingWindowZ);
+    
+    // ...
     G4VPhysicalVolume* backCasingWindowPhys = new G4PVPlacement(
         nullptr,
         backCasingWindowTrans,

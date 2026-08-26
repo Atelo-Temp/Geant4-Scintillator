@@ -59,12 +59,58 @@ G4Material* SourceMaterials::Create137Cs() {
     // i.e. cesium oxide ceramic matrix (more like 1.47 g/cm3)
     
     // Assign the element to the G4 material
-    // sourceMat->AddElement(sourceElement, 100.0 * perCent); // element, amount of element in material (100%)
     sourceMat->AddElement(sourceElement, 50. * perCent); // element, amount of element in material (100%)
-    // TODO: In practice there would be non-zero amount of the daughter isotope too,
+    // NOTE: In practice there would be non-zero amount of the daughter isotope too,
     // based on how old the source was (after 30y half of a "new" 137Cs source would be 137Ba)
     
-    // isotope, source is >30y old so 1/2 is 137Ba
+    // Source is >30y old so at least 1/2 is 137Ba
+    sourceMat->AddElement(daughterElement, 50. * perCent);
+    
+    // ...
+    return sourceMat;
+}
+
+/*
+ * ...
+ */
+G4Material* SourceMaterials::Create60Co() {
+    // Source isotope (define Cobalt-60 isotope)
+    auto sourceIsotope = new G4Isotope(
+        "60Co", // name
+        27, // num protons (Z)
+        60, // Atomic mass (num nucleons) (A),
+        59.9338222 * g/mole // Molar mass (grams per molecule)
+    );
+    // NOTE: 1 mol contains avogadros number of particles (6.022 x 10^23)
+    
+    // Daugher isotope (Nickel-60)
+    auto daughterIsotope = new G4Isotope(
+        "60Ni",
+        28,
+        60,
+        59.93078513 * g/mole
+    );
+    
+    // Define an element from the isotope
+    auto sourceElement = new G4Element("Cobalt-60", "60Co", 1); // name, symbol, num isotopes
+    
+    // Assign the defined isotope to the element
+    sourceElement->AddIsotope(sourceIsotope, 100.0 * perCent); // isotope, no other isotopes so 100%
+    
+    // Define daughter element, adding its isotope
+    auto daughterElement = new G4Element("Nickel-60", "60Ni", 1);
+    daughterElement->AddIsotope(daughterIsotope, 100.0 * perCent);
+    
+    // Because isotope and element have no direct interaction in G4, need to create a material to assign to logical volume
+    auto sourceMat = new G4Material("60Co", 8.834 * g / cm3, 2); // name, density (g/cm^3), num components
+    // NOTE: Density is estimate, in reality it wont usually be a pure 60Co source
+    
+    // Assign the element to the G4 material
+    sourceMat->AddElement(sourceElement, 50. * perCent); // element, amount of element in material (100%)
+    // NOTE: In practice there would be non-zero amount of the daughter isotope too,
+    // based on how old the source was (after 30y half of a "new" 137Cs source would be 60Ni)
+    
+    // Source is >??y old so ?? is 60Ni
     sourceMat->AddElement(daughterElement, 50. * perCent);
     
     // ...
@@ -119,24 +165,27 @@ void SourceMaterials::DefineSourceMats() {
     // G4Material* PVC = nist->FindOrBuildMaterial("G4_POLYVINYL_CHLORIDE"); // density = 1.3 g/cm^3
     // NOTE: 2 part carbon (C), 3 part hydrogen (H), 1 part chlorine (Cl)
     
+    // NOTE: Chlorine has relatively high Z, not as suitable as H, C, O, based PMMA
+    
+    // ...
     G4Element* C = nist->FindOrBuildElement("C");
     G4Element* H = nist->FindOrBuildElement("H");
     G4Element* O = nist->FindOrBuildElement("O");
     
-    // TODO: Chlorine has relatively high Z, not as suitable as H, C, O, based PMMA
-    // PMMA
+    // PMMA (acrylic)
     fPMMA = new G4Material("PMMA", 1.18 * g/cm3, 3);
     fPMMA->AddElement(C, 5); // NOTE: MUST BE FRACTIONAL IF MATERIAL, PASS ELEMENT IF USING ATOMS
     fPMMA->AddElement(H, 8);
     fPMMA->AddElement(O, 2);
+    // NOTE: Seperate opaque & transparent acrylic definitions are only relevant if optical photons 
+    // are to interact with it, for high energy particles like gammas and x-rays, can use the same 
+    // material for both
     
     // Source Holder (3d printed, likely PLA)
     fPLA = new G4Material("PLA", 1.24 * g/cm3, 3);
     fPLA->AddElement(C, 3);
     fPLA->AddElement(H, 4);
-    fPLA->AddElement(O, 2);
-    
-    // TODO: Should "MaterialDefinitions -- i.e. sourceHandler" be deleted...    
+    fPLA->AddElement(O, 2);    
 }
 
 /*

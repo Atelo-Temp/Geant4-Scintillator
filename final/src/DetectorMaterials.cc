@@ -673,7 +673,7 @@ void DetectorMaterials::DefineOpticalProperties() {
     std::vector<G4double> const reflectivityAl = {0.9, 0.9, 0.9};
     MPTAlSurface->AddProperty("REFLECTIVITY", energy, reflectivityAl);
     
-    // std::vector<G4double> rindexAl = {0.59062, 0.33593, 0.22053};
+    // std::vector<G4double> rindexAl = {0.59062, 0.33593, 0.22053};                                // TODO: ADD RINDEX TO SURFACE (IS NEEDED FOR REFLECTION CALCS, BUT ON OTHER HAND CURRENTLY NO PHOTONS REACH ALUMINIUM)
     // MPTAlSurface->AddProperty("RINDEX", energy, rindexAl);
     
     fAluminiumSurface->SetMaterialPropertiesTable(MPTAlSurface);
@@ -715,6 +715,7 @@ void DetectorMaterials::DefineOpticalProperties() {
     
     // Dielectric polished surface, allowing refraction
     fGreaseSurface = new G4OpticalSurface("GreaseSurface", unified, polished, dielectric_dielectric);
+    // NOTE: This is default surface, can be omitted without any change to spectra
     
     // Refractive index of optical grease (1.46 @ 589.3 nm)
     std::vector<G4double> const rindexGrease = {1.46, 1.46, 1.46}; // TODO: Refractive index matching ...
@@ -756,8 +757,9 @@ void DetectorMaterials::DefineOpticalProperties() {
     // PMT Glass MPT (Optical window)
     auto MPTWindow = new G4MaterialPropertiesTable();
     
-    // // Dielectric polished surface, allowing refraction
+    // Dielectric polished surface, allowing refraction
     fWindowSurface = new G4OpticalSurface("WindowSurface", unified, polished, dielectric_dielectric);
+    // NOTE: This is default surface, can be omitted without any change to spectra
     
     // Refractive index of borosilicate glass (1.53024 @ 404.7 nm - SCHOTT BK7 Datasheet)
     std::vector<G4double> const rindexBorosilicate = {1.51872, 1.53024, 1.54272}; // NOTE: From SCOTT BK7 datasheet

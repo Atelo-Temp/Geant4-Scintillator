@@ -18,7 +18,12 @@ DetectorGeometry::DetectorGeometry(DetectorMaterials& detectorMaterials) : fDete
 /*
  * ...
  */
-DetectorBuild DetectorGeometry::BuildDetector(G4LogicalVolume* worldLog, G4double const tableTopY, G4double const fCrystalDiameter, bool const fCheckOverlaps) {
+DetectorBuild DetectorGeometry::BuildDetector(
+    G4LogicalVolume* worldLog,
+    G4double const tableTopY,
+    G4double const fCrystalDiameter,
+    bool const fCheckOverlaps
+) {
     ////////////////////////
     // SCINTILLATOR CRYSTAL:
     ////////////////////////
