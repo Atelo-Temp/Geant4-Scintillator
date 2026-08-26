@@ -363,9 +363,11 @@ int prompt_user_int(int const low, int const high) {
  * 
  * TODO: Make smearing optional, potentially via boolean param
  * 
- * TODO: When calling plot(), may need to 
+ * TODO: When calling plot(), may need to
+ *
+ * TODO: I dont think these should be optional params
  */
-double post_processing(int const entry, int const nbins = 2048, double const xmax = 3500.) {
+double post_processing(int const entry, int const nbins = 2048, double const xmax = 3500., double const sigmaFactor = 1.) {
     // In counting statistics: sigma = sqrt(N)
     double const sigma = std::sqrt(entry);
     // TODO: This assumes pure Poisson statistics, in a real detector system,
@@ -379,8 +381,11 @@ double post_processing(int const entry, int const nbins = 2048, double const xma
     // double const sigma = entry * (0.08 / 2.355);
     // NOTE: ^ 1.8 res scale, n * (res lab / 2.355) = 114.02 FWHM
     
+    // ...
+    double const smear = sigma * sigmaFactor;
+    
     // Apply gaussian smearing to the photons detected in this event
-    double const smeared = gRandom->Gaus(entry, sigma);
+    double const smeared = gRandom->Gaus(entry, smear);
     // TODO: potentially reduce gaussian smearing, reducing from:
     // sigma = sqrt(n)
     // to:
@@ -1906,7 +1911,7 @@ class ROOTHandler {
         * 
         * TODO: Make it so branch or branch name is actually passed in as param
         */
-        int fill_hist_ntuple(TH1* hpx, bool const doPostProcessing, int const nbins, double const xmax) {
+        int fill_hist_ntuple(TH1* hpx, bool const doPostProcessing, int const nbins, double const xmax, double const sigmaFactor) {
             // Handle invalid branch name
             if (!branch) {
                 std::cerr << "\nError: TTree branch not found. Couldnt fill histogram. Closing root file and deconstructing Ntuple.\n";
@@ -2007,14 +2012,14 @@ class ROOTHandler {
                 // Add a count to the appropriate bin for that value, introduce smearing if requested
                 if (dataType == intType) {
                     if (doPostProcessing) {
-                        doubleEntry = post_processing(intEntry, nbins, xmax);
+                        doubleEntry = post_processing(intEntry, nbins, xmax, sigmaFactor);
                         hpx->Fill(doubleEntry);
                     } else {
                         hpx->Fill(intEntry);
                     }
                 }
                 else if (dataType == doubleType) {
-                    if (doPostProcessing) doubleEntry = post_processing(doubleEntry, nbins, xmax);
+                    if (doPostProcessing) doubleEntry = post_processing(doubleEntry, nbins, xmax, sigmaFactor);
                     hpx->Fill(doubleEntry);
                 }
                 // NOTE: Switching on int/double data type
@@ -2082,7 +2087,8 @@ class ROOTHandler {
             int const nbins = -1,
             double const xmin = -1.,
             double const xmax = -1.,
-            bool const doPostProcessing = false
+            bool const doPostProcessing = false,
+            double const sigmaFactor = 1.
         ) {
             // Error handlers to catch bad program state (these should all have been cleared)
             if (leaf) {
@@ -2194,7 +2200,7 @@ class ROOTHandler {
             }
             
             // Attempt to populate histogram from ASCII or ROOT file
-            int const fillError = fill_hist_ntuple(hpx, doPostProcessing, nbins, xmax);
+            int const fillError = fill_hist_ntuple(hpx, doPostProcessing, nbins, xmax, sigmaFactor);
             
             if (fillError) {
                 std::cerr << "\nAborting: Fill hist error!\n";
@@ -2223,7 +2229,7 @@ class ROOTHandler {
         * 
         * TODO: Post-processing
         */
-        std::optional<TH1*> replot(int const nbins, double const xmin, double const xmax, bool const doPostProcessing = false) {
+        std::optional<TH1*> replot(int const nbins, double const xmin, double const xmax, bool const doPostProcessing = false, double const sigmaFactor = 1.) {
             // ...
             if (rootObjectType != RootObjectType::TTree) {
                 std::cerr << "Error: Replot only available for ROOT Ntuples.\n";
@@ -2260,7 +2266,7 @@ class ROOTHandler {
             std::cout << "LAST BRANCH: " << lastBranchName << "\n";
             
             // Pass 
-            std::optional<TH1*> const success = plot_root(lastPath, lastObjectName, lastBranchName, nbins, xmin, xmax, doPostProcessing);
+            std::optional<TH1*> const success = plot_root(lastPath, lastObjectName, lastBranchName, nbins, xmin, xmax, doPostProcessing, sigmaFactor);
             // NOTE: Passing in the cached path, and both the cached TTree and TBranch names
             
             if (!success.has_value()) {
@@ -2607,7 +2613,8 @@ int plot_x(
     int const nbins = -1,
     double const xmin = -1.,
     double const xmax = -1.,
-    bool const doPostProcessing = false
+    bool const doPostProcessing = false,
+    double const sigmaFactor = 1.
 ) {
     // Instantiate only once in a given plotting session
     if (!gSession) gSession = new PlotSession();
@@ -2648,7 +2655,7 @@ int plot_x(
     }
     else if (fileType == FileType::ROOT) {
         auto handler = new ROOTHandler();
-        result = handler->plot_root(path, objectName, branchName, nbins, xmin, xmax, doPostProcessing);
+        result = handler->plot_root(path, objectName, branchName, nbins, xmin, xmax, doPostProcessing, sigmaFactor);
         gSession->set_handler(handler);
     }
     else {
@@ -2753,6 +2760,8 @@ int plot(std::string const userPath, std::string const objectName, std::string c
     return success;
 }
 
+// TODO: doPostProcessing & sigmaFactor overloads
+
 /*
  * ...
  * 
@@ -2765,7 +2774,7 @@ int plot(std::string const userPath, std::string const objectName, std::string c
  * 
  * NOTE: See below regarding hpx lifetime (ROOTHandler->replot(...) && PlotSession->set_hpx(...))
  */
-int replot(int const nbins, double const xmin, double const xmax, bool const doPostProcessing = false) {    
+int replot(int const nbins, double const xmin, double const xmax, bool const doPostProcessing = false, double const sigmaFactor = 1.) {    
     // Get the active handler
     auto activeHandler = gSession->get_handler();
     
@@ -2792,7 +2801,7 @@ int replot(int const nbins, double const xmin, double const xmax, bool const doP
     }
     
     // Replot the last accessed TBranch with the specified args
-    std::optional<TH1*> result = gROOTHandler->replot(nbins, xmin, xmax, doPostProcessing);
+    std::optional<TH1*> result = gROOTHandler->replot(nbins, xmin, xmax, doPostProcessing, sigmaFactor);
     
     if (!result.has_value()) {
         std::cerr << "\nAborting: Plotting error!\n";
