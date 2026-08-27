@@ -2,6 +2,7 @@
 
 // ROOT lib
 // #include <TDirectory.h> // NOTE: Unused
+#include <RtypesCore.h>
 #include <TFile.h>
 #include <TKey.h>
 #include <TTree.h>
@@ -2557,22 +2558,34 @@ int render_hist(TH1* hpx, TCanvas* canvas, bool const hideDefaultStats = true) {
     std::cout << "\nRendering histogram to canvas...\n";
     
     // Draw histogram to the canvas with default option
-    hpx->Draw(); 
+    // hpx->Draw();
     // NOTE: With histos filled from ASCII & ntuples, "HIST" no longer needed, and for TH1 created
     // by Geant4, the draw option "HIST" is set to the object when loading it from the root file
     
     // ...
-    canvas->Update(); // NOTE: Afaik, this is not needed
+    // canvas->Update(); // NOTE: Afaik, this is not needed
     
     // gPad->Update(); // Make sure the statistics box is created
     // NOTE: Without gPad update, FindObject("stats") may sometimes return null pointer (leading to undefined behaviour)
     
-    // Clean the default histogram statistics box (498.4, 291.1)
-    if (hideDefaultStats) gStyle->SetOptStat(0); // default = 1111 (NOTE: 000001111 with zeros removed)
-    // 0 = hides the statistics box entirely (leaving only fit box when fitted)
-    // 10 = only number of entries
-    // 110 = entries and mean
-    // NOTE: Prefix zeros must be removed, as "01" is treated as octal number
+    // Clean the default histogram statistics box
+    if (hideDefaultStats) {
+        gStyle->SetOptStat(0); // default = 1111 (NOTE: 000001111 with zeros removed)
+        // 0 = hides the statistics box entirely (leaving only fit box when fitted)
+        // 10 = only number of entries
+        // 110 = entries and mean
+        // NOTE: Prefix zeros must be removed, as "01" is treated as octal number
+        
+        // hpx->SetStats(kFALSE); // TEST
+    }
+    
+    // canvas->Update(); // TEST
+    
+    // Draw histogram to the canvas with default option
+    hpx->Draw();
+    // NOTE: With histos filled from ASCII & ntuples, "HIST" no longer needed, and for TH1 created
+    // by Geant4, the draw option "HIST" is set to the object when loading it from the root file
+    // NOTE: Calling this after SetOptStat means no need to update canvas
     
     // ...
     std::cout << "\nHistogram rendered to canvas.\n";
@@ -3765,7 +3778,7 @@ int get_stats_lines(TFitResultPtr const &result, std::vector<std::vector<double>
  */
 int draw_fit_stats(TH1* hpx, TList* listOfLines) {
     // Format the output SetOptFit(pcev)
-    gStyle->SetOptFit(111); // NOTE: param is a bit-mask (4-digit integer)
+    // gStyle->SetOptFit(111); // NOTE: param is a bit-mask (4-digit integer)
     // p = chi2 probability
     // c = chi2 & number of degrees of freedom (NDF)
     // e = Errors (standard deviations of the fitted parameters)
@@ -3782,17 +3795,40 @@ int draw_fit_stats(TH1* hpx, TList* listOfLines) {
     
     // Handle missing histogram
     if (!hpx) {
-        std::cerr << "\nError (drawFitStats()): Histogram not found!\n";
+        std::cerr << "\nError (draw_fit_stats()): Histogram not found!\n";
         return 1;
     }
+    
+    // gPad->Update(); // TEST
     
     // Get a pointer to the stats box object
     // auto ps = (TPaveStats*)(hpx->FindObject("stats"));
     // auto ps = reinterpret_cast<TPaveStats*>(hpx->FindObject("stats"));
-    auto ps = dynamic_cast<TPaveStats*>(hpx->FindObject("stats")); // NOTE: Works w/ combo
+    // auto ps = dynamic_cast<TPaveStats*>(hpx->FindObject("stats")); // NOTE: Works w/ combo
     // auto ps = dynamic_cast<TPaveStats*>(hpx->GetListOfFunctions()->FindObject("stats")); // NOTE: Works w/ combo
     // auto ps = dynamic_cast<TPaveStats*>(c->GetPrimitive("stats")); // NOTE: Works w/ combo
     // NOTE: Casting the ambiguous return type of find object (TObject*), to TPaveStats object
+    
+    // ...
+    double const bottomLeftX = 0.65;
+    double const bottomLeftY = 0.7;
+    double const topRightX = 0.88;
+    double const topRightY = 0.88;
+    
+    // ...
+    // auto ps = new TPaveStats(); // TEST
+    // auto ps = new TPaveStats(0.65, 0.70, 0.88, 0.88, "brNDC");
+    // auto ps = new TPaveStats(0.65, 0.70, 0.88, 0.88, "blNDC");
+    // auto ps = new TPaveStats(0.65, 0.70, 0.88, 0.88, "NDC");
+    auto ps = new TPaveStats(bottomLeftX, bottomLeftY, topRightX, topRightY, "NDC");
+    // NOTE: Args = X1, Y1, X2, Y2, option
+    // these represent normalised device coordinates (NDC), where NDC maps 0.0 (bottom left) to 1.0 (top right)
+    // (X1, Y1) defines bottom left corner of the box
+    // (X2, Y2) defines top right corner of the box
+    // "br" = Border-relative shadow (draws a drop-shadow cast under bottom right corner) (omittable)
+    // "bl" = Border-left shadow (drop-shadow cast under bottom left corner ) (omittable)
+    // "NDC" ensures stats box scales with window size and stays in position
+    
     
     // Handle missing stats box
     if (!ps) {
@@ -3808,23 +3844,39 @@ int draw_fit_stats(TH1* hpx, TList* listOfLines) {
     ps->SetName("mystats"); // NOTE: Without this, get segmentation violation (segfault)
     
     // ...
-    ps->Clear();
+    // ps->Clear();
+    
+    // TEST
+    // ps->SetBorderSize(1);
+    // ps->SetFillColor(0);
+    // ps->SetTextFont(42);
+    // ps->SetTextSize(0.035);
+    // TEST
     
     // Get existing statistics box content
     TList* existingLines = ps->GetListOfLines();
+    // auto existingLines = new TList();
     
     // ...
     // existingLines->Clear();
     
-    // ...
-    for (int i = 0; i < listOfLines->GetSize(); i++) {
-        existingLines->Add(listOfLines->At(i));
-    }
+    // Append the custom stats to the TPaveStats list
+    // for (int i = 0; i < listOfLines->GetSize(); i++) {
+    //     existingLines->Add(listOfLines->At(i));
+    // }
+    existingLines->AddAll(listOfLines); // NOTE: Does same as above
     
     // Display the custom statistics box
-    hpx->SetStats(0); // Disable auto future stats regeneration
-    ps->Draw(); // Redraw custom box
+    // hpx->SetStats(0); // Disable auto future stats regeneration
+    // ps->Draw(); // Redraw custom box
     // c->Update(); // this can actually be omitted too
+    
+    // Attach custom stats box to list of primitives so it draws with the plot
+    gPad->GetListOfPrimitives()->Add(ps);
+    
+    // Display the custom statistics box
+    gPad->Modified();
+    gPad->Update();
     
     ////////////////////////////////////////////////////////////////////////////
     
