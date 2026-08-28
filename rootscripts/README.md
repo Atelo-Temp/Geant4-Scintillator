@@ -230,7 +230,11 @@ Re-introduces:
 
 ## TODOS
 
-29) residuals.cc
+29) ???.cc
+
+Literally just a cleaned up version of oop_fit.cc
+
+30) residuals.cc
 
 ...
 
@@ -246,7 +250,7 @@ Leveraging ROOT multithreaded capabilities to read large datasets (>10m entries)
 
 ...
 
-31) any_fit.cc (alt: fit_any.cc, fitter.cc)             <<< TODO: This has largely been addressed by previous macros
+31) any_fit.cc (alt: fit_any.cc, fitter.cc)             <<< TODO: This has largely been addressed by previous macros (and is essentially oop_fit.cc)
 
 Hybrid fitting, able to handle both ascii files (lab) and root files (simulation)
 
