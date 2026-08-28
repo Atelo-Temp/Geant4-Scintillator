@@ -37,12 +37,16 @@ void DetectorMaterials::DefineDetectorMats() {
 
     // World material
     fAir = nist->FindOrBuildMaterial("G4_AIR"); // Carbon, nitrogen, oxygen, argon
+    
+    G4Element* Na = nist->FindOrBuildElement("Na");
+    G4Element* I = nist->FindOrBuildElement("I");
+    G4Element* Tl = nist->FindOrBuildElement("Tl");
 
     // Scintillator material
     // G4Material* NaI = nist->FindOrBuildMaterial("G4_SODIUM_IODIDE"); // (1 part Na, 1 part I), density = 3.667 g/cm^3
-    auto Na = new G4Element("Sodium", "Na", 11, 22.990 * g/mole);
-    auto I = new G4Element("Iodine", "I", 53, 126.90 * g/mole);
-    auto Tl = new G4Element("Thallium", "Tl", 81, 204.38 * g/mole);
+    // auto Na = new G4Element("Sodium", "Na", 11, 22.990 * g/mole);
+    // auto I = new G4Element("Iodine", "I", 53, 126.90 * g/mole);
+    // auto Tl = new G4Element("Thallium", "Tl", 81, 204.38 * g/mole);
     
     fNaI = new G4Material("NaI:Tl", 3.667 * g/cm3, 3);
     
@@ -61,10 +65,15 @@ void DetectorMaterials::DefineDetectorMats() {
     // G4Element* H = nist->FindOrBuildElement("H"); // TODO: ................................................................................................................
     
     // Optical grease (Silicone gel) - NOTE: Synthetic "silicone" (polymer), not natural "Silicon"
-    auto H = new G4Element("Hydrogen", "H", 1, 1.0078 * g/mole); // Z=1, A=1, density = 8.3748E-5 g/cm^3
-    auto C = new G4Element("Carbon", "C", 6, 12.011 * g/mole); //  Z=6, A=12, density = 2 g/cm^3
-    auto O = new G4Element("Oxygen", "O", 8, 15.999 * g/mole); // Z=8, A=16, density = 0.00133151 g/cm^3
-    auto Si = new G4Element("Silicon", "Si", 14, 28.086 * g/mole); // Z=14, A=28, density = 2.33 g/cm^3
+    // auto H = new G4Element("Hydrogen", "H", 1, 1.0078 * g/mole); // Z=1, A=1, density = 8.3748E-5 g/cm^3
+    // auto C = new G4Element("Carbon", "C", 6, 12.011 * g/mole); //  Z=6, A=12, density = 2 g/cm^3
+    // auto O = new G4Element("Oxygen", "O", 8, 15.999 * g/mole); // Z=8, A=16, density = 0.00133151 g/cm^3
+    // auto Si = new G4Element("Silicon", "Si", 14, 28.086 * g/mole); // Z=14, A=28, density = 2.33 g/cm^3
+    
+    G4Element* H = nist->FindOrBuildElement("H");
+    G4Element* C = nist->FindOrBuildElement("C");
+    G4Element* O = nist->FindOrBuildElement("O");
+    G4Element* Si = nist->FindOrBuildElement("Si");
     
     fPDMS = new G4Material("PDMS", 0.97 * g/cm3, 3);
     
@@ -109,9 +118,13 @@ void DetectorMaterials::DefineDetectorMats() {
     // Table material (MDF wood proxy, using generalised wood chemical composition)
     fWood = new G4Material("WOOD", 0.8 * g/cm3, 6); // NOTE: Solid cellular material of wood ~1.5 g/cm3, but lowered by air spaces
     
-    auto N = new G4Element("Nitrogen", "N", 7, 14.007 * g/mole); // Z=7, A=14, density = ...
-    auto Ca = new G4Element("Calcium", "Ca", 20, 40.078 * g/mole); // Z=20, A=40, density = ...
-    auto K = new G4Element("Potassium", "K", 19, 39.098 * g/mole); // Z=19, A=39, density = ...
+    // auto N = new G4Element("Nitrogen", "N", 7, 14.007 * g/mole); // Z=7, A=14, density = ...
+    // auto Ca = new G4Element("Calcium", "Ca", 20, 40.078 * g/mole); // Z=20, A=40, density = ...
+    // auto K = new G4Element("Potassium", "K", 19, 39.098 * g/mole); // Z=19, A=39, density = ...
+    
+    G4Element* N = nist->FindOrBuildElement("N");
+    G4Element* Ca = nist->FindOrBuildElement("Ca");
+    G4Element* K = nist->FindOrBuildElement("K");
     
     fWood->AddElement(C, 50. * perCent);
     fWood->AddElement(O, 42. * perCent);
