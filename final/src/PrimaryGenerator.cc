@@ -46,15 +46,59 @@ PrimaryGenerator::~PrimaryGenerator() {
 void PrimaryGenerator::GeneratePrimaries(G4Event* event) {
     // Add a clause to check if particle has already been set, else set it at the start of the event before calling generate
     // NOTE: Default particle is geantino if nothing has been set, this changes default to 137Cs
-    if (fParticleGun->GetParticleDefinition()->GetParticleName() == "geantino") {
-        Cesium137Source();
-    }
+    // if (fParticleGun->GetParticleDefinition()->GetParticleName() == "geantino") {
+    //     Cesium137Source();
+    // }
     
     // Place the source once
-    if (!fPlaced) PlaceSource();
+    if (!fPlaced) {
+        // ...
+        auto const detectorConstruction = static_cast<const DetectorConstruction*>(
+            G4RunManager::GetRunManager()->GetUserDetectorConstruction()
+        );
+        // NOTE: Readonly pointer
+        
+        // ...
+        SelectSource(detectorConstruction);
+        
+        // ...
+        PlaceSource(detectorConstruction);
+        
+        // Dont execute this code again during the run
+        fPlaced = true;
+    }
     
     // Create vertex (shoot particle), handing over the event
     fParticleGun->GeneratePrimaryVertex(event);
+}
+
+/*
+ * ...
+ * 
+ * TODO: Generate isotope could be called once at the end of this method, instead of in each
+ */
+void PrimaryGenerator::SelectSource(DetectorConstruction const* detectorConstruction) {
+    // ...
+    Isotopes isotope = detectorConstruction->GetSource();
+    
+    // ...
+    switch (isotope) {
+        case Isotopes::Cs137:
+            Cesium137Source();
+            break;
+        case Isotopes::Co60:
+            Cobalt60Source();
+            break;
+        case Isotopes::Ba133:
+            Barium133Source();
+            break;
+        case Isotopes::Na22:
+            Sodium22Source();
+            break;
+        default:
+            G4cerr << "Error: Unrecognised isotope." << G4endl;
+            break;
+    }
 }
 
 /*
@@ -62,12 +106,61 @@ void PrimaryGenerator::GeneratePrimaries(G4Event* event) {
  * 
  * NOTE: Likely better to return isotope & charge here, then have a separate method for
  * assigning isotope and charge to the particle gun
+ * 
+ * TODO: Probably just make a small database of isotopes {element, Z, A}, passing struct to GenerateIsotope,
+ * rather than methods with Z and A embedded
  */
 void PrimaryGenerator::Cesium137Source() {
     // Cesium (137Cs) (Half life ~30y) (B-)
     G4int const Z = 55; // Atomic number (num protons)
     G4int const A = 137; // Molecular mass (integer, not exact)
     
+    // ...
+    GenerateIsotope(Z, A);
+}
+
+/*
+ * ...
+ */
+void PrimaryGenerator::Cobalt60Source() {
+    // Cobalt (60Co) (Half life ~5y) (B-)
+    G4int const Z = 27; // Atomic number (num protons)
+    G4int const A = 60; // Molecular mass (integer, not exact)
+    
+    // ...
+    GenerateIsotope(Z, A);
+}
+
+/*
+ * ...
+ */
+void PrimaryGenerator::Barium133Source() {
+    // Barium (133Ba) (Half life ~10.5y) (ε)
+    G4int const Z = 56; // Atomic number (num protons)
+    G4int const A = 133; // Molecular mass (integer, not exact)
+    
+    // ...
+    GenerateIsotope(Z, A);
+}
+
+/*
+ * ...
+ */
+void PrimaryGenerator::Sodium22Source() {
+    // Sodium (22Na) (Half life ~2.6y) (B+ primarily)
+    G4int const Z = 11; // Atomic number (num protons)
+    G4int const A = 22; // Molecular mass (integer, not exact)
+    
+    // ...
+    GenerateIsotope(Z, A);
+}
+
+/*
+ * ...
+ * 
+ * TODO: Maybe make charge and energy args with deafult values
+ */
+void PrimaryGenerator::GenerateIsotope(G4int const Z, G4int const A) {
     // NOTE: For isotopes with t 1/2 > 1 year, the time threshold for radioactive decay of ions
     // must be adjusted, currently set in main() prior to initialisation,
     // can also be set in physics list or via macro
@@ -107,7 +200,7 @@ void PrimaryGenerator::Cesium137Source() {
  * TODO: Not sure primary generator should require this intimate knowledge of det const
  * maybe just cache source shape, outer rad, half z, and origin in a struct
  */
-void PrimaryGenerator::PlaceSource() {
+void PrimaryGenerator::PlaceSource(DetectorConstruction const* detectorConstruction) {
     // ...
     // fParticleGun->GetCurrentSource()->GetPosDist()->SetCentreCoords(G4ThreeVector(0., -1 * cm, 2.90425 * cm));
     
@@ -115,14 +208,14 @@ void PrimaryGenerator::PlaceSource() {
     G4SPSPosDistribution* position = particle->GetPosDist();
     
     // TEST ...
-    auto const detectorConstruction = static_cast<const DetectorConstruction*>(
-        G4RunManager::GetRunManager()->GetUserDetectorConstruction()
-    );
+    // auto const detectorConstruction = static_cast<const DetectorConstruction*>(
+    //     G4RunManager::GetRunManager()->GetUserDetectorConstruction()
+    // );
     G4LogicalVolume* sourceLog = detectorConstruction->GetSourceVolume(); // TODO: Should be physical volume so i can get coords, and logical, and solid
     // G4VPhysicalVolume* sourcePhys = detectorConstruction->GetSourceVolume(); // TODO
     
     G4VSolid* sourceSolid = sourceLog->GetSolid();
-    G4String shapeType = sourceSolid->GetEntityType();
+    G4String const shapeType = sourceSolid->GetEntityType();
     
     G4double outerRadius;
     G4double halfThickness;
@@ -167,7 +260,4 @@ void PrimaryGenerator::PlaceSource() {
     // TODO: Remove all these from test.mac and 137Cs.mac (just leave isotope selection to the macro)
     // ^ but actually abstract away isotope selection a bit, macro should just specify one of the four
     // available sources, and it changes what is instantiated as ion here in the code
-    
-    // Dont execute this code again during the run
-    fPlaced = true;
 }

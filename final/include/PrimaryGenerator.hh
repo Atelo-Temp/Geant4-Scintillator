@@ -3,11 +3,11 @@
 
 // G4 lib
 #include "G4VUserPrimaryGeneratorAction.hh" // base class
-#include "G4GeneralParticleSource.hh"  // particle generator
+#include "G4Types.hh"
 
 // Forward declarations
-// class G4GeneralParticleSource; // can just specify this without include as is done in examples
-// not sure which is best practice, probably actually using .hh ?
+class G4GeneralParticleSource; // particle generator
+class DetectorConstruction;
 
 /*
  * Handles particle generation
@@ -27,19 +27,23 @@ class PrimaryGenerator : public G4VUserPrimaryGeneratorAction {
         // Override method from base class
         void GeneratePrimaries(G4Event* event) override;
         // Handles object from G4Event
+
+    private:
+        // ...
+        void SelectSource(DetectorConstruction const* detectorConstruction);
         
         // Assign cesium 137 as gps ion
         void Cesium137Source();
+        void Cobalt60Source();
+        void Barium133Source();
+        void Sodium22Source();
         
-        // TODO:
-        // 60CoSource
-        // 22NaSource
-        // 241AmSource
+        // ...
+        void GenerateIsotope(G4int const Z, G4int const A);
         
         // Assign coordinates to gps ion, specify distribution, etc
-        void PlaceSource();
-
-    private:
+        void PlaceSource(DetectorConstruction const* detectorConstruction);
+        
         // Pointer to particle generator
         G4GeneralParticleSource* fParticleGun = nullptr;
         

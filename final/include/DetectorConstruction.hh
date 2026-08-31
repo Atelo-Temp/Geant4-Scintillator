@@ -41,6 +41,26 @@ class SourceGeometry;
 /*
  * ...
  * 
+ * TODO: Metastable silver might be an interesting one to compliment B-, B+, ε
+ * since it shows non-zero parent isotope energy works, and it sometimes undergoes
+ * isometric transtion (IT) decay mode
+ */
+enum class Isotopes {
+    Cs137, // Cesium 137
+    Co60, // Cobalt 60
+    Na22, // Sodium 22
+    Ba133, // Barium 133
+    // mAg108 // Metastable Silver 108
+    // Ge68 // Germanium 68
+    // Am241 // Americium 241
+    // Ti44 // Titanium 44
+    // Eu152 // Europium 152
+    // Bi207 // Bismuth 207
+};
+
+/*
+ * ...
+ * 
  * Inherits from the abstract base class "G4VUserDetectorConstruction" (denoted by the colon)
  * 
  * NOTE: Mandatory user initialisation class (no default behaviour provided)
@@ -73,8 +93,15 @@ class DetectorConstruction : public G4VUserDetectorConstruction {
         void SetCrystalDiameter(G4double const diameterInInches);
         void SetSourceDetectorDistance(G4double const distance);
         void SetSource(G4String const isotope);
+        
+        // ...
+        Isotopes GetSource() const { return fSource; };
 
     private:
+        // ...
+        G4VPhysicalVolume* BuildWorld();
+        G4double BuildTable(G4LogicalVolume* worldLog);
+        
         // Local storage to access scoring volume outside the scope of "Construct()"
         // G4LogicalVolume* fScoringVolume = nullptr; // logical volume
 
@@ -88,8 +115,8 @@ class DetectorConstruction : public G4VUserDetectorConstruction {
         
         // TEST
         G4double fCrystalDiameter = 3. * (2.54 * cm); // 3 inches default (unit doesnt exist, will be converted in .cc file though)
-        G4double fSourceDetectorDistance = 3. * cm;
-        G4String fSource = "137Cs";
+        G4double fSourceDetectorDistance = 3. * cm; // source placed 3cm from face of detector by default
+        Isotopes fSource = Isotopes::Cs137;
         
         // ...
         DetectorMessenger* fDetectorMessenger = nullptr;
@@ -100,10 +127,6 @@ class DetectorConstruction : public G4VUserDetectorConstruction {
         // TEST
         DetectorMaterials* fDetectorMaterials = nullptr;
         SourceMaterials* fSourceMaterials = nullptr;
-        
-        // ...
-        G4VPhysicalVolume* BuildWorld();
-        G4double BuildTable(G4LogicalVolume* worldLog);
         
         // ...
         DetectorGeometry* fDetectorGeometry = nullptr;

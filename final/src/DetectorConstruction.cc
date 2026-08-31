@@ -422,8 +422,8 @@ void DetectorConstruction::SetCrystalDiameter(G4double diameter) {
     // ...
     // ...
     
+    G4RunManager::GetRunManager()->ReinitializeGeometry();
     // G4RunManager::GetRunManager()->GeometryHasBeenModified();
-    // G4RunManager::GetRunManager()->ReinitializeGeometry();
     // G4RunManager::GetRunManager()->ReinitializeGeometry(true);
     
     // G4VVisManager* visManager = G4VVisManager::GetConcreteInstance();
@@ -467,7 +467,7 @@ void DetectorConstruction::SetCrystalDiameter(G4double diameter) {
 void DetectorConstruction::SetSourceDetectorDistance(G4double distance) {
     fSourceDetectorDistance = distance;
     
-    // G4RunManager::GetRunManager()->ReinitializeGeometry();
+    G4RunManager::GetRunManager()->ReinitializeGeometry();
 }
 
 /*
@@ -475,12 +475,18 @@ void DetectorConstruction::SetSourceDetectorDistance(G4double distance) {
  */
 void DetectorConstruction::SetSource(G4String isotope) {
     if (isotope == "137Cs") {
-        
-    } else if (isotope == "60Co") {
-        
-    } else if (isotope == "22Na") {
-        
-    } else if (isotope == "241Am") {
+        fSource = Isotopes::Cs137;
+    }
+    else if (isotope == "60Co") {
+        fSource = Isotopes::Co60;
+    }
+    else if (isotope == "22Na") {
+        fSource = Isotopes::Na22;
+    }
+    else if (isotope == "133Ba") {
+        fSource = Isotopes::Ba133;
+    }
+    else if (isotope == "241Am") {
         
     }
     
