@@ -16,7 +16,7 @@ class SourceMaterials {
         SourceMaterials() = default;
         
         // Constructor
-        ~SourceMaterials();
+        ~SourceMaterials() = default;
         
         // Create custom cesium-137 material
         G4Material* Create137Cs();

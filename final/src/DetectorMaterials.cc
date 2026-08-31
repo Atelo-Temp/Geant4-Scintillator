@@ -10,21 +10,6 @@
 // #include "G4MaterialPropertyVector.hh" // can use instead of 2x std::vector
 
 /*
- * Destructor
- */
-DetectorMaterials::~DetectorMaterials() {
-    delete fAir;
-    delete fWood;
-
-    delete fNaI;
-    delete fAl2O3;
-    delete fAl;
-    delete fPDMS;
-    delete fBorosilicate;
-    delete fLi;
-}
-
-/*
  * ...
  */
 void DetectorMaterials::DefineDetectorMats() {

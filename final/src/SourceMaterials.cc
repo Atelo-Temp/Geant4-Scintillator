@@ -9,14 +9,6 @@
 #include "G4NistManager.hh"
 
 /*
- * Destructor
- */
-SourceMaterials::~SourceMaterials() {
-    delete fPMMA;
-    delete fPLA;
-}
-
-/*
  * Create and return a cesium 137 material
  * 
  * NOTE: With 50% barium 137 content due to 137Cs decay

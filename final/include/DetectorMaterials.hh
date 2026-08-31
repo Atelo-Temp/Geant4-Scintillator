@@ -19,7 +19,7 @@ class DetectorMaterials {
         DetectorMaterials() = default;
         
         // ...
-        ~DetectorMaterials();
+        ~DetectorMaterials() = default;
         
         // ...
         void DefineDetectorMats();
