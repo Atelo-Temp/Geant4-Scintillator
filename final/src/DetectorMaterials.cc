@@ -57,7 +57,8 @@ void DetectorMaterials::DefineDetectorMats() {
     // TODO: NaI:Tl blend
     
     // Scintillation light reflector material (Alumina - Al2O3)
-    fAl2O3 = nist->FindOrBuildMaterial("G4_ALUMINUM_OXIDE"); // (2 part Al, 3 part O), density = 3.97 g/cm^3
+    // fAl2O3 = nist->FindOrBuildMaterial("G4_ALUMINUM_OXIDE"); // (2 part Al, 3 part O), density = 3.97 g/cm^3
+    fAl2O3 = nist->BuildMaterialWithNewDensity("Al2O3", "G4_ALUMINUM_OXIDE", 1.2 * g/cm3);
     
     // Scintillator can material (Aluminium)
     fAl = nist->FindOrBuildMaterial("G4_Al"); // density = 2.699 g/cm^3
