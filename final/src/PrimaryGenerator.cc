@@ -103,6 +103,9 @@ void PrimaryGenerator::Cesium137Source() {
 
 /*
  * Assign coordinates to gps ion, specify distribution and dimensions
+ * 
+ * TODO: Not sure primary generator should require this intimate knowledge of det const
+ * maybe just cache source shape, outer rad, half z, and origin in a struct
  */
 void PrimaryGenerator::PlaceSource() {
     // ...
@@ -164,4 +167,7 @@ void PrimaryGenerator::PlaceSource() {
     // TODO: Remove all these from test.mac and 137Cs.mac (just leave isotope selection to the macro)
     // ^ but actually abstract away isotope selection a bit, macro should just specify one of the four
     // available sources, and it changes what is instantiated as ion here in the code
+    
+    // Dont execute this code again during the run
+    fPlaced = true;
 }
