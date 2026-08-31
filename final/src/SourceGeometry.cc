@@ -32,20 +32,21 @@ G4VPhysicalVolume* SourceGeometry::BuildSource(
     //////////
     
     // Source geometry specification
-    G4double const sourceRadius = 0.5 * cm; // 1cm diameter
-    G4double const sourceThickness = 0.1 * cm; // 1mm thickness
-    
+    // G4double const sourceRadius = 0.5 * cm; // 1cm diameter
+    // G4double const sourceThickness = 0.1 * cm; // 1mm thickness
     // G4double const sourceRadius = (2.54 * 0.5) * cm; // 1" -> 2.54cm diameter -> 1.27cm radius (typical of disk sources)
     // NOTE: Lab sources must have smaller diameters as this wouldnt fit casing (they are made in house tbf)
-    // G4double const sourceRadius = (1.905 * 0.5) * cm; // 1" -> 2.54cm diameter -> 1.27cm radius (typical of disk sources)                                        .......................................................
-    // G4double const sourceThickness = 0.3175 * cm; // 0.125" -> 3.175mm thickness (typical of disk sources)                                                       ....................................................
+    // G4double const sourceRadius = (1.905 * 0.5) * cm; // 1" -> 2.54cm diameter -> 1.27cm radius (typical of disk sources)
+    // G4double const sourceThickness = 0.3175 * cm; // 0.125" -> 3.175mm thickness (typical of disk sources)
+    G4double const activeRadius = 0.15 * cm; // 3mm diameter
+    G4double const activeThickness = 0.01 * cm; // 0.1mm thickness
     
     // Source geometry definition (modelled as cylinder)
-    auto solidSource = new G4Tubs(
-        "Source", // name
+    auto sourceActive = new G4Tubs(
+        "SourceActive", // name
         0., // inner radius (0 = not hollow)
-        sourceRadius, // outer radius
-        sourceThickness * 0.5, // thickness
+        activeRadius, // outer radius
+        activeThickness * 0.5, // thickness
         0. * deg, // start angle
         360 * deg // end angle (full span here)
     );
@@ -56,7 +57,7 @@ G4VPhysicalVolume* SourceGeometry::BuildSource(
     // this is both a creator and getter, unlike other material methods
     
     // Define the radioactive source with the created material
-    auto sourceLog = new G4LogicalVolume(solidSource, sourceMat, "Source");
+    auto sourceActiveLog = new G4LogicalVolume(sourceActive, sourceMat, "SourceActive");
     
     /////////////////
     // SOURCE CASING:
@@ -88,7 +89,7 @@ G4VPhysicalVolume* SourceGeometry::BuildSource(
     auto casingCut = new G4Box("SourceCasingCut", casingCutSizeX * 0.5, casingCutSizeY * 0.5, casingCutSizeZ * 0.5);
     
     // Create new solid with cut subtracted from base
-    auto casing = new G4SubtractionSolid(
+    auto sourceCasing = new G4SubtractionSolid(
         "SourceCasing", // name
         casingBase, // the solid to subtract from
         casingCut, // the volume to subtract
@@ -101,7 +102,7 @@ G4VPhysicalVolume* SourceGeometry::BuildSource(
     
     // Assign a material to the casing solid
     auto casingLog = new G4LogicalVolume(
-        casing, // subtraction solid acts same as any other geometry here
+        sourceCasing, // subtraction solid acts same as any other geometry here
         PMMA, // casing material (acrylic - PMMA) (was opaque)
         "SourceCasing"
     );
@@ -114,11 +115,11 @@ G4VPhysicalVolume* SourceGeometry::BuildSource(
     G4double const casingWindowSizeZ = 0.15 * cm;
     
     // ...
-    auto casingWindow = new G4Box("SourceCasingWindow", casingSizeX * 0.5, casingSizeY * 0.5, casingWindowSizeZ * 0.5);
+    auto sourceCasingWindow = new G4Box("SourceCasingWindow", casingSizeX * 0.5, casingSizeY * 0.5, casingWindowSizeZ * 0.5);
     
     // ...
     auto casingWindowLog = new G4LogicalVolume(
-        casingWindow,
+        sourceCasingWindow,
         PMMA, // casing material (acrylic - PMMA) (was transparent)
         "SourceCasingWindow"
     );
@@ -175,7 +176,7 @@ G4VPhysicalVolume* SourceGeometry::BuildSource(
     auto const holderCut2Trans = G4ThreeVector(0., holderCut2TransY, 0.);
     
     // Make the 2nd cut
-    auto holder = new G4SubtractionSolid(
+    auto sourceHolder = new G4SubtractionSolid(
         "SourceHolder",
         holderSubtracted, // base solid to make cut in
         holderCut2, // cut to make in base
@@ -190,7 +191,7 @@ G4VPhysicalVolume* SourceGeometry::BuildSource(
     
     // Logical volume
     auto holderLog = new G4LogicalVolume(
-        holder,
+        sourceHolder,
         PLA,
         "SourceHolder"
     );
@@ -267,12 +268,12 @@ G4VPhysicalVolume* SourceGeometry::BuildSource(
     // y is determined by table and source enclosure, 
     // and is a specified distance from detector face in z
     
-    // Place the radioactive source (TODO TODO TODO TODO)
+    // Place the radioactive source
     G4VPhysicalVolume* sourcePhys = new G4PVPlacement(
         nullptr,
         sourceTrans,
-        sourceLog,
-        "Source",
+        sourceActiveLog,
+        "SourceActive",
         worldLog,
         false,
         0,

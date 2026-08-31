@@ -204,17 +204,17 @@ void PrimaryGenerator::PlaceSource(DetectorConstruction const* detectorConstruct
     // ...
     // fParticleGun->GetCurrentSource()->GetPosDist()->SetCentreCoords(G4ThreeVector(0., -1 * cm, 2.90425 * cm));
     
-    G4SingleParticleSource* particle = fParticleGun->GetCurrentSource();
+    G4SingleParticleSource const* particle = fParticleGun->GetCurrentSource();
     G4SPSPosDistribution* position = particle->GetPosDist();
     
     // TEST ...
     // auto const detectorConstruction = static_cast<const DetectorConstruction*>(
     //     G4RunManager::GetRunManager()->GetUserDetectorConstruction()
     // );
-    G4LogicalVolume* sourceLog = detectorConstruction->GetSourceVolume(); // TODO: Should be physical volume so i can get coords, and logical, and solid
+    G4LogicalVolume const* sourceLog = detectorConstruction->GetSourceVolume(); // TODO: Should be physical volume so i can get coords, and logical, and solid
     // G4VPhysicalVolume* sourcePhys = detectorConstruction->GetSourceVolume(); // TODO
     
-    G4VSolid* sourceSolid = sourceLog->GetSolid();
+    G4VSolid const* sourceSolid = sourceLog->GetSolid();
     G4String const shapeType = sourceSolid->GetEntityType();
     
     G4double outerRadius;
@@ -222,7 +222,7 @@ void PrimaryGenerator::PlaceSource(DetectorConstruction const* detectorConstruct
     
     if (shapeType == "G4Tubs") {
         // ...
-        auto cylinder = static_cast<G4Tubs*>(sourceSolid);
+        auto cylinder = static_cast<G4Tubs const*>(sourceSolid);
         outerRadius = cylinder->GetOuterRadius();
         halfThickness = cylinder->GetZHalfLength();
     }
@@ -242,20 +242,19 @@ void PrimaryGenerator::PlaceSource(DetectorConstruction const* detectorConstruct
     // NOTE: Primary generator should have no knowledge of source-detector distance, etc,
     // thats purely detector construction and detector messenger job, just derive here
     
-    // ...
-    position->SetPosDisType("Volume"); // volumetric source // TODO
+    // Specify volumetric source
+    position->SetPosDisType("Volume");
+    
+    // confine start positions to particular volume
+    position->ConfineSourceToVolume("SourceActive");
+    // TODO: could extract name from sourcePhys too tbh, one less point of failure
     
     // ...
-    position->ConfineSourceToVolume("Source"); // confine start positions to particular volume // TODO
-    
-    // ...
-    position->SetPosDisShape("Cylinder"); // TODO
+    position->SetPosDisShape("Cylinder");
     
     // For cylinder, user gives redius and z-half length
-    // position->SetRadius(0. * cm); // TODO: derive these from detector construction
-    // position->SetHalfZ(0. * cm);
-    position->SetRadius(outerRadius); // TODO: derive these from detector construction
-    position->SetHalfZ(halfThickness);
+    position->SetRadius(outerRadius); // TODO: derive these from detector construction,
+    position->SetHalfZ(halfThickness); // or from class member itself like GetSourceOrigin
     
     // TODO: Remove all these from test.mac and 137Cs.mac (just leave isotope selection to the macro)
     // ^ but actually abstract away isotope selection a bit, macro should just specify one of the four
