@@ -237,14 +237,13 @@ G4VPhysicalVolume* DetectorConstruction::BuildWorld() {
     // NOTE: The constructor takes its args as half of the total box size, hence this world extends from:
     // -0.5 to +0.5 along the X axis
     // -0.5 to +0.5 along the Y axis
-    // -0.5 to +0.5 along the Z axis    
+    // -0.5 to +0.5 along the Z axis
     
     // To create a logical volume: a solid and material are required (as a minimum)
     
     // ...
-    // G4Material* air = G4Material::GetMaterial(...); // TODO ........................................................................................................
-    // TODO: This isnt really a detector material
-    auto air = fDetectorMaterials->Air();
+    // G4Material* air = G4Material::GetMaterial(...);
+    auto air = fDetectorMaterials->Air(); // TODO: This isnt really a detector material
     
     // Using the world box solid, a logical volume can be created by filling it with air
     auto worldLog = new G4LogicalVolume(worldBox, air, "World");
@@ -325,8 +324,7 @@ G4double DetectorConstruction::BuildTable(G4LogicalVolume* worldLog) {
         fCheckOverlaps
     );
     
-    // return tablePhys;
-    
+    // ...
     G4double tableTopY = tableTransY + (0.5 * tableHeight);
     
     return tableTopY;
@@ -335,94 +333,17 @@ G4double DetectorConstruction::BuildTable(G4LogicalVolume* worldLog) {
 /*
  * ...
  */
-// void DetectorConstruction::AssignColours() {
-//     /////////////
-//     // COLOURING:
-//     /////////////
-// 
-//     // Set visualiser colouring (R, G, B, opacity), and assign colours to the detector geometry
-//     // NOTE: I think these could also be set via the visualiser init macro script
-//    
-//     // World
-//     auto worldVisAtt = new G4VisAttributes(G4Color(0., 0., 1., 0.1)); // blue (transparent)
-//     worldVisAtt->SetForceSolid(true); // ... (think this can be called w/ no arg for same effect)
-//     worldLog->SetVisAttributes(worldVisAtt); // assign to the logical volume
-// 
-//     // Scintillator crystal
-//     auto scintillatorVisAtt = new G4VisAttributes(G4Color(1., 1., 1., 0.5)); // white (part-transparent)
-//     scintillatorVisAtt->SetForceSolid(true);
-//     scintillatorLog->SetVisAttributes(scintillatorVisAtt);
-//     
-//     // Aluminium oxide reflector
-//     auto reflectorVisAtt = new G4VisAttributes(G4Color(0., 0., 1.0, 0.5)); // blue
-//     reflectorVisAtt->SetForceSolid(true);
-//     reflectorLog->SetVisAttributes(reflectorVisAtt);
-//     
-//     // Aluminium enclosure
-//     auto enclosureVisAtt = new G4VisAttributes(G4Color(0.8, 0.8, 0.8, 1.)); // mid-light gray (solid)
-//     enclosureVisAtt->SetForceSolid(true);
-//     enclosureLog->SetVisAttributes(enclosureVisAtt);
-//     
-//     // Optical grease
-//     auto greaseVisAtt = new G4VisAttributes(G4Color(1.0, 1.0, 0., 0.75)); // yellow
-//     greaseVisAtt->SetForceSolid(true);
-//     greaseLog->SetVisAttributes(greaseVisAtt);
-//     
-//     // Optical window
-//     auto windowVisAtt = new G4VisAttributes(G4Color(0.8, 0.8, 0.8, 0.25)); // mid-light gray (transparent)
-//     windowVisAtt->SetForceSolid(true);
-//     windowLog->SetVisAttributes(windowVisAtt);
-//     
-//     // Scoring photocathode
-//     auto photocathodeVisAtt = new G4VisAttributes(G4Color(1., 0., 0., 0.5)); // red
-//     photocathodeVisAtt->SetForceSolid(true);
-//     photocathodeLog->SetVisAttributes(photocathodeVisAtt);
-//     
-//     // Hermetic seal
-//     auto sealVisAtt = new G4VisAttributes(G4Color(0.9, 0.9, 0.9, 1.)); // light gray (opaque)
-//     sealVisAtt->SetForceSolid(true);
-//     sealLog->SetVisAttributes(sealVisAtt);
-//     
-//     // Source geometry
-//     auto sourceVisAtt = new G4VisAttributes(G4Color(0.0, 1.0, 0.0, 0.5)); // green
-//     sourceVisAtt->SetForceSolid(true);
-//     sourceLog->SetVisAttributes(sourceVisAtt);
-//     
-//     // Source casing geometry
-//     auto casingVisAtt = new G4VisAttributes(G4Color(0.8, 0.8, 0.8, 1.)); // mid-light gray (opaque)
-//     casingVisAtt->SetForceSolid(true);
-//     casingLog->SetVisAttributes(casingVisAtt);
-//     
-//     // Source casing windows geometry
-//     auto casingWindowsVisAtt = new G4VisAttributes(G4Color(0.8, 0.8, 0.8, 0.25)); // mid-light gray (transparent)
-//     casingWindowsVisAtt->SetForceSolid(true);
-//     casingWindowLog->SetVisAttributes(casingWindowsVisAtt);
-//     
-//     // Source holder geometry
-//     auto holderVisAtt = new G4VisAttributes(G4Color(0.1, 0.1, 0.1, 1.)); // charcoal (opaque)
-//     holderVisAtt->SetForceSolid(true);
-//     holderLog->SetVisAttributes(holderVisAtt);
-//     
-//     // Tabletop geometry
-//     auto tableVisAtt = new G4VisAttributes(G4Color(0.95, 0.95, 0.95, 1.)); // light gray
-//     tableVisAtt->SetForceSolid(true);
-//     tableLog->SetVisAttributes(tableVisAtt);
-// }
-
-/*
- * ...
- */
-// void DetectorConstruction::SetCrystalDiameter(G4double diameterInInches) {
 void DetectorConstruction::SetCrystalDiameter(G4double diameter) {
+    // ...
     // fCrystalDiameter = diameterInInches * 2.54;
-    
     // fCrystalDiameter = diameterInInches;
     fCrystalDiameter = diameter;
     
     // ...
-    // ...
-    
     G4RunManager::GetRunManager()->ReinitializeGeometry();
+    
+    // NOTE: Everything below is testing related to trying to update visualiser post-command
+    
     // G4RunManager::GetRunManager()->GeometryHasBeenModified();
     // G4RunManager::GetRunManager()->ReinitializeGeometry(true);
     
@@ -435,7 +356,6 @@ void DetectorConstruction::SetCrystalDiameter(G4double diameter) {
     
     // ...
     // ...
-    
     
     // // clean-up previous geometry
     // G4SolidStore::GetInstance()->Clean();
@@ -465,8 +385,10 @@ void DetectorConstruction::SetCrystalDiameter(G4double diameter) {
  * ...
  */
 void DetectorConstruction::SetSourceDetectorDistance(G4double distance) {
+    // ...
     fSourceDetectorDistance = distance;
     
+    // ...
     G4RunManager::GetRunManager()->ReinitializeGeometry();
 }
 
@@ -474,6 +396,7 @@ void DetectorConstruction::SetSourceDetectorDistance(G4double distance) {
  * ...
  */
 void DetectorConstruction::SetSource(G4String isotope) {
+    // ...
     if (isotope == "137Cs") {
         fSource = Isotopes::Cs137;
     }
@@ -486,9 +409,13 @@ void DetectorConstruction::SetSource(G4String isotope) {
     else if (isotope == "133Ba") {
         fSource = Isotopes::Ba133;
     }
-    else if (isotope == "241Am") {
-        
+    // else if (isotope == "241Am") {
+    //     // ...
+    // }
+    else {
+        G4cerr << "Error: Invalid isotope." << G4endl;
     }
     
+    // ...
     G4RunManager::GetRunManager()->ReinitializeGeometry();
 }
