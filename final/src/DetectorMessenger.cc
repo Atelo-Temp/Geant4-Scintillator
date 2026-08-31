@@ -24,7 +24,6 @@ DetectorMessenger::DetectorMessenger(DetectorConstruction* detCon) : fDetectorCo
     crystalSizeCmd->SetParameterName("crystal-diameter", false);
     new G4UnitDefinition("inch", "in", "Length", 2.54 * cm);
     crystalSizeCmd->SetDefaultUnit("inch");
-    
     // crystalSizeCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
     // crystalSizeCmd->SetToBeBroadcasted(false);
     
@@ -44,7 +43,7 @@ DetectorMessenger::DetectorMessenger(DetectorConstruction* detCon) : fDetectorCo
     auto sourceCmd = new G4UIcmdWithAString("/experiment/source/isotope", this);
     sourceCmd->SetGuidance("Select the radioactive isotope to use as the source.");
     sourceCmd->SetParameterName("isotope", false);
-    // TODO: List supported sources
+    sourceCmd->SetCandidates("137Cs 60Co 22Na 133Ba"); // TODO: List supported sources
     
     fCommands[sourceCmd] = "isotope";
 };
@@ -81,6 +80,8 @@ void DetectorMessenger::SetNewValue(G4UIcommand* cmd, G4String val) {
         // ..
         auto casted = static_cast<G4UIcmdWithADoubleAndUnit*>(cmd);
         G4double const value = casted->GetNewDoubleValue(val);
+        
+        // ...
         fDetectorConstruction->SetCrystalDiameter(value);
         
         G4cout << "CRYSTAL DIAMETER SET: " << value << G4endl;
@@ -90,6 +91,8 @@ void DetectorMessenger::SetNewValue(G4UIcommand* cmd, G4String val) {
         // auto casted = static_cast<G4UIcmdWithADoubleAndUnit*>(cmd);
         auto casted = static_cast<G4UIcmdWithADoubleAndUnit*>(found->first);
         G4double const value = casted->GetNewDoubleValue(val);
+        
+        // ...
         fDetectorConstruction->SetSourceDetectorDistance(value);
         
         G4cout << "SOURCE DETECTOR DISTANCE SET" << G4endl;
