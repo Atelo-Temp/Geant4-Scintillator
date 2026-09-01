@@ -100,6 +100,7 @@
 /vis/geometry/set/colour HermeticSeal 0 0.9 0.9 0.9 1. // light gray (opaque)
 
 /vis/geometry/set/colour SourceActive 0 0.0 1.0 0.0 0.5 // green
+/vis/geometry/set/colour SourceRetainerWindow 0 0.8 0.8 0.8 0.25 // mid-light gray (transparent)
 /vis/geometry/set/colour SourceCasing 0 0.8 0.8 0.8 1. // mid-light gray (opaque)
 /vis/geometry/set/colour SourceCasingWindow 0 0.8 0.8 0.8 0.25 // mid-light gray (transparent)
 /vis/geometry/set/colour SourceHolder 0 0.1 0.1 0.1 1. // charcoal (opaque)

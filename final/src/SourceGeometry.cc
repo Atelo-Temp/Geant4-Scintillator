@@ -66,8 +66,8 @@ G4VPhysicalVolume* SourceGeometry::BuildSource(
     ///////////////////
     
     // ...
-    G4double const retainerInnerRadius = 0.25 * cm; // 5mm thickness
-    G4double const retainerOuterRadius = 0.35 * cm; // 7mm diameter
+    G4double const retainerInnerRadius = 0.25 * cm; // 5mm inner diameter
+    G4double const retainerOuterRadius = 0.35 * cm; // 7mm outer diameter
     G4double const retainerThickness = 0.3 * cm; // 3mm thickness
     
     // ...
@@ -89,7 +89,7 @@ G4VPhysicalVolume* SourceGeometry::BuildSource(
     /////////////////
     
     // ...
-    G4double const retainerWindowRadius = 0.35 * cm; // 7mm diameter
+    G4double const retainerWindowRadius = retainerInnerRadius; // 5mm diameter
     G4double const retainerWindowThickness = 0.0125 * cm; // 0.125mm or 125um thickness
     
     // ...
@@ -102,11 +102,11 @@ G4VPhysicalVolume* SourceGeometry::BuildSource(
         360 * deg // end angle (full span here)
     );
     
-    // ...
-    // G4Material* mylar = fSourceMaterials.Mylar();
+    // Polyethylene terephthalate (PET) aka Mylar
+    G4Material* mylar = fSourceMaterials.Mylar();
     
     // ...
-    // auto sourceRetainerWindowLog = new G4LogicalVolume(sourceRetainerWindow, ..., "SourceRetainerWindow");
+    auto sourceRetainerWindowLog = new G4LogicalVolume(sourceRetainerWindow, mylar, "SourceRetainerWindow");
     
     
     /////////////////
@@ -330,6 +330,41 @@ G4VPhysicalVolume* SourceGeometry::BuildSource(
         fCheckOverlaps
     );
     
+    ////
+    // Source Retainer Windows
+    ////
+    
+    // ...
+    G4double const frontRetainerWindowZ = sourceZ + (0.5 * activeThickness) + (0.5 * retainerWindowThickness);
+    auto const frontRetainerWindowTrans = G4ThreeVector(detectorX, casingTransY, frontRetainerWindowZ);
+    
+    // ...
+    G4VPhysicalVolume* frontRetainerWindowPhys = new G4PVPlacement(
+        nullptr,
+        frontRetainerWindowTrans,
+        sourceRetainerWindowLog,
+        "FrontRetainerWindow",
+        worldLog,
+        false,
+        0,
+        fCheckOverlaps
+    );
+    
+    // ...
+    G4double const backRetainerWindowZ = sourceZ - (0.5 * activeThickness) - (0.5 * retainerWindowThickness);
+    auto const backRetainerWindowTrans = G4ThreeVector(detectorX, casingTransY, backRetainerWindowZ);
+    
+    // ...
+    G4VPhysicalVolume* backRetainerWindowPhys = new G4PVPlacement(
+        nullptr,
+        backRetainerWindowTrans,
+        sourceRetainerWindowLog,
+        "BackRetainerWindow",
+        worldLog,
+        false,
+        0,
+        fCheckOverlaps
+    );
     
     ////
     // Casing Windows

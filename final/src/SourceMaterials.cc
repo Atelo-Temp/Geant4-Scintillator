@@ -130,6 +130,9 @@ void SourceMaterials::DefineSourceMats() {
     fPolystyrene = nist->FindOrBuildMaterial("G4_POLYSTYRENE");
     // TODO: Maybe explore cesium chloride powder, cesium titanate ceramic, or stable glass matrix
     
+    // Polyethylene terephthalate (PET) aka Mylar
+    fMylar = nist->FindOrBuildMaterial("G4_MYLAR");
+    
     // Source Casing
     // G4Material* PVC = nist->FindOrBuildMaterial("G4_POLYVINYL_CHLORIDE"); // density = 1.3 g/cm^3
     // NOTE: 2 part carbon (C), 3 part hydrogen (H), 1 part chlorine (Cl)
@@ -162,6 +165,13 @@ void SourceMaterials::DefineSourceMats() {
  */
 G4Material* SourceMaterials::Polystyrene() const {
     return fPolystyrene;
+};
+
+/*
+ * ...
+ */
+G4Material* SourceMaterials::Mylar() const {
+    return fMylar;
 };
 
 /*

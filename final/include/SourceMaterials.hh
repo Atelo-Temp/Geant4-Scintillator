@@ -27,11 +27,13 @@ class SourceMaterials {
         
         // Getters
         G4Material* Polystyrene() const;
+        G4Material* Mylar() const;
         G4Material* PMMA() const;
         G4Material* PLA() const;
         
     private:
         G4Material* fPolystyrene;
+        G4Material* fMylar;
         G4Material* fPMMA;
         G4Material* fPLA;
 };
