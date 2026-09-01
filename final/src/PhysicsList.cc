@@ -20,7 +20,7 @@
 #include "G4RadioactiveDecayPhysics.hh" // physics list
 #include "G4DecayPhysics.hh" // handling different decay models
 // TEST ... PIXE, cuts
-#include "G4EmParameters.hh"
+// #include "G4EmParameters.hh"
 #include "G4RegionStore.hh"
 #include "G4SystemOfUnits.hh"
 
@@ -36,7 +36,7 @@ PhysicsList::PhysicsList() {
     RegisterPhysics(new G4EmStandardPhysics_option4());
     
     // Enable PIXE atomic de-excitation
-    G4EmParameters::Instance()->SetPixe(true); // NOTE: Must be called after passing physics list
+    // G4EmParameters::Instance()->SetPixe(true); // NOTE: Must be called after passing physics list
     // G4EmParameters::Instance()->SetDeexcitationIgnoreCut(true); // NOTE: Already true
     // TODO: Set cuts to 100 um
 
@@ -61,6 +61,7 @@ void PhysicsList::SetCuts() {
     G4String const regionName = "Scintillator";
     G4Region* region = G4RegionStore::GetInstance()->GetRegion(regionName);
     auto* cuts = new G4ProductionCuts();
-    cuts->SetProductionCut(100 * um);
+    // cuts->SetProductionCut(100 * um);
+    cuts->SetProductionCut(5 * um);
     region->SetProductionCuts(cuts);
 }
