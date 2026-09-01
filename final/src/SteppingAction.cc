@@ -182,8 +182,8 @@ void SteppingAction::UserSteppingAction(const G4Step* step) {
         // G4cout << endPoint->GetTouchable()->GetVolume()->GetName() << G4endl; // "Reflector"
         
         // if (endPoint->GetTouchable()->GetVolume()->GetName() != "Reflector") {
-            G4cout << G4endl << "OPTICAL PHOTON LOST TO LACK OF RINDEX" << G4endl;
-            G4cout << endPoint->GetTouchable()->GetVolume()->GetName() << G4endl; // Volume that photon was lost in, i.e.: "Reflector"
+            // G4cout << G4endl << "OPTICAL PHOTON LOST TO LACK OF RINDEX" << G4endl;
+            // G4cout << endPoint->GetTouchable()->GetVolume()->GetName() << G4endl; // Volume that photon was lost in, i.e.: "Reflector"
             // G4cout << "Event ID: " << fEventAction->fEventID << G4endl; // Id of event in which this occured
         // }
         

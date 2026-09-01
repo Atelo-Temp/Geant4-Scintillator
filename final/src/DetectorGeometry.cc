@@ -239,8 +239,8 @@ DetectorBuild DetectorGeometry::BuildDetector(
     ///////////////////////
         
     // Enclosure is 3.225' outer diameter according to ortec spec, and 0.2' thickness (0.508mm)
-    // G4double const enclosureThick = 0.0508 * cm; // NOTE: 0.02' => 0.508 mm (added to both sides in Z direction)
-    G4double const enclosureThick = 0.08 * cm; // 0.8mm thickness from: scionix.nl/standard/
+    G4double const enclosureThick = 0.0508 * cm; // NOTE: 0.02' => 0.508 mm (added to both sides in Z direction)
+    // G4double const enclosureThick = 0.08 * cm; // 0.8mm thickness used w/ stainless steel enclosure from: scionix.nl/standard/
     
     // Derive outer radius and length from reflector radius & length plus enclosure thickness
     G4double const enclosureOuterRad = reflectorRadialOuterRad + enclosureThick; // NOTE: 3.225' dia => 8.1915cm dia => 4.09575 cm outer rad
