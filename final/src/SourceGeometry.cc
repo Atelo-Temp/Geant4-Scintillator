@@ -80,8 +80,11 @@ G4VPhysicalVolume* SourceGeometry::BuildSource(
         360 * deg // end angle (full span here)
     );
     
+    // ..
+    G4Material* Al = fSourceMaterials.Aluminium();
+    
     // ...
-    // auto sourceRetainerLog = new G4LogicalVolume(sourceRetainer, Al, "SourceRetainer");
+    auto sourceRetainerLog = new G4LogicalVolume(sourceRetainer, Al, "SourceRetainer");
     
 
     /////////////////
@@ -324,6 +327,22 @@ G4VPhysicalVolume* SourceGeometry::BuildSource(
         sourceTrans,
         sourceActiveLog,
         "SourceActive",
+        worldLog,
+        false,
+        0,
+        fCheckOverlaps
+    );
+    
+    ////
+    // Source Retainer
+    ////
+    
+    // ...
+    G4VPhysicalVolume* sourceRetainerPhys = new G4PVPlacement(
+        nullptr,
+        sourceTrans,
+        sourceRetainerLog,
+        "SourceRetainer",
         worldLog,
         false,
         0,

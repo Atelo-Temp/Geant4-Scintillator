@@ -133,6 +133,9 @@ void SourceMaterials::DefineSourceMats() {
     // Polyethylene terephthalate (PET) aka Mylar
     fMylar = nist->FindOrBuildMaterial("G4_MYLAR");
     
+    // ...
+    fAluminium = nist->FindOrBuildMaterial("G4_Al");
+    
     // Source Casing
     // G4Material* PVC = nist->FindOrBuildMaterial("G4_POLYVINYL_CHLORIDE"); // density = 1.3 g/cm^3
     // NOTE: 2 part carbon (C), 3 part hydrogen (H), 1 part chlorine (Cl)
@@ -172,6 +175,13 @@ G4Material* SourceMaterials::Polystyrene() const {
  */
 G4Material* SourceMaterials::Mylar() const {
     return fMylar;
+};
+
+/*
+ * ...
+ */
+G4Material* SourceMaterials::Aluminium() const {
+    return fAluminium;
 };
 
 /*
