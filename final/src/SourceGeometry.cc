@@ -59,6 +59,55 @@ G4VPhysicalVolume* SourceGeometry::BuildSource(
     // Define the radioactive source with the created material
     auto sourceActiveLog = new G4LogicalVolume(sourceActive, sourceMat, "SourceActive");
     
+    
+    ///////////////////
+    // SOURCE RETAINER:
+    ///////////////////
+    
+    // ...
+    G4double const retainerInnerRadius = 0.25 * cm; // 5mm thickness
+    G4double const retainerOuterRadius = 0.35 * cm; // 7mm diameter
+    G4double const retainerThickness = 0.3 * cm; // 3mm thickness
+    
+    // ...
+    auto sourceRetainer = new G4Tubs(
+        "SourceRetainer", // name
+        retainerInnerRadius, // inner radius (hollow)
+        retainerOuterRadius, // outer radius
+        retainerThickness * 0.5, // thickness
+        0. * deg, // start angle
+        360 * deg // end angle (full span here)
+    );
+    
+    // ...
+    // auto sourceRetainerLog = new G4LogicalVolume(sourceRetainer, Al, "SourceRetainer");
+    
+
+    /////////////////
+    // SOURCE WINDOW:
+    /////////////////
+    
+    // ...
+    G4double const retainerWindowRadius = 0.35 * cm; // 7mm diameter
+    G4double const retainerWindowThickness = 0.0125 * cm; // 0.125mm or 125um thickness
+    
+    // ...
+    auto sourceRetainerWindow = new G4Tubs(
+        "SourceRetainerWindow", // name
+        0., // inner radius (0 = not hollow)
+        retainerWindowRadius, // outer radius
+        retainerWindowThickness * 0.5, // thickness
+        0. * deg, // start angle
+        360 * deg // end angle (full span here)
+    );
+    
+    // ...
+    // G4Material* mylar = fSourceMaterials.Mylar();
+    
+    // ...
+    // auto sourceRetainerWindowLog = new G4LogicalVolume(sourceRetainerWindow, ..., "SourceRetainerWindow");
+    
+    
     /////////////////
     // SOURCE CASING:
     /////////////////
