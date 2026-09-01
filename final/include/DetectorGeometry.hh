@@ -54,12 +54,13 @@ class DetectorGeometry {
         
         // ...
         void DefineOpticalInterfaces(
-            G4VPhysicalVolume* crystalPhys, 
-            G4VPhysicalVolume* reflectorPhys, 
-            G4VPhysicalVolume* enclosurePhys, 
-            G4VPhysicalVolume* greasePhys, 
-            G4VPhysicalVolume* windowPhys, 
-            G4VPhysicalVolume* photocathodePhys, 
+            G4VPhysicalVolume* crystalPhys,
+            G4VPhysicalVolume* reflectorRadialPhys,
+            G4VPhysicalVolume* reflectorAxialPhys,
+            G4VPhysicalVolume* enclosurePhys,
+            G4VPhysicalVolume* greasePhys,
+            G4VPhysicalVolume* windowPhys,
+            G4VPhysicalVolume* photocathodePhys,
             G4VPhysicalVolume* sealPhys
         );
 };

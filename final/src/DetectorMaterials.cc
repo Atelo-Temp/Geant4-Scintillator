@@ -43,7 +43,8 @@ void DetectorMaterials::DefineDetectorMats() {
     
     // Scintillation light reflector material (Alumina - Al2O3)
     // fAl2O3 = nist->FindOrBuildMaterial("G4_ALUMINUM_OXIDE"); // (2 part Al, 3 part O), density = 3.97 g/cm^3
-    fAl2O3 = nist->BuildMaterialWithNewDensity("Al2O3", "G4_ALUMINUM_OXIDE", 1.2 * g/cm3);
+    // fAl2O3 = nist->BuildMaterialWithNewDensity("Al2O3", "G4_ALUMINUM_OXIDE", 1.2 * g/cm3);
+    fAl2O3 = nist->BuildMaterialWithNewDensity("Al2O3", "G4_ALUMINUM_OXIDE", 2.0 * g/cm3);
     
     // Scintillator can material (Aluminium)
     fAl = nist->FindOrBuildMaterial("G4_Al"); // density = 2.699 g/cm^3
@@ -672,8 +673,8 @@ void DetectorMaterials::DefineOpticalProperties() {
     std::vector<G4double> const reflectivityAl = {0.9, 0.9, 0.9};
     MPTAlSurface->AddProperty("REFLECTIVITY", energy, reflectivityAl);
     
-    // std::vector<G4double> rindexAl = {0.59062, 0.33593, 0.22053};                                // TODO: ADD RINDEX TO SURFACE (IS NEEDED FOR REFLECTION CALCS, BUT ON OTHER HAND CURRENTLY NO PHOTONS REACH ALUMINIUM)
-    // MPTAlSurface->AddProperty("RINDEX", energy, rindexAl);
+    std::vector<G4double> rindexAl = {0.59062, 0.33593, 0.22053};                                // TODO: ADD RINDEX TO SURFACE (IS NEEDED FOR REFLECTION CALCS, BUT ON OTHER HAND CURRENTLY NO PHOTONS REACH ALUMINIUM)
+    MPTAlSurface->AddProperty("RINDEX", energy, rindexAl);
     
     fAluminiumSurface->SetMaterialPropertiesTable(MPTAlSurface);
     
@@ -885,7 +886,7 @@ void DetectorMaterials::DefineOpticalProperties() {
     auto MPTAir = new G4MaterialPropertiesTable();
     std::vector<G4double> const rindexAir = {1., 1., 1.}; // MPT2->AddProperty("RINDEX", "Air") NOTE: Default available
     MPTAir->AddProperty("RINDEX", energy, rindexAir);
-    // air->SetMaterialPropertiesTable(MPTAir);
+    // fAir->SetMaterialPropertiesTable(MPTAir);
     
     // TODO: Test removing this (to identify any air gaps)
 }
