@@ -52,7 +52,8 @@ G4VPhysicalVolume* SourceGeometry::BuildSource(
     );
     
     // ...
-    G4Material* sourceMat = fSourceMaterials.Create137Cs(); // TODO: This needs to be dependent on the macro command
+    // G4Material* sourceMat = fSourceMaterials.Create137Cs(); // TODO: This needs to be dependent on the macro command
+    G4Material* sourceMat = fSourceMaterials.Polystyrene();
     // TODO: Maybe an if clause to check if material already made inside of Create137Cs
     // this is both a creator and getter, unlike other material methods
     

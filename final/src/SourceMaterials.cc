@@ -113,7 +113,6 @@ G4Material* SourceMaterials::Create60Co() {
  * ....
  */
 void SourceMaterials::DefineSourceMats() {
-    
     // Get a pointer to the material manager instance
     G4NistManager* nist = G4NistManager::Instance();
     
@@ -122,36 +121,14 @@ void SourceMaterials::DefineSourceMats() {
     ////////////////////
     
     // TODO: Expose a messenger for source selection that sets both the gps ion, and the source materials here
-
-//     // Source material (define Cesium-18 isotope)
-//     auto sourceIsotope = new G4Isotope(
-//         "137Cs", // name
-//         55, // num protons (Z)
-//         137, // Atomic mass (num nucleons) (A),
-//         136.907089 * g / mole // Molar mass (grams per molecule) (~18g per mol)
-//     );
-//     // NOTE: 1 mol contains avogadros number of particles (6.022 x 10^23)
-//     
-//     // Define an element from the isotope
-//     auto sourceElement = new G4Element("Cesium-137", "137Cs", 1); // name, symbol, num isotopes
-//     
-//     // Assign the defined isotope to the element
-//     sourceElement->AddIsotope(sourceIsotope, 100.0 * perCent); // isotope, no other isotopes so 100%
-//     
-//     // Because isotope and element have no direct interaction in G4, need to create a material to assign to logical volume
-//     auto sourceMat = new G4Material("137Cs", 1.886 * g / cm3, 1); // name, density (g/cm^3), phase (solid, liquid, gas)
-//     // NOTE: Density is estimate, in reality it wont usually be a pure 137Cs source,
-//     // usually embedded in a matrix, encapsulated (stainless steel), or a mixed compound (cesium chloride),
-//     // i.e. cesium oxide ceramic matrix (more like 1.47 g/cm3)
-//     
-//     // Assign the element to the G4 material
-//     sourceMat->AddElement(sourceElement, 100.0 * perCent); // element, amount of element in material (100%)
-//     // TODO: In practice there would be non-zero amount of the daughter isotope too,
-//     // based on how old the source was (after 30y half of a "new" 137Cs source would be 137Ba)
     
     // Cesium-137 (137Cs) source, 50% barium (137Ba) daughter product
     // auto sourceHandler = new MaterialDefinitions();
     // G4Material* sourceMat = sourceHandler->Create137Cs();
+    
+    // Ion-exchange bead
+    fPolystyrene = nist->FindOrBuildMaterial("G4_POLYSTYRENE");
+    // TODO: Maybe explore cesium chloride powder, cesium titanate ceramic, or stable glass matrix
     
     // Source Casing
     // G4Material* PVC = nist->FindOrBuildMaterial("G4_POLYVINYL_CHLORIDE"); // density = 1.3 g/cm^3
@@ -179,6 +156,13 @@ void SourceMaterials::DefineSourceMats() {
     fPLA->AddElement(H, 4);
     fPLA->AddElement(O, 2);    
 }
+
+/*
+ * ...
+ */
+G4Material* SourceMaterials::Polystyrene() const {
+    return fPolystyrene;
+};
 
 /*
  * ...
