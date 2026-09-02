@@ -57,11 +57,12 @@ class DetectorGeometry {
             G4VPhysicalVolume* crystalPhys,
             G4VPhysicalVolume* reflectorRadialPhys,
             G4VPhysicalVolume* reflectorAxialPhys,
-            G4VPhysicalVolume* enclosurePhys,
+            // G4VPhysicalVolume* enclosureRadialPhys,
+            // G4VPhysicalVolume* enclosureAxialPhys,
             G4VPhysicalVolume* greasePhys,
             G4VPhysicalVolume* windowPhys,
-            G4VPhysicalVolume* photocathodePhys,
-            G4VPhysicalVolume* sealPhys
+            G4VPhysicalVolume* sealPhys,
+            G4VPhysicalVolume* photocathodePhys
         );
 };
 

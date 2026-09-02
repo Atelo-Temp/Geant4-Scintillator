@@ -238,6 +238,62 @@ DetectorBuild DetectorGeometry::BuildDetector(
     // ALUMINIUM ENCLOSURE:
     ///////////////////////
         
+//     // Enclosure is 3.225' outer diameter according to ortec spec, and 0.2' thickness (0.508mm)
+//     G4double const enclosureThick = 0.0508 * cm; // NOTE: 0.02' => 0.508 mm (added to both sides in Z direction)
+//     // G4double const enclosureThick = 0.08 * cm; // 0.8mm thickness used w/ stainless steel enclosure from: scionix.nl/standard/
+//     
+//     // Derive outer radius and length from reflector radius & length plus enclosure thickness
+//     G4double const enclosureOuterRad = reflectorRadialOuterRad + enclosureThick; // NOTE: 3.225' dia => 8.1915cm dia => 4.09575 cm outer rad
+//     // G4double const enclosureLength = reflectorHeight + (enclosureThick * 2); // NOTE: Same height as reflector, with thickness added to both ends
+//     G4double const enclosureLength = crystalHeight + (reflectorRadialThickness * 2) + (enclosureThick * 2); // NOTE: Same height as reflector, with thickness added to both ends
+//     // NOTE: 4.04495 cm inner rad
+//     
+//     // Base volume which will be cut
+//     auto enclosureSolid = new G4Tubs(
+//         "EnclosureSolid",
+//         0. * cm, // inner rad (no hole, as cut will handle it in this case)
+//         enclosureOuterRad, // outer rad
+//         enclosureLength * 0.5, // height
+//         startAngle, // 0 deg
+//         endAngle // 360 deg (full span)
+//     );
+//     
+//     // The section to cut from the base volume
+//     auto enclosureCut = new G4Tubs(
+//         "EnclosureCut",
+//         0. * cm, // inner rad (no hole, solid cut)
+//         reflectorRadialOuterRad, // outer rad (cut a section with same rad as reflector)
+//         enclosureLength * 0.5, // height (cut has same height as base)
+//         startAngle, // 0 deg
+//         endAngle // 360 deg (full span)
+//     );
+//     // NOTE: To be a "perfect cut", could do +0.5*thickness & translate by same amount too,
+//     // currently after translation part of this solid is cutting nothing, but tbh thats fine,
+//     // i think this approach is more readable
+//     
+//     // Create new solid with cut subtracted from base
+//     auto enclosure = new G4SubtractionSolid(
+//         "Enclosure", // name
+//         enclosureSolid, // the solid to subtract from
+//         enclosureCut, // the volume to subtract
+//         nullptr, // no rotation
+//         G4ThreeVector(0., 0., enclosureThick) // cut translation (relative to base solid, not world)
+//     );
+//     
+//     // ...
+//     G4Material* Al = fDetectorMaterials.Al();
+//     
+//     // Assign a material to the enclosure solid
+//     auto enclosureLog = new G4LogicalVolume(
+//         enclosure, // subtraction solid acts same as any other geometry here
+//         Al, // enclosure material (aluminium)
+//         "Enclosure"
+//     );
+    
+    //////////////////////////////
+    // RADIAL ALUMINIUM ENCLOSURE:
+    //////////////////////////////
+    
     // Enclosure is 3.225' outer diameter according to ortec spec, and 0.2' thickness (0.508mm)
     G4double const enclosureThick = 0.0508 * cm; // NOTE: 0.02' => 0.508 mm (added to both sides in Z direction)
     // G4double const enclosureThick = 0.08 * cm; // 0.8mm thickness used w/ stainless steel enclosure from: scionix.nl/standard/
@@ -245,51 +301,50 @@ DetectorBuild DetectorGeometry::BuildDetector(
     // Derive outer radius and length from reflector radius & length plus enclosure thickness
     G4double const enclosureOuterRad = reflectorRadialOuterRad + enclosureThick; // NOTE: 3.225' dia => 8.1915cm dia => 4.09575 cm outer rad
     // G4double const enclosureLength = reflectorHeight + (enclosureThick * 2); // NOTE: Same height as reflector, with thickness added to both ends
-    G4double const enclosureLength = crystalHeight + (reflectorRadialThickness * 2) + (enclosureThick * 2); // NOTE: Same height as reflector, with thickness added to both ends
-    // NOTE: 4.04495 cm inner rad
+    // G4double const enclosureLength = crystalHeight + (reflectorRadialThickness * 2) + (enclosureThick * 2); // NOTE: Same height as reflector, with thickness added to both ends
+    G4double const enclosureLength = crystalHeight + reflectorAxialThickness; // TODO: + neoprene thickness ??
     
-    // Base volume which will be cut
-    auto enclosureSolid = new G4Tubs(
-        "EnclosureSolid",
-        0. * cm, // inner rad (no hole, as cut will handle it in this case)
+    // ...
+    auto enclosureRadialSolid = new G4Tubs(
+        "EnclosureRadialSolid",
+        reflectorRadialOuterRad, // inner rad (hollow)
         enclosureOuterRad, // outer rad
         enclosureLength * 0.5, // height
         startAngle, // 0 deg
         endAngle // 360 deg (full span)
     );
     
-    // The section to cut from the base volume
-    auto enclosureCut = new G4Tubs(
-        "EnclosureCut",
-        0. * cm, // inner rad (no hole, solid cut)
-        reflectorRadialOuterRad, // outer rad (cut a section with same rad as reflector)
-        enclosureLength * 0.5, // height (cut has same height as base)
-        startAngle, // 0 deg
-        endAngle // 360 deg (full span)
-    );
-    // NOTE: To be a "perfect cut", could do +0.5*thickness & translate by same amount too,
-    // currently after translation part of this solid is cutting nothing, but tbh thats fine,
-    // i think this approach is more readable
-    
-    // Create new solid with cut subtracted from base
-    auto enclosure = new G4SubtractionSolid(
-        "Enclosure", // name
-        enclosureSolid, // the solid to subtract from
-        enclosureCut, // the volume to subtract
-        nullptr, // no rotation
-        G4ThreeVector(0., 0., enclosureThick) // cut translation (relative to base solid, not world)
-    );
-    
     // ...
     G4Material* Al = fDetectorMaterials.Al();
     
     // Assign a material to the enclosure solid
-    auto enclosureLog = new G4LogicalVolume(
-        enclosure, // subtraction solid acts same as any other geometry here
+    auto enclosureRadialLog = new G4LogicalVolume(
+        enclosureRadialSolid, // subtraction solid acts same as any other geometry here
         Al, // enclosure material (aluminium)
-        "Enclosure"
+        "EnclosureRadial"
     );
     
+    /////////////////////////////
+    // AXIAL ALUMINIUM ENCLOSURE:
+    /////////////////////////////
+    
+    // ...
+    // ...
+    auto enclosureAxialSolid = new G4Tubs(
+        "EnclosureAxialSolid",
+        0., // inner rad (no hole)
+        enclosureOuterRad, // outer rad
+        enclosureThick * 0.5, // height
+        startAngle, // 0 deg
+        endAngle // 360 deg (full span)
+    );
+    
+    // Assign a material to the enclosure solid
+    auto enclosureAxialLog = new G4LogicalVolume(
+        enclosureAxialSolid, // subtraction solid acts same as any other geometry here
+        Al, // enclosure material (aluminium)
+        "EnclosureAxial"
+    );
     
     /////////////////
     // HERMETIC SEAL:
@@ -337,17 +392,18 @@ DetectorBuild DetectorGeometry::BuildDetector(
     // Define translation vector (relative to mother origin)
     auto const detectorOrigin = G4ThreeVector(detectorX, detectorY, detectorZ);
     
-    // Place the enclosure
-    G4VPhysicalVolume* enclosurePhys = new G4PVPlacement(
-        nullptr, // no rotation
-        detectorOrigin, // same position as crystal
-        enclosureLog, // logical volume
-        "Enclosure", // name
-        worldLog, // mother volume (logical)
-        false, // no boolean ops
-        0, // one copy
+    // Place the sodium iodide scintillator crystal (inside of the world)
+    G4VPhysicalVolume* crystalPhys = new G4PVPlacement(
+        nullptr, // No rotation
+        detectorOrigin, // Translation
+        scintillatorLog, // The logical volume
+        "Scintillator", // Name
+        worldLog, // Mother volume (logical)
+        false, // No boolean ops
+        0, // Copy number
         fCheckOverlaps
     );
+    // NOTE: This places the scintillator at the origin of the mother volume, shifted by 0.5 meter along Z
     
     // ...
     // ...
@@ -363,6 +419,9 @@ DetectorBuild DetectorGeometry::BuildDetector(
         0, // one copy
         fCheckOverlaps
     );
+    
+    // ...
+    // ...
     
     // ...
     G4double const axialReflectorZ = detectorZ - (0.5 * crystalHeight) - (0.5 * reflectorAxialThickness);
@@ -382,19 +441,44 @@ DetectorBuild DetectorGeometry::BuildDetector(
     
     // ...
     // ...
-
-    // Place the sodium iodide scintillator crystal (inside of the world)
-    G4VPhysicalVolume* crystalPhys = new G4PVPlacement(
-        nullptr, // No rotation
-        detectorOrigin, // Translation
-        scintillatorLog, // The logical volume
-        "Scintillator", // Name
-        worldLog, // Mother volume (logical)
-        false, // No boolean ops
-        0, // Copy number
+    
+    // ...
+    G4double const radialEnclosureZ = detectorZ - (0.5 * reflectorAxialThickness);
+    auto const radialEnclosureOrigin = G4ThreeVector(detectorX, detectorY, radialEnclosureZ);
+    // NOTE: Since the length of the radial enclosure is that of the crystal + reflector thickness,
+    // to centre it on the midpoint of the two components, it needs to be placed on the crystal origin
+    // then shifted in the negative Z direction by half the reflector thickness
+    
+    // Place the enclosure
+    G4VPhysicalVolume* enclosureRadialPhys = new G4PVPlacement(
+        nullptr, // no rotation
+        radialEnclosureOrigin, // same position as crystal
+        enclosureRadialLog, // logical volume
+        "EnclosureRadial", // name
+        worldLog, // mother volume (logical)
+        false, // no boolean ops
+        0, // one copy
         fCheckOverlaps
     );
-    // NOTE: This places the scintillator at the origin of the mother volume, shifted by 0.5 meter along Z
+    
+    // ...
+    // ...
+    
+    // ...
+    G4double const axialEnclosureZ = axialReflectorZ - (0.5 * reflectorAxialThickness) - (0.5 * enclosureThick);
+    auto const axialEnclosureOrigin = G4ThreeVector(detectorX, detectorY, axialEnclosureZ);
+    
+    // ...
+    G4VPhysicalVolume* enclosureAxialPhys = new G4PVPlacement(
+        nullptr, // no rotation
+        axialEnclosureOrigin, // same position as crystal
+        enclosureAxialLog, // logical volume
+        "EnclosureAxial", // name
+        worldLog, // mother volume (logical)
+        false, // no boolean ops
+        0, // one copy
+        fCheckOverlaps
+    );
     
     // ...
     // ...
@@ -488,7 +572,8 @@ DetectorBuild DetectorGeometry::BuildDetector(
     );
     
     // ...
-    DefineOpticalInterfaces(crystalPhys, reflectorRadialPhys, reflectorAxialPhys, enclosurePhys, greasePhys, windowPhys, photocathodePhys, sealPhys);
+    // DefineOpticalInterfaces(crystalPhys, reflectorRadialPhys, reflectorAxialPhys, enclosureRadialPhys, enclosureAxialPhys, greasePhys, windowPhys, photocathodePhys, sealPhys);
+    DefineOpticalInterfaces(crystalPhys, reflectorRadialPhys, reflectorAxialPhys, greasePhys, windowPhys, sealPhys, photocathodePhys);
     
     // ...
     G4double detectorFaceZ = detectorZ - ((crystalHeight * 0.5) + reflectorAxialThickness + enclosureThick);
@@ -504,11 +589,12 @@ void DetectorGeometry::DefineOpticalInterfaces(
     G4VPhysicalVolume* crystalPhys,
     G4VPhysicalVolume* reflectorRadialPhys,
     G4VPhysicalVolume* reflectorAxialPhys,
-    G4VPhysicalVolume* enclosurePhys,
+    // G4VPhysicalVolume* enclosureRadialPhys,
+    // G4VPhysicalVolume* enclosureAxialPhys,
     G4VPhysicalVolume* greasePhys,
     G4VPhysicalVolume* windowPhys,
-    G4VPhysicalVolume* photocathodePhys,
-    G4VPhysicalVolume* sealPhys
+    G4VPhysicalVolume* sealPhys,
+    G4VPhysicalVolume* photocathodePhys
 ) {
     // Define the border between the crystal and the reflector
     auto crystalReflectorRadialBorder = new G4LogicalBorderSurface("CrystalToRadialReflector", crystalPhys, reflectorRadialPhys, fDetectorMaterials.ReflectorSurface());

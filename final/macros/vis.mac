@@ -94,7 +94,8 @@
 /vis/geometry/set/colour Scintillator 0 1. 1. 1. 0.5 // white (part-transparent)
 /vis/geometry/set/colour ReflectorRadial 0 0. 0. 1.0 0.5 // blue
 /vis/geometry/set/colour ReflectorAxial 0 0. 0. 1.0 0.5 // blue
-/vis/geometry/set/colour Enclosure 0 0.8 0.8 0.8 1. // mid-light gray (solid)
+/vis/geometry/set/colour EnclosureRadial 0 0.8 0.8 0.8 1. // mid-light gray (solid)
+/vis/geometry/set/colour EnclosureAxial 0 0.8 0.8 0.8 1. // mid-light gray (solid)
 /vis/geometry/set/colour OpticalGrease 0 1.0 1.0 0. 0.75 // yellow
 /vis/geometry/set/colour OpticalWindow 0 0.8 0.8 0.8 0.25 // mid-light gray (transparent)
 /vis/geometry/set/colour Photocathode 0 1. 0. 0. 0.5 // red
