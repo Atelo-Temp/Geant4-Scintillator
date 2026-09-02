@@ -187,16 +187,19 @@ G4VPhysicalVolume* DetectorConstruction::Construct() {
     // DETECTOR:
     ////////////
     
-    DetectorBuild detectorBuild = fDetectorGeometry->BuildDetector(worldLog, tableTopY, fCrystalDiameter, fCheckOverlaps);
+    // DetectorBuild detectorBuild = fDetectorGeometry->BuildDetector(worldLog, tableTopY, fCrystalDiameter, fCheckOverlaps);
+    DetectorBuild detectorBuild = fDetectorGeometry->BuildDetector(worldLog, tableTopY, fCheckOverlaps);
     // TODO: Rename struct and variable
 
     //////////
     // SOURCE:
     //////////
     
-    G4VPhysicalVolume* sourcePhys = fSourceGeometry->BuildSource(worldLog, tableTopY, detectorBuild.detectorFaceZ, detectorBuild.detectorX, fSourceDetectorDistance, fCheckOverlaps);
-    fSourceVolume = sourcePhys->GetLogicalVolume(); // NOTE: TEMP - REPLACE WITH PHYSICAL VOLUME
-    fSourceCoords = sourcePhys->GetObjectTranslation(); // NOTE: TEMP - REPLACE WITH PHYSICAL VOLUME
+    // G4VPhysicalVolume* sourcePhys = fSourceGeometry->BuildSource(worldLog, tableTopY, detectorBuild.detectorFaceZ, detectorBuild.detectorX, fSourceDetectorDistance, fCheckOverlaps);
+    // G4VPhysicalVolume* sourcePhys = fSourceGeometry->BuildSource(worldLog, tableTopY, detectorBuild.detectorFaceZ, detectorBuild.detectorX, fCheckOverlaps);
+    // fSourceVolume = sourcePhys->GetLogicalVolume(); // NOTE: TEMP - REPLACE WITH PHYSICAL VOLUME
+    // fSourceCoords = sourcePhys->GetObjectTranslation(); // NOTE: TEMP - REPLACE WITH PHYSICAL VOLUME
+    fSourceGeometry->BuildSource(worldLog, tableTopY, detectorBuild.detectorFaceZ, detectorBuild.detectorX, fCheckOverlaps);
     // TODO: Maybe even just return an object containing everything primary generator needs (radius, height, origin),
     // then cache that object as a class member, that way primary generator doesnt need to do a bunch of shite
     // to get the values it needs (i.e., static cast to cylinder etc)
@@ -333,11 +336,13 @@ G4double DetectorConstruction::BuildTable(G4LogicalVolume* worldLog) {
 /*
  * ...
  */
-void DetectorConstruction::SetCrystalDiameter(G4double diameter) {
+void DetectorConstruction::SetCrystalDiameter(G4double const diameter) {
     // ...
     // fCrystalDiameter = diameterInInches * 2.54;
     // fCrystalDiameter = diameterInInches;
-    fCrystalDiameter = diameter;
+    // fCrystalDiameter = diameter;
+    
+    fDetectorGeometry->SetCrystalDiameter(diameter);
     
     // ...
     G4RunManager::GetRunManager()->ReinitializeGeometry();
@@ -384,9 +389,11 @@ void DetectorConstruction::SetCrystalDiameter(G4double diameter) {
 /*
  * ...
  */
-void DetectorConstruction::SetSourceDetectorDistance(G4double distance) {
-    // ...
-    fSourceDetectorDistance = distance;
+void DetectorConstruction::SetSourceDetectorDistance(G4double const distance) {
+    // // ...
+    // fSourceDetectorDistance = distance;
+    
+    fSourceGeometry->SetSourceDetectorDistance(distance);
     
     // ...
     G4RunManager::GetRunManager()->ReinitializeGeometry();
@@ -395,26 +402,28 @@ void DetectorConstruction::SetSourceDetectorDistance(G4double distance) {
 /*
  * ...
  */
-void DetectorConstruction::SetSource(G4String isotope) {
-    // ...
-    if (isotope == "137Cs") {
-        fSource = Isotopes::Cs137;
-    }
-    else if (isotope == "60Co") {
-        fSource = Isotopes::Co60;
-    }
-    else if (isotope == "22Na") {
-        fSource = Isotopes::Na22;
-    }
-    else if (isotope == "133Ba") {
-        fSource = Isotopes::Ba133;
-    }
-    // else if (isotope == "241Am") {
-    //     // ...
+void DetectorConstruction::SetSource(G4String const isotope) {
+    // // ...
+    // if (isotope == "137Cs") {
+    //     fSource = Isotopes::Cs137;
     // }
-    else {
-        G4cerr << "Error: Invalid isotope." << G4endl;
-    }
+    // else if (isotope == "60Co") {
+    //     fSource = Isotopes::Co60;
+    // }
+    // else if (isotope == "22Na") {
+    //     fSource = Isotopes::Na22;
+    // }
+    // else if (isotope == "133Ba") {
+    //     fSource = Isotopes::Ba133;
+    // }
+    // // else if (isotope == "241Am") {
+    // //     // ...
+    // // }
+    // else {
+    //     G4cerr << "Error: Invalid isotope." << G4endl;
+    // }
+    
+    fSourceGeometry->SetSource(isotope);
     
     // ...
     G4RunManager::GetRunManager()->ReinitializeGeometry();

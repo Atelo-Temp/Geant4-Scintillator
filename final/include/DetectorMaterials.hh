@@ -13,6 +13,16 @@ class G4Material;
 /*
  * ...
  */
+enum class ReflectorMaterial { Al2O3 }; // TODO: MgO, Teflon
+
+/*
+ * ...
+ */
+enum class EnclosureMaterial { Aluminium, StainlessSteel }; // TODO: Beryllium
+
+/*
+ * ...
+ */
 class DetectorMaterials {
     public:
         // ...
@@ -26,6 +36,10 @@ class DetectorMaterials {
         
         // ...
         void DefineOpticalProperties();
+        
+        // Generic getters (TEST)
+        G4Material* GetReflectorMaterial(ReflectorMaterial material) const;
+        G4Material* GetEnclosureMaterial(EnclosureMaterial material) const;
         
         // Material Getters
         G4Material* Air() const;

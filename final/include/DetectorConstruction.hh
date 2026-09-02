@@ -6,8 +6,8 @@
 // #include "G4LogicalVolume.hh"
 // #include "G4VPhysicalVolume.hh"
 
-#include "G4ThreeVector.hh" // NOTE: TEMP
-#include "G4SystemOfUnits.hh"
+// #include "G4ThreeVector.hh" // NOTE: TEMP
+// #include "G4SystemOfUnits.hh"
 
 // Forward declarations
 class G4VPhysicalVolume;
@@ -38,25 +38,25 @@ class SourceGeometry;
 //     G4double detectorX;
 // };
 
-/*
- * ...
- * 
- * TODO: Metastable silver might be an interesting one to compliment B-, B+, ε
- * since it shows non-zero parent isotope energy works, and it sometimes undergoes
- * isometric transtion (IT) decay mode
- */
-enum class Isotopes {
-    Cs137, // Cesium 137
-    Co60, // Cobalt 60
-    Na22, // Sodium 22
-    Ba133, // Barium 133
-    // mAg108 // Metastable Silver 108
-    // Ge68 // Germanium 68
-    // Am241 // Americium 241
-    // Ti44 // Titanium 44
-    // Eu152 // Europium 152
-    // Bi207 // Bismuth 207
-};
+// /*
+//  * ...
+//  * 
+//  * TODO: Metastable silver might be an interesting one to compliment B-, B+, ε
+//  * since it shows non-zero parent isotope energy works, and it sometimes undergoes
+//  * isometric transtion (IT) decay mode
+//  */
+// enum class Isotopes {
+//     Cs137, // Cesium 137
+//     Co60, // Cobalt 60
+//     Na22, // Sodium 22
+//     Ba133, // Barium 133
+//     // mAg108 // Metastable Silver 108
+//     // Ge68 // Germanium 68
+//     // Am241 // Americium 241
+//     // Ti44 // Titanium 44
+//     // Eu152 // Europium 152
+//     // Bi207 // Bismuth 207
+// };
 
 /*
  * ...
@@ -82,55 +82,56 @@ class DetectorConstruction : public G4VUserDetectorConstruction {
         // Public method to get stored pointer to scoring region
         // G4LogicalVolume* GetScoringVolume() const { return fScoringVolume; };
         
-        
         // TEST
-        G4LogicalVolume* GetSourceVolume() const { return fSourceVolume; }; // NOTE: TEMP UNTIL PLACING PHYSICAL SOURCE VOL
-        G4ThreeVector GetSourceOrigin() const { return fSourceCoords; }; // NOTE: TEMP UNTIL PLACING PHYSICAL SOURCE VOL
-        // G4VPhysicalVolume* GetSourceVolume() const { return fSourceVolume; };
+        // G4LogicalVolume* GetSourceVolume() const { return fSourceVolume; }; // NOTE: TEMP UNTIL PLACING PHYSICAL SOURCE VOL
+        // G4ThreeVector GetSourceOrigin() const { return fSourceCoords; }; // NOTE: TEMP UNTIL PLACING PHYSICAL SOURCE VOL
+        // // G4VPhysicalVolume* GetSourceVolume() const { return fSourceVolume; };
         
-        
-        // TEST - Methods to be exposed by and called by detector messenger
+        // Setter methods to be exposed by and called by detector messenger
         void SetCrystalDiameter(G4double const diameterInInches);
         void SetSourceDetectorDistance(G4double const distance);
         void SetSource(G4String const isotope);
         
-        // ...
-        Isotopes GetSource() const { return fSource; };
+        // // ...
+        // Isotopes GetSource() const { return fSource; };
+        
+        
+        // TEST
+        SourceGeometry* GetSourceGeometry() const { return fSourceGeometry; };
 
     private:
         // ...
         G4VPhysicalVolume* BuildWorld();
         G4double BuildTable(G4LogicalVolume* worldLog);
         
-        // Local storage to access scoring volume outside the scope of "Construct()"
-        // G4LogicalVolume* fScoringVolume = nullptr; // logical volume
-
-        // Construct sensitive detector (SD) or field (electronic, magnetic, etc..)
-        // void ConstructSDandField() override; // Will ignore field for now
-        
-        // TEST
-        G4LogicalVolume* fSourceVolume = nullptr; // NOTE: TEMP UNTIL PLACING PHYSICAL SOURCE VOL
-        G4ThreeVector fSourceCoords; // NOTE: TEMP UNTIL PLACING PHYSICAL SOURCE VOL
-        // G4VPhysicalVolume* fSourceVolume = nullptr;
-        
-        // TEST
-        G4double fCrystalDiameter = 3. * (2.54 * cm); // 3 inches default (unit doesnt exist, will be converted in .cc file though)
-        G4double fSourceDetectorDistance = 3. * cm; // source placed 3cm from face of detector by default
-        Isotopes fSource = Isotopes::Cs137;
-        
         // ...
         DetectorMessenger* fDetectorMessenger = nullptr;
         
-        // Flag for checking geometry overlap
-        G4bool fCheckOverlaps = true;
-        
-        // TEST
+        // ...
         DetectorMaterials* fDetectorMaterials = nullptr;
         SourceMaterials* fSourceMaterials = nullptr;
         
         // ...
         DetectorGeometry* fDetectorGeometry = nullptr;
         SourceGeometry* fSourceGeometry = nullptr;
+        
+        // Flag for checking geometry overlap
+        G4bool fCheckOverlaps = true;
+        
+        // Local storage to access scoring volume outside the scope of "Construct()"
+        // G4LogicalVolume* fScoringVolume = nullptr; // logical volume
+        
+        // TEST
+        // G4LogicalVolume* fSourceVolume = nullptr; // NOTE: TEMP UNTIL PLACING PHYSICAL SOURCE VOL
+        // G4ThreeVector fSourceCoords; // NOTE: TEMP UNTIL PLACING PHYSICAL SOURCE VOL
+        // G4VPhysicalVolume* fSourceVolume = nullptr;
+        
+        // TEST
+        // G4double fCrystalDiameter = 3. * (2.54 * cm); // 3 inches default (unit doesnt exist, will be converted in .cc file though)
+        // G4double fSourceDetectorDistance = 3. * cm; // source placed 3cm from face of detector by default
+        // Isotopes fSource = Isotopes::Cs137;
+        
+        
 };
 
 #endif

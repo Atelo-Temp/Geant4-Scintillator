@@ -5,7 +5,7 @@
 // G4 lib
 #include "G4VPhysicalVolume.hh"
 #include "G4LogicalVolume.hh"
-#include "G4SystemOfUnits.hh"
+// #include "G4SystemOfUnits.hh" // included in header file now
 #include "G4Tubs.hh"
 #include "G4Box.hh"
 #include "G4SubtractionSolid.hh"
@@ -19,12 +19,13 @@ SourceGeometry::SourceGeometry(SourceMaterials& sourceMaterials) : fSourceMateri
 /*
  * ...
  */
-G4VPhysicalVolume* SourceGeometry::BuildSource(
+// G4VPhysicalVolume* SourceGeometry::BuildSource(
+void SourceGeometry::BuildSource(
     G4LogicalVolume* worldLog,
     G4double const tableTopY,
     G4double const detectorFaceZ,
     G4double const detectorX,
-    G4double const fSourceDetectorDistance,
+    // G4double const fSourceDetectorDistance,
     bool const fCheckOverlaps
 ) {
     //////////
@@ -421,17 +422,54 @@ G4VPhysicalVolume* SourceGeometry::BuildSource(
         fCheckOverlaps
     );
     
-    //////
-    //
-    //////
+    ///////////////////
+    // CACHE VARIABLES:
+    ///////////////////
     
     // Assign the logical source volume to the class member
     // fSourceVolume = sourceLog;
     // TODO: This should be sourcePhys so that x,y,z can be extracted
     
     // fSourceVolume = sourceLog; // NOTE: TEMP UNTIL PLACING PHYSICAL VOLUME
-    // fSourceCoords = sourceTrans; // NOTE: TEMP UNTIL PLACING PHYSICAL VOLUME
     // fSourceVolume = sourcePhys;
     
-    return sourcePhys;
+    // TODO: May just replace the lines above with assignment to members, then use members throughout
+    fSourceRadius = activeRadius;
+    fSourceThickness = activeThickness;
+    fSourceCoords = sourceTrans;
+    
+    // return sourcePhys;
+}
+
+/*
+ * ...
+ */
+void SourceGeometry::SetSourceDetectorDistance(G4double const distance) {
+    // ...
+    fSourceDetectorDistance = distance;
+}
+
+/*
+ * ...
+ */
+void SourceGeometry::SetSource(G4String const isotope) {
+    // ...
+    if (isotope == "137Cs") {
+        fSource = Isotopes::Cs137;
+    }
+    else if (isotope == "60Co") {
+        fSource = Isotopes::Co60;
+    }
+    else if (isotope == "22Na") {
+        fSource = Isotopes::Na22;
+    }
+    else if (isotope == "133Ba") {
+        fSource = Isotopes::Ba133;
+    }
+    // else if (isotope == "241Am") {
+    //     // ...
+    // }
+    else {
+        G4cerr << "Error: Invalid isotope." << G4endl;
+    }
 }

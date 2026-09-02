@@ -1,16 +1,15 @@
 // User classes
 #include "PrimaryGenerator.hh"
+#include "DetectorConstruction.hh"
+#include "SourceGeometry.hh" // for isotope definition
 
 // G4 lib
 #include "G4ParticleGun.hh"
 #include "G4SystemOfUnits.hh" // cm, m, etc definition
 #include "G4IonTable.hh" // Get acces to predefinied ions (decay physics)
 #include "G4GeneralParticleSource.hh"
-
-// TODO:
-#include "DetectorConstruction.hh"
 #include "G4RunManager.hh"
-#include "G4Tubs.hh"
+// #include "G4Tubs.hh"
 
 // NOTE: Cannot hand this class directly to the run manager as with the others,
 // must hand this to "ActionInitialization" which will use it
@@ -79,7 +78,7 @@ void PrimaryGenerator::GeneratePrimaries(G4Event* event) {
  */
 void PrimaryGenerator::SelectSource(DetectorConstruction const* detectorConstruction) {
     // ...
-    Isotopes isotope = detectorConstruction->GetSource();
+    Isotopes isotope = detectorConstruction->GetSourceGeometry()->GetSource();
     
     // ...
     switch (isotope) {
@@ -211,21 +210,22 @@ void PrimaryGenerator::PlaceSource(DetectorConstruction const* detectorConstruct
     // auto const detectorConstruction = static_cast<const DetectorConstruction*>(
     //     G4RunManager::GetRunManager()->GetUserDetectorConstruction()
     // );
-    G4LogicalVolume const* sourceLog = detectorConstruction->GetSourceVolume(); // TODO: Should be physical volume so i can get coords, and logical, and solid
+    
+    // G4LogicalVolume const* sourceLog = detectorConstruction->GetSourceVolume(); // TODO: Should be physical volume so i can get coords, and logical, and solid
     // G4VPhysicalVolume* sourcePhys = detectorConstruction->GetSourceVolume(); // TODO
     
-    G4VSolid const* sourceSolid = sourceLog->GetSolid();
-    G4String const shapeType = sourceSolid->GetEntityType();
+    // G4VSolid const* sourceSolid = sourceLog->GetSolid();
+    // G4String const shapeType = sourceSolid->GetEntityType();
     
-    G4double outerRadius;
-    G4double halfThickness;
+    // G4double outerRadius;
+    // G4double halfThickness;
     
-    if (shapeType == "G4Tubs") {
-        // ...
-        auto cylinder = static_cast<G4Tubs const*>(sourceSolid);
-        outerRadius = cylinder->GetOuterRadius();
-        halfThickness = cylinder->GetZHalfLength();
-    }
+    // if (shapeType == "G4Tubs") {
+    //     // ...
+    //     auto cylinder = static_cast<G4Tubs const*>(sourceSolid);
+    //     outerRadius = cylinder->GetOuterRadius();
+    //     halfThickness = cylinder->GetZHalfLength();
+    // }
     
     // G4double const crystalFaceZ = 5.90425 * cm; // TODO: calculate this as: crystal origin - 1/2 crystal height - reflector thick - enclosure thick
     // ^^^ use acquired detector construction instance above
@@ -233,9 +233,12 @@ void PrimaryGenerator::PlaceSource(DetectorConstruction const* detectorConstruct
     // G4double const sourceDetectorDist = 3 * cm; // TODO: expose messenger to alter this via macros, get the best of both worlds,
     // able to alter it on the fly instead of hardcoding/recompiling, and automatically derived based on detector geometry
     // ^^ will also allow for a change in macro source-detector dist to move the source holder, casing, and physical source itself
-
+    
+    // ...
+    SourceGeometry const* sourceGeom = detectorConstruction->GetSourceGeometry();
+    
     // Get position vector with the defined components
-    G4ThreeVector const origin = detectorConstruction->GetSourceOrigin();
+    G4ThreeVector const origin = sourceGeom->GetSourceOrigin();
 
     // Assign position of the particle    
     position->SetCentreCoords(origin);
@@ -252,9 +255,12 @@ void PrimaryGenerator::PlaceSource(DetectorConstruction const* detectorConstruct
     // ...
     position->SetPosDisShape("Cylinder");
     
+    G4double radius = sourceGeom->GetSourceRadius();
+    G4double thickness = sourceGeom->GetSourceThickness();
+    
     // For cylinder, user gives redius and z-half length
-    position->SetRadius(outerRadius); // TODO: derive these from detector construction,
-    position->SetHalfZ(halfThickness); // or from class member itself like GetSourceOrigin
+    position->SetRadius(radius); // TODO: derive these from detector construction,
+    position->SetHalfZ(thickness * 0.5); // or from class member itself like GetSourceOrigin
     
     // TODO: Remove all these from test.mac and 137Cs.mac (just leave isotope selection to the macro)
     // ^ but actually abstract away isotope selection a bit, macro should just specify one of the four

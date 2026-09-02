@@ -8,6 +8,8 @@
 #include "G4Isotope.hh"
 #include "G4NistManager.hh"
 
+// TODO: Lazy load ? getters instantiate if not already instantiated
+
 /*
  * Create and return a cesium 137 material
  * 

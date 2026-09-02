@@ -981,3 +981,29 @@ G4OpticalSurface* DetectorMaterials::WindowSurface() const {
 G4OpticalSurface* DetectorMaterials::PhotocathodeSurface() const {
     return fPhotocathodeSurface;
 };
+
+/*
+ * ...
+ */
+G4Material* DetectorMaterials::GetReflectorMaterial(ReflectorMaterial material) const {
+    switch (material) {
+        case ReflectorMaterial::Al2O3:
+            return fAl2O3;
+        default:
+            G4cerr << "Error: Unrecognised reflector material." << G4endl;
+    }
+};
+
+/*
+ * ...
+ */
+G4Material* DetectorMaterials::GetEnclosureMaterial(EnclosureMaterial material) const {
+    switch (material) {
+        case EnclosureMaterial::Aluminium:
+            return fAl;
+        case EnclosureMaterial::StainlessSteel:
+            return G4NistManager::Instance()->FindOrBuildMaterial("G4_STAINLESS-STEEL"); // TODO: Temporary instantiation in here, remove
+        default:
+            G4cerr << "Error: Unrecognised enclosure material." << G4endl;
+    }
+};

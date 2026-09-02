@@ -1,11 +1,15 @@
 #ifndef MyDetectorGeometry_HH
 #define MyDetectorGeometry_HH
 
+// User lib
+#include "DetectorMaterials.hh"
+
 // G4 lib
 #include "G4Types.hh"
+#include "G4SystemOfUnits.hh"
 
 // Forward declarations
-class DetectorMaterials;
+// class DetectorMaterials;
 class G4VPhysicalVolume;
 class G4LogicalVolume;
 
@@ -46,12 +50,14 @@ class DetectorGeometry {
         ~DetectorGeometry() = default;
         
         // ...
-        DetectorBuild BuildDetector(G4LogicalVolume* worldLog, G4double const tableTopY, G4double const fCrystalDiameter, bool const fCheckOverlaps);
+        // DetectorBuild BuildDetector(G4LogicalVolume* worldLog, G4double const tableTopY, G4double const fCrystalDiameter, bool const fCheckOverlaps);
+        DetectorBuild BuildDetector(G4LogicalVolume* worldLog, G4double const tableTopY, bool const fCheckOverlaps);
+        
+        // ...
+        void SetCrystalDiameter(G4double const diameterInInches);
+        
         
     private:
-        // ...
-        DetectorMaterials& fDetectorMaterials;
-        
         // ...
         void DefineOpticalInterfaces(
             G4VPhysicalVolume* crystalPhys,
@@ -64,6 +70,28 @@ class DetectorGeometry {
             G4VPhysicalVolume* sealPhys,
             G4VPhysicalVolume* photocathodePhys
         );
+        
+        // ...
+        DetectorMaterials& fDetectorMaterials;
+        
+        // TODO: Maybe structs to group params for each component \/\/\/\/\/\/\/
+        // then fEnclosure.RadialMaterial, etc
+        // also means you practically never have to look at .cc file and wade through all the shite
+        // just all nicely grouped here, idk
+        
+        // ...
+        G4double fCrystalDiameter = 3. * (2.54 * cm); // 3 inches
+        
+        // ...
+        G4double fReflectorAxialThickness = 0.23495 * cm;
+        G4double fReflectorRadialThickness = 0.23495 * cm;
+        ReflectorMaterial fReflectorMaterial = ReflectorMaterial::Al2O3;
+        
+        // ...
+        G4double fEnclosureAxialThickness = 0.0508 * cm;
+        G4double fEnclosureRadialThickness = 0.0508 * cm;
+        EnclosureMaterial fEnclosureRadialMaterial = EnclosureMaterial::Aluminium;
+        EnclosureMaterial fEnclosureAxialMaterial = EnclosureMaterial::Aluminium;
 };
 
 #endif
