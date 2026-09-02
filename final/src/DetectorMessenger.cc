@@ -27,7 +27,73 @@ DetectorMessenger::DetectorMessenger(DetectorConstruction* detCon) : fDetectorCo
     // crystalSizeCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
     // crystalSizeCmd->SetToBeBroadcasted(false);
     
-    fCommands[crystalSizeCmd] = "crystal_diameter";
+    fCommands[crystalSizeCmd] = CommandName::crystal_diameter;
+    
+    // REFLECTOR THICKNESS
+    
+    // ..
+    auto reflectorThicknessAxialCmd = new G4UIcmdWithADoubleAndUnit("/experiment/detector/reflectorAxialThickness", this);
+    reflectorThicknessAxialCmd->SetGuidance("Set the thickness of the reflector axially (at the radiation entrance window).");
+    reflectorThicknessAxialCmd->SetParameterName("reflector-thickness-axial", false);
+    reflectorThicknessAxialCmd->SetDefaultUnit("cm");
+    
+    fCommands[reflectorThicknessAxialCmd] = CommandName::reflector_thickness_axial;
+    
+    // ...
+    auto reflectorThicknessRadialCmd = new G4UIcmdWithADoubleAndUnit("/experiment/detector/reflectorRadialThickness", this);
+    reflectorThicknessRadialCmd->SetGuidance("Set the thickness of the reflector radially.");
+    reflectorThicknessRadialCmd->SetParameterName("reflector-thickness-radial", false);
+    reflectorThicknessRadialCmd->SetDefaultUnit("cm");
+    
+    fCommands[reflectorThicknessRadialCmd] = CommandName::reflector_thickness_radial;
+    
+    // REFLECTOR MATERIAL
+    
+    // TODO: Reflector density, reflector material
+    // ...
+    
+    // REFLECTOR DENSITY
+    
+    // ...
+    
+    // ENCLOSURE THICKNESS
+    
+    // ..
+    auto enclosureThicknessAxialCmd = new G4UIcmdWithADoubleAndUnit("/experiment/detector/enclosureAxialThickness", this);
+    enclosureThicknessAxialCmd->SetGuidance("Set the thickness of the enclosure axially (at the radiation entrance window).");
+    enclosureThicknessAxialCmd->SetParameterName("enclosure-thickness-axial", false);
+    enclosureThicknessAxialCmd->SetDefaultUnit("cm");
+    
+    fCommands[enclosureThicknessAxialCmd] = CommandName::enclosure_thickness_axial;
+    
+    // ...
+    auto enclosureThicknessRadialCmd = new G4UIcmdWithADoubleAndUnit("/experiment/detector/enclosureRadialThickness", this);
+    enclosureThicknessRadialCmd->SetGuidance("Set the thickness of the enclosure radially.");
+    enclosureThicknessRadialCmd->SetParameterName("enclosure-thickness-radial", false);
+    enclosureThicknessRadialCmd->SetDefaultUnit("cm");
+    
+    fCommands[enclosureThicknessRadialCmd] = CommandName::enclosure_thickness_radial;
+    
+    // ENCLOSURE MATERIAL
+    
+    // ...
+    auto enclosureMaterialAxialCmd = new G4UIcmdWithAString("/experiment/detector/enclosureMaterialAxial", this);
+    enclosureMaterialAxialCmd->SetGuidance("Set the material of the enclosure axially (at the radiation entrance window).");
+    enclosureMaterialAxialCmd->SetParameterName("enclosure-material-axial", false);
+    enclosureMaterialAxialCmd->SetCandidates("Aluminium StainlessSteel"); // TODO: List supported sources
+    
+    fCommands[enclosureMaterialAxialCmd] = CommandName::enclosure_material_axial;
+    
+    // ...
+    auto enclosureMaterialRadialCmd = new G4UIcmdWithAString("/experiment/detector/enclosureMaterialRadial", this);
+    enclosureMaterialRadialCmd->SetGuidance("Set the material of the enclosure radially.");
+    enclosureMaterialRadialCmd->SetParameterName("enclosure-material-radial", false);
+    enclosureMaterialRadialCmd->SetCandidates("Aluminium StainlessSteel"); // TODO: List supported sources
+    
+    fCommands[enclosureMaterialRadialCmd] = CommandName::enclosure_material_radial;
+    
+    
+    // SOURCE DETECTOR DISTANCE
     
     // ...
     auto sourceDetectorDistCmd = new G4UIcmdWithADoubleAndUnit("/experiment/source/sourceDetectorDist", this);
@@ -37,7 +103,9 @@ DetectorMessenger::DetectorMessenger(DetectorConstruction* detCon) : fDetectorCo
     // sourceDetectorDistCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
     // sourceDetectorDistCmd->SetToBeBroadcasted(false);
     
-    fCommands[sourceDetectorDistCmd] = "source_detector_distance";
+    fCommands[sourceDetectorDistCmd] = CommandName::source_detector_distance;
+    
+    // SOURCE ISOTOPE
     
     // ...
     auto sourceCmd = new G4UIcmdWithAString("/experiment/source/isotope", this);
@@ -45,7 +113,28 @@ DetectorMessenger::DetectorMessenger(DetectorConstruction* detCon) : fDetectorCo
     sourceCmd->SetParameterName("isotope", false);
     sourceCmd->SetCandidates("137Cs 60Co 22Na 133Ba"); // TODO: List supported sources
     
-    fCommands[sourceCmd] = "isotope";
+    fCommands[sourceCmd] = CommandName::isotope;
+    
+    // SOURCE WINDOW MATERIAL
+    
+    // ...
+    // ...
+    auto sourceWindowMaterialCmd = new G4UIcmdWithAString("/experiment/source/sourceWindowMaterial", this);
+    sourceWindowMaterialCmd->SetGuidance("Set the material of the source retainer window.");
+    sourceWindowMaterialCmd->SetParameterName("source-window-material", false);
+    sourceWindowMaterialCmd->SetCandidates("Mylar StainlessSteel"); // TODO: List supported sources
+    
+    fCommands[sourceWindowMaterialCmd] = CommandName::source_window_material;
+    
+    // SOURCE WINDOW THICKNESS
+    
+    // ...
+    auto sourceWindowThicknessCmd = new G4UIcmdWithADoubleAndUnit("/experiment/source/sourceWindowThickness", this);
+    sourceWindowThicknessCmd->SetGuidance("Set the thickness of the source retainer window.");
+    sourceWindowThicknessCmd->SetParameterName("source-window-thickness", false);
+    sourceWindowThicknessCmd->SetDefaultUnit("cm");
+    
+    fCommands[sourceWindowThicknessCmd] = CommandName::source_window_thickness;
 };
 
 /*
@@ -66,41 +155,92 @@ void DetectorMessenger::SetNewValue(G4UIcommand* cmd, G4String val) {
     auto const found = fCommands.find(cmd);
     
     if (found == fCommands.end()) {
-        G4cout << "Command not found." << G4endl;
+        G4cerr << "Error: Command not found." << G4endl;
         return;
     }
     
     G4cout << "SETTING VALUE: " << val << G4endl;
     
     // ...
-    G4String const command = found->second;
+    CommandName const commandName = found->second;
     
     // ...
-    if (command == "crystal_diameter") {
-        // ..
-        auto casted = static_cast<G4UIcmdWithADoubleAndUnit*>(cmd);
-        G4double const value = casted->GetNewDoubleValue(val);
-        
-        // ...
-        fDetectorConstruction->SetCrystalDiameter(value);
-        
-        G4cout << "CRYSTAL DIAMETER SET: " << value << G4endl;
-    }
-    else if (command == "source_detector_distance") {
-        // ..
-        // auto casted = static_cast<G4UIcmdWithADoubleAndUnit*>(cmd);
-        auto casted = static_cast<G4UIcmdWithADoubleAndUnit*>(found->first);
-        G4double const value = casted->GetNewDoubleValue(val);
-        
-        // ...
-        fDetectorConstruction->SetSourceDetectorDistance(value);
-        
-        G4cout << "SOURCE DETECTOR DISTANCE SET" << G4endl;
-    }
-    else if (command == "isotope") {
-        // ...
-        fDetectorConstruction->SetSource(val);
-        
-        G4cout << "ISOTOPE SET" << G4endl;
+    switch (commandName) {
+        case CommandName::crystal_diameter: {
+            auto casted = static_cast<G4UIcmdWithADoubleAndUnit*>(cmd);
+            G4double const value = casted->GetNewDoubleValue(val);
+            fDetectorConstruction->SetCrystalDiameter(value);
+            G4cout << "CRYSTAL DIAMETER SET: " << value << G4endl;
+            break;
+        }
+        case CommandName::reflector_thickness_axial: {
+            auto casted = static_cast<G4UIcmdWithADoubleAndUnit*>(cmd);
+            G4double const value = casted->GetNewDoubleValue(val);
+            G4cout << "AXIAL REFLECTOR THICKNESS SET: " << value << G4endl;
+            // fDetectorConstruction->Se
+            break;
+        }
+        case CommandName::reflector_thickness_radial: {
+            auto casted = static_cast<G4UIcmdWithADoubleAndUnit*>(cmd);
+            G4double const value = casted->GetNewDoubleValue(val);
+            G4cout << "RADIAL REFLECTOR THICKNESS SET: " << value << G4endl;
+            // fDetectorConstruction->Se
+            break;
+        }
+        // case CommandName::reflector_material {
+        //     break;
+        // }
+        case CommandName::enclosure_thickness_axial: {
+            auto casted = static_cast<G4UIcmdWithADoubleAndUnit*>(cmd);
+            G4double const value = casted->GetNewDoubleValue(val);
+            G4cout << "AXIAL ENCLOSURE THICKNESS SET: " << value << G4endl;
+            // fDetectorConstruction->Se
+            break;
+        }
+        case CommandName::enclosure_thickness_radial: {
+            auto casted = static_cast<G4UIcmdWithADoubleAndUnit*>(cmd);
+            G4double const value = casted->GetNewDoubleValue(val);
+            G4cout << "RADIAL ENCLOSURE THICKNESS SET: " << value << G4endl;
+            // fDetectorConstruction->Se
+            break;
+        }
+        case CommandName::enclosure_material_axial: {
+            G4cout << "AXIAL ENCLOSURE MATERIAL SET: " << val << G4endl;
+            // fDetectorConstruction->Se
+            break;
+        }
+        case CommandName::enclosure_material_radial: {
+            G4cout << "RADIAL ENCLOSURE MATERIAL SET: " << val << G4endl;
+            // fDetectorConstruction->Se
+            break;
+        }
+        case CommandName::source_detector_distance: {
+            // auto casted = static_cast<G4UIcmdWithADoubleAndUnit*>(cmd);
+            auto casted = static_cast<G4UIcmdWithADoubleAndUnit*>(found->first);
+            G4double const value = casted->GetNewDoubleValue(val);
+            fDetectorConstruction->SetSourceDetectorDistance(value);
+            G4cout << "SOURCE DETECTOR DISTANCE SET: " << value << G4endl;
+            break;
+        }
+        case CommandName::isotope: {
+            fDetectorConstruction->SetSource(val);
+            G4cout << "ISOTOPE SET: " << val << G4endl;
+            break;
+        }
+        case CommandName::source_window_material: {
+            G4cout << "SOURCE WINDOW MATERIAL SET: " << val << G4endl;
+            // fDetectorConstruction->Se
+            break;
+        }
+        case CommandName::source_window_thickness: {
+            auto casted = static_cast<G4UIcmdWithADoubleAndUnit*>(cmd);
+            G4double const value = casted->GetNewDoubleValue(val);
+            // fDetectorConstruction->Se
+            G4cout << "SOURCE WINDOW THICKNESS SET: " << value << G4endl;
+            break;
+        }
+        default:
+            G4cerr << "Error: Command name invalid." << G4endl;
+            break;
     }
 }
