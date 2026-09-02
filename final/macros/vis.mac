@@ -19,7 +19,9 @@
 /run/initialize
 
 # Initialise graphical output (qt window) OpenGL - 600 window
-/vis/open OGL 600x600-0+0
+#/vis/open OGL 600x600-0+0
+#/vis/open TSG 600x600-0+0
+#/vis/open TSGQtZB 600x600-0+0
 
 # If changes are made, viewer will automatically be updated
 /vis/viewer/set/autoRefresh true

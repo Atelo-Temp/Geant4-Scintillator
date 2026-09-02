@@ -1,5 +1,12 @@
 # Top-down Visualisation Macro
 
+###################
+# EXPERIMENT CONFIG
+###################
+
+/experiment/detector/crystalSize 2 inch
+#/experiment/source/sourceDetectorDist 3 cm
+
 ######
 # INIT
 ######
@@ -7,65 +14,120 @@
 # Initialise Geant4 framework
 /run/initialize
 
-# Initialise graphical output (qt window) OpenGL - 600 window
-/vis/open OGL 600x600-0+0
-# /vis/open OGL 900x900-0+0
-#/vis/open OGL 1440x1080-0+0
-
-# If changes are made, viewer will automatically be updated
-/vis/viewer/set/autoRefresh true
-
-# Draw the volumes (will be empty otherwise)
-/vis/drawVolume
-
 # Check for overlaps (the overlap warning doesnt abort sim, and the normal warning is lost in stdout)
 /geometry/test/run
+
+##########
+# GRAPHICS
+##########
+
+# Initialise graphical output (qt window) OpenGL - 600 window
+#/vis/open OGL 600x600-0+0
+#/vis/open OGL 900x900-0+0
+#/vis/open OGL 1440x1080-0+0
+/vis/open TSG 600x600-0+0
+#/vis/open TSGQtZB 600x600-0+0
+
+# Disable auto refresh whilst scene is established
+/vis/viewer/set/autoRefresh false
 
 #######
 # SCENE
 #######
 
+# Draw the volumes (will be empty otherwise)
+/vis/drawVolume
+
 # Display a scale for the scene
-/vis/scene/add/scale 10 cm
+#/vis/scene/add/scale 10 cm
 # NOTE: Without adding scale zoom messes up randomly
 
 # Display coordinate system
 #/vis/scene/add/axes
-/vis/scene/add/axes 0 0 0 5 cm # at xyz(0,0,0), 5cm long axis line
+#/vis/scene/add/axes 0 0 0 5 cm # at xyz(0,0,0), 5cm long axis line
 
 # Hide volumes
 /vis/geometry/set/visibility World 0 false
 /vis/geometry/set/visibility Table 0 false
-/vis/geometry/set/visibility Casing 0 false
+/vis/geometry/set/visibility SourceActive 0 false 
+/vis/geometry/set/visibility SourceRetainer 0 false 
+/vis/geometry/set/visibility SourceRetainerWindow 0 false 
+/vis/geometry/set/visibility SourceCasing 0 false 
+/vis/geometry/set/visibility SourceCasingWindow 0 false 
+/vis/geometry/set/visibility SourceHolder 0 false
 
 # Set colours (args: volume, depth, red, green, blue, opacity)
-/vis/geometry/set/colour Scintillator 0 1. 1. 1. 0.5 # white (semi-transparent)
-/vis/geometry/set/colour Reflector 0 0. 0. 1. 1. # blue (opaque)
-/vis/geometry/set/colour OpticalGrease 0 1. 1. 1. 0.1 # white (mostly-transparent)
-/vis/geometry/set/colour OpticalWindow 0 0.8 0.8 0.8 0.25 # mid-light gray (mostly-transparent)
-/vis/geometry/set/colour Photocathode 0 1. 0. 0. 0.5 # red
-/vis/geometry/set/colour Enclosure 0 0.8 0.8 0.8 1. # mid-light gray (opaque)
-/vis/geometry/set/colour HermeticSeal 0 0.8 0.8 0.8 1. # mid-light gray (opaque)
+/vis/geometry/set/colour Scintillator 0 1. 1. 1. 1. # white
+/vis/geometry/set/colour ReflectorRadial 0 0. 0. 1. 1. # blue
+/vis/geometry/set/colour ReflectorAxial 0 0. 0. 1. 1. # blue
+/vis/geometry/set/colour OpticalGrease 0 1. 1. 0. 1. # yellow
+/vis/geometry/set/colour OpticalWindow 0 0. 1. 1. 1. # teal
+/vis/geometry/set/colour Photocathode 0 1. 0. 0. 1. # red
+#/vis/geometry/set/colour EnclosureRadial 0 0.8 0.8 0.8 1. # mid-light gray
+#/vis/geometry/set/colour EnclosureAxial 0 0.8 0.8 0.8 1. # mid-light gray
+#/vis/geometry/set/colour HermeticSeal 0 0.8 0.8 0.8 1. # mid-light gray
+/vis/geometry/set/colour EnclosureRadial 0 0.7 0.7 0.7 1. # mid-light gray
+/vis/geometry/set/colour EnclosureAxial 0 0.7 0.7 0.7 1. # mid-light gray
+/vis/geometry/set/colour HermeticSeal 0 0.7 0.7 0.7 1. # mid-light gray
 
+# ...
+/vis/geometry/set/forceSolid all
+
+######
+# VIEW
+######
+
+# Section cut (quarter-cut)
 /vis/viewer/addCutawayPlane 0 0 0 cm 1 0 0 # cut along the X-axis
-/vis/viewer/addCutawayPlane 0 0 0 cm 0 -1 0 # cut along the Y-axis
+/vis/viewer/addCutawayPlane 0 5 0 cm 0 -1 0 # cut along the Y-axis
+
+# Specify style (surface or wireframe):
+/vis/viewer/set/style surface
+#/vis/viewer/set/style wireframe
+
+# Set cut aways to add or multiply
+/vis/viewer/set/cutawayMode union # add (default value)
+#/vis/viewer/set/cutawayMode intersection # multiply
+
+# ...
+#/vis/viewer/set/hiddenEdge true
+#/vis/viewer/set/hiddenEdge false
+
+# ...
+#/vis/viewer/set/auxiliaryEdge true
+#/vis/viewer/set/auxiliaryEdge false
+
+# Increase cylindrical tesselation to reduce staggered gradient on enclosure
+/vis/viewer/set/lineSegmentsPerCircle 360
 
 ########
 # CAMERA
 ########
 
+# ...
+/vis/viewer/set/projection orthogonal
+# NOTE: Reduces z-fighting seemingly
+
 # Centre camera on detector origin
 /vis/viewer/centreOn Scintillator
 
+# Set the positive Z axis as the cameras Y axis
+/vis/viewer/set/upVector 0 0 1
+
+# Rotate the camera up/down & left/right
+/vis/viewer/set/viewpointThetaPhi 285. 315.
+# NOTE: first value rotates it up/down, second value rotates it side to side
+# i.e., 290. 315. would just move the camera angle up a bit
+# i.e., 285. 330. would just move the camera angle right
+# and vice versa
+
 # Zoom in on detector origin
 # /vis/viewer/zoom 7
-/vis/viewer/zoom 6
+#/vis/viewer/zoom 6
+/vis/viewer/zoom 1.3
 
-# Top down view
-/vis/viewer/set/upVector 0 0 10
-/vis/viewer/set/viewpointThetaPhi 270. 270.
+# Update viewer with the changes
+/vis/viewer/refresh
 
-
-# /vis/viewer/set/projection orthogonal
-# 
-# 
+# If changes are made, viewer will automatically be updated
+/vis/viewer/set/autoRefresh true
