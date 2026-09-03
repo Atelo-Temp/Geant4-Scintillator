@@ -9,6 +9,7 @@
 // #include "G4SubtractionSolid.hh"
 #include "G4PVPlacement.hh"
 #include "G4LogicalBorderSurface.hh"
+#include "DetectorMaterials.hh"
 
 /*
  * ...
@@ -562,73 +563,152 @@ DetectorBuild DetectorGeometry::BuildDetector(
 
 /*
  * ....
+ * 
+ * NOTE: Reflector->Enclosure & Reflector->Seal are not needed, as groundbackpainted & dielectri_metal prevent refraction
+ * 
+ * NOTE: Crystal->Grease, and Grease->Window surfaces are not explicitly needed when rindex of each is passed,
+ * will default to: GLISUR, polished, dielectric_dielectric
+ * 
+ * NOTE: G4LogicalBorderSurface is not bidirectional, however, in this model return borders are not needed
  */
 void DetectorGeometry::DefineOpticalInterfaces(
     G4VPhysicalVolume* crystalPhys,
     G4VPhysicalVolume* reflectorRadialPhys,
     G4VPhysicalVolume* reflectorAxialPhys,
-    // G4VPhysicalVolume* enclosureRadialPhys,
-    // G4VPhysicalVolume* enclosureAxialPhys,
     G4VPhysicalVolume* greasePhys,
     G4VPhysicalVolume* windowPhys,
     G4VPhysicalVolume* sealPhys,
     G4VPhysicalVolume* photocathodePhys
 ) {
     // Define the border between the crystal and the reflector
-    auto crystalReflectorRadialBorder = new G4LogicalBorderSurface("CrystalToRadialReflector", crystalPhys, reflectorRadialPhys, fDetectorMaterials.ReflectorSurface());
-    auto crystalReflectorAxialBorder = new G4LogicalBorderSurface("CrystalToAxialReflector", crystalPhys, reflectorAxialPhys, fDetectorMaterials.ReflectorSurface());
+    auto crystalReflectorRadialBorder = new G4LogicalBorderSurface(
+        "CrystalToRadialReflector", 
+        crystalPhys, 
+        reflectorRadialPhys, 
+        fDetectorMaterials.ReflectorSurface()
+    );
+    auto crystalReflectorAxialBorder = new G4LogicalBorderSurface(
+        "CrystalToAxialReflector", 
+        crystalPhys, 
+        reflectorAxialPhys, 
+        fDetectorMaterials.ReflectorSurface()
+    );
 
     // NOTE: Crystal->Grease, and Grease->Window surfaces are not explicitly needed when rindex of each is passed
     // will default to: GLISUR, polished, dielectric_dielectric
     // ^ maybe do it just to explicitly pick UNIFIED
-    auto crystalGreaseBorder = new G4LogicalBorderSurface("CrystalToGrease", crystalPhys, greasePhys, fDetectorMaterials.GreaseSurface());
-    auto greaseWindowBorder = new G4LogicalBorderSurface("GreaseToWindow", greasePhys, windowPhys, fDetectorMaterials.WindowSurface());
+    auto crystalGreaseBorder = new G4LogicalBorderSurface(
+        "CrystalToGrease", 
+        crystalPhys, 
+        greasePhys, 
+        fDetectorMaterials.GreaseSurface()
+    );
+    auto greaseWindowBorder = new G4LogicalBorderSurface(
+        "GreaseToWindow", 
+        greasePhys, 
+        windowPhys, 
+        fDetectorMaterials.WindowSurface()
+    );
     // NOTE: After testing, adding these two borders produces an identical spectrum to just 
     // leaving these two borders as default
     
-    
-    // TEST
-    // auto crystalWindowBorder = new G4LogicalBorderSurface("CrystalToWindow", crystalPhys, windowPhys, fDetectorMaterials.greaseSurface());
-    // auto crystalWindowBorder = new G4LogicalBorderSurface("CrystalToWindow", crystalPhys, windowPhys, fDetectorMaterials.windowSurface());
-    // TEST
-    
-    
-    // TEST \/\/\/\/
-    // Define the border between the reflector and enclosure
-    // auto reflectorEnclosureBorder = new G4LogicalBorderSurface("ReflectorToEnclosure", reflectorPhys, enclosurePhys, fDetectorMaterials.aluminiumSurface());
-    //
-    // Define the border between the reflector and hermetic seal
-    // auto reflectorSealBorder = new G4LogicalBorderSurface("ReflectorToSeal", reflectorPhys, sealPhys, fDetectorMaterials.aluminiumSurface());
-    // TEST ^^^^^^^
-    
-    // NOTE: ^^^ These are not needed, as groundbackpainted prevents refraction
-    
-    // TODO: Border back from: (enclosurePhys -> reflectorPhys) & (sealPhys - reflectorPhys)
-    // auto enclosureReflectorBorder = new G4LogicalBorderSurface("EnclosureToReflector", enclosurePhys, reflectorPhys, fDetectorMaterials.reflectorSurface());
-    // auto enclosureSealBorder = new G4LogicalBorderSurface("SealToReflector", sealPhys, reflectorPhys, fDetectorMaterials.reflectorSurface());
-    // TODO: Border back from reflectorPhys->crystalPhys
-    // auto reflectorCrystalBorder = new G4LogicalBorderSurface("ReflectorToCrystal", reflectorPhys, crystalPhys, fDetectorMaterials.reflectorSurface());
-    
-    // NOTE: ^^^ I DONT THINK THESE ARE ACTUALLY NEEDED (borders work both ways as is)
-    
     // Define the border between the optical grease and the reflector
     // auto greaseReflectorBorder = new G4LogicalBorderSurface("GreaseToReflector", greasePhys, reflectorRadialPhys, fDetectorMaterials.ReflectorSurface()); // TEST (FIXES LOST PHOTONS)
-    auto greaseSealBorder = new G4LogicalBorderSurface("GreaseToSeal", greasePhys, sealPhys, fDetectorMaterials.AluminiumSurface()); // TEST (FIXES LOST PHOTONS)
     // TODO: Is the crystal->reflector surface sufficient here? Not really as the sigma alpha value is for crystal surface, and uses rindex air for gap
+    
+    // Define the border between the optical grease and the hermetic seal
+    auto greaseSealBorder = new G4LogicalBorderSurface(
+        "GreaseToSeal", 
+        greasePhys, 
+        sealPhys, 
+        fDetectorMaterials.AluminiumSurface()
+    );
+    // NOTE: FIXES LOST PHOTONS - While the optical grease has only miniscule thickness, several photons per event can still
+    // trickle out the far edges, and if the grease->seal border is not defined (with rindex), the photons will be lost
     
     // ...
     // auto windowReflectorBorder = new G4LogicalBorderSurface("WindowToReflector", windowPhys, reflectorRadialPhys, fDetectorMaterials.ReflectorSurface()); // TEST (for 25 um grease geom)
+    
     // Define the border between the optical window and the hermetic seal
-    auto windowSealBorder = new G4LogicalBorderSurface("WindowToSeal", windowPhys, sealPhys, fDetectorMaterials.AluminiumSurface()); // NOTE: UNCOMMENT ME
+    auto windowSealBorder = new G4LogicalBorderSurface(
+        "WindowToSeal",
+        windowPhys,
+        sealPhys,
+        fDetectorMaterials.AluminiumSurface()
+    ); // NOTE: UNCOMMENT ME
     
     // Define the border between the optical window and the photocathode
-    auto windowPhotocathodeBorder = new G4LogicalBorderSurface("WindowToPhotocathode", windowPhys, photocathodePhys, fDetectorMaterials.PhotocathodeSurface());
+    auto windowPhotocathodeBorder = new G4LogicalBorderSurface(
+        "WindowToPhotocathode",
+        windowPhys,
+        photocathodePhys,
+        fDetectorMaterials.PhotocathodeSurface()
+    );
 }
 
 /*
  * ...
  */
 void DetectorGeometry::SetCrystalDiameter(G4double diameter) {
-    // ...
     fCrystalDiameter = diameter;
+}
+
+/*
+ * ...
+ */
+void DetectorGeometry::SetAxialReflectorThickness(G4double const thickness) {
+    fReflectorAxialThickness = thickness;
+}
+
+/*
+ * ...
+ */
+void DetectorGeometry::SetRadialReflectorThickness(G4double const thickness) {
+    fReflectorRadialThickness = thickness;
+}
+
+/*
+ * ...
+ */
+void DetectorGeometry::SetAxialEnclosureThickness(G4double const thickness) {
+    fEnclosureAxialThickness = thickness;
+}
+
+/*
+ * ...
+ */
+void DetectorGeometry::SetRadialEnclosureThickness(G4double const thickness) {
+    fEnclosureRadialThickness = thickness;
+}
+
+/*
+ * ...
+ */
+void DetectorGeometry::SetAxialEnclosureMaterial(G4String const material) {
+    // ...
+    if (material == "Aluminium") {
+        fEnclosureAxialMaterial = EnclosureMaterial::Aluminium;
+    }
+    else if (material == "StainlessSteel") {
+        fEnclosureAxialMaterial = EnclosureMaterial::StainlessSteel;
+    }
+    else {
+        G4cerr << "Error: Invalid material." << G4endl;
+    }
+}
+
+/*
+ * ...
+ */
+void DetectorGeometry::SetRadialEnclosureMaterial(G4String const material) {
+    // ...
+    if (material == "Aluminium") {
+        fEnclosureAxialMaterial = EnclosureMaterial::Aluminium;
+    }
+    else if (material == "StainlessSteel") {
+        fEnclosureAxialMaterial = EnclosureMaterial::StainlessSteel;
+    }
+    else {
+        G4cerr << "Error: Invalid material." << G4endl;
+    }
 }

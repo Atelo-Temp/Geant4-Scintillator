@@ -2,13 +2,28 @@
 # EXPERIMENT CONFIG
 ###################
 
-/experiment/detector/crystalSize 3 inch
+# ...
+#/experiment/detector/crystalSize 3 inch
+/experiment/detector/crystalSize 2 inch
 #/experiment/detector/crystalSize 1 inch
 
+# ...
+/experiment/detector/reflectorAxialThickness 0.23495 cm
+/experiment/detector/reflectorRadialThickness 0.23495 cm
+
+# ...
+/experiment/detector/enclosureAxialThickness 0.0508 cm
+/experiment/detector/enclosureRadialThickness 0.0508 cm
+/experiment/detector/enclosureAxialMaterial Aluminium
+/experiment/detector/enclosureRadialMaterial Aluminium
+
+# ...
 #/experiment/source/sourceDetectorDist 10 cm
 /experiment/source/sourceDetectorDist 3 cm
 
-# /experiment/source/isotope 137Cs # TODO
+# ...
+/experiment/source/isotope 137Cs
+#/experiment/source/isotope 133Ba
 
 
 ######

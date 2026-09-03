@@ -88,13 +88,27 @@ class DetectorConstruction : public G4VUserDetectorConstruction {
         // // G4VPhysicalVolume* GetSourceVolume() const { return fSourceVolume; };
         
         // Setter methods to be exposed by and called by detector messenger
+        // ...
         void SetCrystalDiameter(G4double const diameterInInches);
+        
+        // ...
+        void SetAxialReflectorThickness(G4double const thickness);
+        void SetRadialReflectorThickness(G4double const thickness);
+        
+        // ...
+        void SetAxialEnclosureThickness(G4double const thickness);
+        void SetRadialEnclosureThickness(G4double const thickness);
+        void SetAxialEnclosureMaterial(G4String const material);
+        void SetRadialEnclosureMaterial(G4String const material);
+        
+        // ...
         void SetSourceDetectorDistance(G4double const distance);
         void SetSource(G4String const isotope);
+        void SetSourceWindowThickness(G4double const thickness);
+        void SetSourceWindowMaterial(G4String const material);
         
         // // ...
         // Isotopes GetSource() const { return fSource; };
-        
         
         // TEST
         SourceGeometry* GetSourceGeometry() const { return fSourceGeometry; };

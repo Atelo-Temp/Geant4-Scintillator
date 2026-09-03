@@ -389,13 +389,56 @@ void DetectorConstruction::SetCrystalDiameter(G4double const diameter) {
 /*
  * ...
  */
+void DetectorConstruction::SetAxialReflectorThickness(G4double const thickness) {
+    fDetectorGeometry->SetAxialReflectorThickness(thickness);
+    G4RunManager::GetRunManager()->ReinitializeGeometry();
+}
+
+/*
+ * ...
+ */
+void DetectorConstruction::SetRadialReflectorThickness(G4double const thickness) {
+    fDetectorGeometry->SetRadialReflectorThickness(thickness);
+    G4RunManager::GetRunManager()->ReinitializeGeometry();
+}
+
+/*
+ * ...
+ */
+void DetectorConstruction::SetAxialEnclosureThickness(G4double const thickness) {
+    fDetectorGeometry->SetAxialEnclosureThickness(thickness);
+    G4RunManager::GetRunManager()->ReinitializeGeometry();
+}
+
+/*
+ * ...
+ */
+void DetectorConstruction::SetRadialEnclosureThickness(G4double const thickness) {
+    fDetectorGeometry->SetRadialEnclosureThickness(thickness);
+    G4RunManager::GetRunManager()->ReinitializeGeometry();
+}
+
+/*
+ * ...
+ */
+void DetectorConstruction::SetAxialEnclosureMaterial(G4String const material) {
+    fDetectorGeometry->SetAxialEnclosureMaterial(material);
+    G4RunManager::GetRunManager()->ReinitializeGeometry();
+}
+
+/*
+ * ...
+ */
+void DetectorConstruction::SetRadialEnclosureMaterial(G4String const material) {
+    fDetectorGeometry->SetRadialEnclosureMaterial(material);
+    G4RunManager::GetRunManager()->ReinitializeGeometry();
+}
+
+/*
+ * ...
+ */
 void DetectorConstruction::SetSourceDetectorDistance(G4double const distance) {
-    // // ...
-    // fSourceDetectorDistance = distance;
-    
     fSourceGeometry->SetSourceDetectorDistance(distance);
-    
-    // ...
     G4RunManager::GetRunManager()->ReinitializeGeometry();
 }
 
@@ -403,28 +446,20 @@ void DetectorConstruction::SetSourceDetectorDistance(G4double const distance) {
  * ...
  */
 void DetectorConstruction::SetSource(G4String const isotope) {
-    // // ...
-    // if (isotope == "137Cs") {
-    //     fSource = Isotopes::Cs137;
-    // }
-    // else if (isotope == "60Co") {
-    //     fSource = Isotopes::Co60;
-    // }
-    // else if (isotope == "22Na") {
-    //     fSource = Isotopes::Na22;
-    // }
-    // else if (isotope == "133Ba") {
-    //     fSource = Isotopes::Ba133;
-    // }
-    // // else if (isotope == "241Am") {
-    // //     // ...
-    // // }
-    // else {
-    //     G4cerr << "Error: Invalid isotope." << G4endl;
-    // }
-    
     fSourceGeometry->SetSource(isotope);
-    
-    // ...
     G4RunManager::GetRunManager()->ReinitializeGeometry();
+}
+
+/*
+ * ...
+ */
+void DetectorConstruction::SetSourceWindowThickness(G4double const thickness) {
+    // fSourceGeometry->SetSourceWindowThickness(thickness);
+}
+
+/*
+ * ...
+ */
+void DetectorConstruction::SetSourceWindowMaterial(G4String const material) {
+    // fSourceGeometry->SetSourceWindowMaterial(material);
 }

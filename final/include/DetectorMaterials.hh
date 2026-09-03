@@ -62,22 +62,22 @@ class DetectorMaterials {
         
     private:
         // Materials
-        G4Material* fAir; // not really detector material
-        G4Material* fWood; // not really detector material
+        G4Material* fAir = nullptr; // not really detector material
+        G4Material* fWood = nullptr; // not really detector material
         
-        G4Material* fNaI;
-        G4Material* fAl2O3;
-        G4Material* fAl;
-        G4Material* fPDMS;
-        G4Material* fBorosilicate;
-        G4Material* fLi;
+        G4Material* fNaI = nullptr;
+        G4Material* fAl2O3 = nullptr;
+        G4Material* fAl = nullptr;
+        G4Material* fPDMS = nullptr;
+        G4Material* fBorosilicate = nullptr;
+        G4Material* fLi = nullptr;
         
         // Surfaces
-        G4OpticalSurface* fReflectorSurface;
-        G4OpticalSurface* fAluminiumSurface;
-        G4OpticalSurface* fGreaseSurface; // technically not needed
-        G4OpticalSurface* fWindowSurface; // technically not needed
-        G4OpticalSurface* fPhotocathodeSurface;
+        G4OpticalSurface* fReflectorSurface = nullptr;
+        G4OpticalSurface* fAluminiumSurface = nullptr;
+        G4OpticalSurface* fGreaseSurface = nullptr; // technically not needed
+        G4OpticalSurface* fWindowSurface = nullptr; // technically not needed
+        G4OpticalSurface* fPhotocathodeSurface = nullptr;
 };
 
 #endif

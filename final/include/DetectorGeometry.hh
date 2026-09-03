@@ -56,6 +56,15 @@ class DetectorGeometry {
         // ...
         void SetCrystalDiameter(G4double const diameterInInches);
         
+        // ...
+        void SetAxialReflectorThickness(G4double const thickness);
+        void SetRadialReflectorThickness(G4double const thickness);
+        
+        // ...
+        void SetAxialEnclosureThickness(G4double const thickness);
+        void SetRadialEnclosureThickness(G4double const thickness);
+        void SetAxialEnclosureMaterial(G4String const material);
+        void SetRadialEnclosureMaterial(G4String const material);
         
     private:
         // ...
