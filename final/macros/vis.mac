@@ -2,28 +2,34 @@
 # EXPERIMENT CONFIG
 ###################
 
-# ...
+# Crystal diameter
 #/experiment/detector/crystalSize 3 inch
 /experiment/detector/crystalSize 2 inch
 #/experiment/detector/crystalSize 1 inch
 
-# ...
-/experiment/detector/reflectorAxialThickness 0.23495 cm
-/experiment/detector/reflectorRadialThickness 0.23495 cm
+# Reflector thickness (axial & radial)
+/experiment/detector/reflectorAxialThickness 0.23495 cm # 0.23495 cm default
+/experiment/detector/reflectorRadialThickness 0.23495 cm # 0.23495 cm default
 
-# ...
-/experiment/detector/enclosureAxialThickness 0.0508 cm
-/experiment/detector/enclosureRadialThickness 0.0508 cm
-/experiment/detector/enclosureAxialMaterial Aluminium
-/experiment/detector/enclosureRadialMaterial Aluminium
+# Enclosure thickness (axial & radial)
+/experiment/detector/enclosureAxialThickness 0.0508 cm # 0.0508 cm default
+/experiment/detector/enclosureRadialThickness 0.0508 cm # 0.0508 cm default
 
-# ...
+# Enclosure material (axial & radial)
+/experiment/detector/enclosureAxialMaterial Aluminium # Aluminium default
+/experiment/detector/enclosureRadialMaterial Aluminium # Aluminium default
+
+# Source-detector-distance
 #/experiment/source/sourceDetectorDist 10 cm
 /experiment/source/sourceDetectorDist 3 cm
 
-# ...
+# Radioactive isotope
 /experiment/source/isotope 137Cs
 #/experiment/source/isotope 133Ba
+
+# Source retainer window material/thickness
+/experiment/source/sourceWindowMaterial Mylar # Mylar default
+/experiment/source/sourceWindowThickness 0.0125 cm # 0.0125 cm default
 
 
 ######

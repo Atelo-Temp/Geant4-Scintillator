@@ -38,8 +38,8 @@ class DetectorMaterials {
         void DefineOpticalProperties();
         
         // Generic getters (TEST)
-        G4Material* GetReflectorMaterial(ReflectorMaterial material) const;
-        G4Material* GetEnclosureMaterial(EnclosureMaterial material) const;
+        G4Material* GetReflectorMaterial(ReflectorMaterial const material) const;
+        G4Material* GetEnclosureMaterial(EnclosureMaterial const material) const;
         
         // Material Getters
         G4Material* Air() const;

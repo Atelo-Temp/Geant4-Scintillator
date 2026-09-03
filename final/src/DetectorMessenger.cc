@@ -151,16 +151,20 @@ DetectorMessenger::~DetectorMessenger() {
 
 /*
  * ...
+ * 
+ * TODO: Handle double commands in separate switch statement to remove repetition of casting
  */
 void DetectorMessenger::SetNewValue(G4UIcommand* cmd, G4String val) {
     // ...
     auto const found = fCommands.find(cmd);
     
+    // ...
     if (found == fCommands.end()) {
         G4cerr << "Error: Command not found." << G4endl;
         return;
     }
     
+    // ...
     G4cout << "SETTING VALUE: " << val << G4endl;
     
     // ...
@@ -178,15 +182,15 @@ void DetectorMessenger::SetNewValue(G4UIcommand* cmd, G4String val) {
         case CommandName::reflector_thickness_axial: {
             auto casted = static_cast<G4UIcmdWithADoubleAndUnit*>(cmd);
             G4double const value = casted->GetNewDoubleValue(val);
-            G4cout << "AXIAL REFLECTOR THICKNESS SET: " << value << G4endl;
             fDetectorConstruction->SetAxialReflectorThickness(value);
+            G4cout << "AXIAL REFLECTOR THICKNESS SET: " << value << G4endl;
             break;
         }
         case CommandName::reflector_thickness_radial: {
             auto casted = static_cast<G4UIcmdWithADoubleAndUnit*>(cmd);
             G4double const value = casted->GetNewDoubleValue(val);
-            G4cout << "RADIAL REFLECTOR THICKNESS SET: " << value << G4endl;
             fDetectorConstruction->SetRadialReflectorThickness(value);
+            G4cout << "RADIAL REFLECTOR THICKNESS SET: " << value << G4endl;
             break;
         }
         // case CommandName::reflector_material {
@@ -195,25 +199,25 @@ void DetectorMessenger::SetNewValue(G4UIcommand* cmd, G4String val) {
         case CommandName::enclosure_thickness_axial: {
             auto casted = static_cast<G4UIcmdWithADoubleAndUnit*>(cmd);
             G4double const value = casted->GetNewDoubleValue(val);
-            G4cout << "AXIAL ENCLOSURE THICKNESS SET: " << value << G4endl;
             fDetectorConstruction->SetAxialEnclosureThickness(value);
+            G4cout << "AXIAL ENCLOSURE THICKNESS SET: " << value << G4endl;
             break;
         }
         case CommandName::enclosure_thickness_radial: {
             auto casted = static_cast<G4UIcmdWithADoubleAndUnit*>(cmd);
             G4double const value = casted->GetNewDoubleValue(val);
-            G4cout << "RADIAL ENCLOSURE THICKNESS SET: " << value << G4endl;
             fDetectorConstruction->SetRadialEnclosureThickness(value);
+            G4cout << "RADIAL ENCLOSURE THICKNESS SET: " << value << G4endl;
             break;
         }
         case CommandName::enclosure_material_axial: {
-            G4cout << "AXIAL ENCLOSURE MATERIAL SET: " << val << G4endl;
             fDetectorConstruction->SetAxialEnclosureMaterial(val);
+            G4cout << "AXIAL ENCLOSURE MATERIAL SET: " << val << G4endl;
             break;
         }
         case CommandName::enclosure_material_radial: {
-            G4cout << "RADIAL ENCLOSURE MATERIAL SET: " << val << G4endl;
             fDetectorConstruction->SetRadialEnclosureMaterial(val);
+            G4cout << "RADIAL ENCLOSURE MATERIAL SET: " << val << G4endl;
             break;
         }
         case CommandName::source_detector_distance: {
@@ -230,8 +234,8 @@ void DetectorMessenger::SetNewValue(G4UIcommand* cmd, G4String val) {
             break;
         }
         case CommandName::source_window_material: {
-            G4cout << "SOURCE WINDOW MATERIAL SET: " << val << G4endl;
             fDetectorConstruction->SetSourceWindowMaterial(val);
+            G4cout << "SOURCE WINDOW MATERIAL SET: " << val << G4endl;
             break;
         }
         case CommandName::source_window_thickness: {

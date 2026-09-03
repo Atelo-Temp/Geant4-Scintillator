@@ -1,6 +1,6 @@
 // User lib
 #include "SourceGeometry.hh"
-#include "SourceMaterials.hh"
+// #include "SourceMaterials.hh" // included in header file now
 
 // G4 lib
 #include "G4VPhysicalVolume.hh"
@@ -10,6 +10,7 @@
 #include "G4Box.hh"
 #include "G4SubtractionSolid.hh"
 #include "G4PVPlacement.hh"
+#include "SourceMaterials.hh"
 
 /*
  * ...
@@ -94,23 +95,24 @@ void SourceGeometry::BuildSource(
     
     // ...
     G4double const retainerWindowRadius = retainerInnerRadius; // 5mm diameter
-    G4double const retainerWindowThickness = 0.0125 * cm; // 0.125mm or 125um thickness
+    // G4double const retainerWindowThickness = 0.0125 * cm; // 0.125mm or 125um thickness
     
     // ...
     auto sourceRetainerWindow = new G4Tubs(
         "SourceRetainerWindow", // name
         0., // inner radius (0 = not hollow)
         retainerWindowRadius, // outer radius
-        retainerWindowThickness * 0.5, // thickness
+        fSourceRetainerWindowThickness * 0.5, // thickness
         0. * deg, // start angle
         360 * deg // end angle (full span here)
     );
     
     // Polyethylene terephthalate (PET) aka Mylar
-    G4Material* mylar = fSourceMaterials.Mylar();
+    // G4Material* mylar = fSourceMaterials.Mylar();
+    G4Material* sourceRetainerWindowMat = fSourceMaterials.GetSourceWindowMaterial(fSourceRetainerWindowMaterial);
     
     // ...
-    auto sourceRetainerWindowLog = new G4LogicalVolume(sourceRetainerWindow, mylar, "SourceRetainerWindow");
+    auto sourceRetainerWindowLog = new G4LogicalVolume(sourceRetainerWindow, sourceRetainerWindowMat, "SourceRetainerWindow");
     
     
     /////////////////
@@ -355,7 +357,7 @@ void SourceGeometry::BuildSource(
     ////
     
     // ...
-    G4double const frontRetainerWindowZ = sourceZ + (0.5 * activeThickness) + (0.5 * retainerWindowThickness);
+    G4double const frontRetainerWindowZ = sourceZ + (0.5 * activeThickness) + (0.5 * fSourceRetainerWindowThickness);
     auto const frontRetainerWindowTrans = G4ThreeVector(detectorX, casingTransY, frontRetainerWindowZ);
     
     // ...
@@ -371,7 +373,7 @@ void SourceGeometry::BuildSource(
     );
     
     // ...
-    G4double const backRetainerWindowZ = sourceZ - (0.5 * activeThickness) - (0.5 * retainerWindowThickness);
+    G4double const backRetainerWindowZ = sourceZ - (0.5 * activeThickness) - (0.5 * fSourceRetainerWindowThickness);
     auto const backRetainerWindowTrans = G4ThreeVector(detectorX, casingTransY, backRetainerWindowZ);
     
     // ...
@@ -434,8 +436,8 @@ void SourceGeometry::BuildSource(
     // fSourceVolume = sourcePhys;
     
     // TODO: May just replace the lines above with assignment to members, then use members throughout
-    fSourceRadius = activeRadius;
-    fSourceThickness = activeThickness;
+    fSourceActiveRadius = activeRadius;
+    fSourceActiveThickness = activeThickness;
     fSourceCoords = sourceTrans;
     
     // return sourcePhys;
@@ -471,5 +473,27 @@ void SourceGeometry::SetSource(G4String const isotope) {
     // }
     else {
         G4cerr << "Error: Invalid isotope." << G4endl;
+    }
+}
+
+/*
+ * ...
+ */
+void SourceGeometry::SetSourceWindowThickness(G4double const thickness) {
+    fSourceRetainerWindowThickness = thickness;
+}
+
+/*
+ * ...
+ */
+void SourceGeometry::SetSourceWindowMaterial(G4String const material) {
+    if (material == "Mylar") {
+        fSourceRetainerWindowMaterial = SourceWindowMaterial::Mylar;
+    }
+    else if (material == "StainlessSteel") {
+        fSourceRetainerWindowMaterial = SourceWindowMaterial::StainlessSteel;
+    }
+    else {
+        G4cerr << "Error: Invalid material." << G4endl;
     }
 }

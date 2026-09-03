@@ -199,3 +199,20 @@ G4Material* SourceMaterials::PMMA() const {
 G4Material* SourceMaterials::PLA() const {
     return fPLA;
 };
+
+/*
+ * ...
+ */
+G4Material* SourceMaterials::GetSourceWindowMaterial(SourceWindowMaterial const material) const {
+    switch (material) {
+        case SourceWindowMaterial::Mylar:
+            return fMylar;
+        case SourceWindowMaterial::StainlessSteel:
+            return G4NistManager::Instance()->FindOrBuildMaterial("G4_STAINLESS-STEEL");
+        default:
+            // G4cerr << "Error: Unrecognised source window material." << G4endl;
+            G4Exception("SourceMaterials::GetSourceWindowMaterial", "ErrCode", FatalException, "Error: Unrecognised source window material.");
+            // throw "";
+            return nullptr;
+    }
+};

@@ -454,12 +454,12 @@ void DetectorConstruction::SetSource(G4String const isotope) {
  * ...
  */
 void DetectorConstruction::SetSourceWindowThickness(G4double const thickness) {
-    // fSourceGeometry->SetSourceWindowThickness(thickness);
+    fSourceGeometry->SetSourceWindowThickness(thickness);
 }
 
 /*
  * ...
  */
 void DetectorConstruction::SetSourceWindowMaterial(G4String const material) {
-    // fSourceGeometry->SetSourceWindowMaterial(material);
+    fSourceGeometry->SetSourceWindowMaterial(material);
 }

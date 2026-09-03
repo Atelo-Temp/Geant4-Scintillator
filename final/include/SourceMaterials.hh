@@ -8,6 +8,16 @@
 class G4Material;
 
 /*
+ * ...
+ */
+enum class SourceWindowMaterial {
+    Mylar,
+    StainlessSteel,
+    Aluminium,
+    TitaniumAlloy
+};
+
+/*
  * Handles creating custom materials
  */
 class SourceMaterials {
@@ -18,12 +28,11 @@ class SourceMaterials {
         // Constructor
         ~SourceMaterials() = default;
         
-        // Create custom cesium-137 material
-        G4Material* Create137Cs();
-        G4Material* Create60Co();
-        
         // ...
         void DefineSourceMats();
+        
+        // ...
+        G4Material* GetSourceWindowMaterial(SourceWindowMaterial const material) const;
         
         // Getters
         G4Material* Polystyrene() const;
@@ -33,6 +42,10 @@ class SourceMaterials {
         G4Material* PLA() const;
         
     private:
+        // Create custom cesium-137 material
+        G4Material* Create137Cs();
+        G4Material* Create60Co();
+        
         G4Material* fPolystyrene = nullptr;
         G4Material* fMylar = nullptr;
         G4Material* fAluminium = nullptr;
