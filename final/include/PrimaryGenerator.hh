@@ -37,6 +37,8 @@ class PrimaryGenerator : public G4VUserPrimaryGeneratorAction {
         void Cobalt60Source();
         void Barium133Source();
         void Sodium22Source();
+        void Europium152Source();
+        void Bismuth207Source();
         
         // ...
         void GenerateIsotope(G4int const Z, G4int const A);
@@ -49,6 +51,7 @@ class PrimaryGenerator : public G4VUserPrimaryGeneratorAction {
         
         // Logic check to see whether gps has been assinged coordinates etc
         bool fPlaced = false;
+        // TODO: ^^ Not multiple run-safe currently, no reset
 };
 
 #endif

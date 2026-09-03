@@ -468,6 +468,12 @@ void SourceGeometry::SetSource(G4String const isotope) {
     else if (isotope == "133Ba") {
         fSource = Isotopes::Ba133;
     }
+    else if (isotope == "152Eu") {
+        fSource = Isotopes::Eu152;
+    }
+    else if (isotope == "207Bi") {
+        fSource = Isotopes::Bi207;
+    }
     // else if (isotope == "241Am") {
     //     // ...
     // }

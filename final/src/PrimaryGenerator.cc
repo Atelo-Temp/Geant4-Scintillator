@@ -94,6 +94,12 @@ void PrimaryGenerator::SelectSource(DetectorConstruction const* detectorConstruc
         case Isotopes::Na22:
             Sodium22Source();
             break;
+        case Isotopes::Bi207:
+            Bismuth207Source();
+            break;
+        case Isotopes::Eu152:
+            Europium152Source();
+            break;
         default:
             G4cerr << "Error: Unrecognised isotope." << G4endl;
             break;
@@ -149,6 +155,30 @@ void PrimaryGenerator::Sodium22Source() {
     // Sodium (22Na) (Half life ~2.6y) (B+ primarily)
     G4int const Z = 11; // Atomic number (num protons)
     G4int const A = 22; // Molecular mass (integer, not exact)
+    
+    // ...
+    GenerateIsotope(Z, A);
+}
+
+/*
+ * Europium (152Eu) (Half life ~13.5y) (ε mostly, B- partly)
+ */
+void PrimaryGenerator::Europium152Source() {
+    // 
+    G4int const Z = 63; // Atomic number (num protons)
+    G4int const A = 152; // Molecular mass (integer, not exact)
+    
+    // ...
+    GenerateIsotope(Z, A);
+}
+
+/*
+ * Bismuth (207Bi) (Half life ~32y) (ε primarily)
+ */
+void PrimaryGenerator::Bismuth207Source() {
+    // 
+    G4int const Z = 83; // Atomic number (num protons)
+    G4int const A = 207; // Molecular mass (integer, not exact)
     
     // ...
     GenerateIsotope(Z, A);

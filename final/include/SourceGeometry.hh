@@ -30,8 +30,8 @@ enum class Isotopes {
     // Ge68 // Germanium 68
     // Am241 // Americium 241
     // Ti44 // Titanium 44
-    // Eu152 // Europium 152
-    // Bi207 // Bismuth 207
+    Eu152, // Europium 152
+    Bi207 // Bismuth 207
 };
 
 /*

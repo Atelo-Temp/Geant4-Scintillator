@@ -349,7 +349,8 @@ DetectorBuild DetectorGeometry::BuildDetector(
     
     // TODO:
     // - Evacuated borosillicate glass vessel of 2mm thickness
-    // - Aluminium enclosure
+    // - Mu Metal /OR/ Permalloy magnetic shield
+    // - 2A12 Aluminium enclosure (Al-Cu-Mg)
     // - Base plate
     // - ...
     

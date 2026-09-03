@@ -33,6 +33,7 @@
 
 # Source retainer window material/thickness
 /experiment/source/sourceWindowMaterial Mylar # Mylar default
+#/experiment/source/sourceWindowMaterial StainlessSteel # Mylar default
 /experiment/source/sourceWindowThickness 0.0125 cm # 0.0125 cm default
 
 #######
@@ -41,7 +42,7 @@
 
 # Use multithreaded mode (3 cores, 3 threads)
 /run/numberOfThreads 3 # NOTE: Using less threads results in slower simulations
-#/run/numberOfThreads 8 # NOTE: Using less threads results in slower simulations
+#/run/numberOfThreads 8
 
 # Initialise kernel
 /run/initialize

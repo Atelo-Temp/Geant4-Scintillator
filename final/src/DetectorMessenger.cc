@@ -113,7 +113,7 @@ DetectorMessenger::DetectorMessenger(DetectorConstruction* detCon) : fDetectorCo
     auto sourceCmd = new G4UIcmdWithAString("/experiment/source/isotope", this);
     sourceCmd->SetGuidance("Select the radioactive isotope to use as the source.");
     sourceCmd->SetParameterName("isotope", false);
-    sourceCmd->SetCandidates("137Cs 60Co 22Na 133Ba"); // TODO: List supported sources
+    sourceCmd->SetCandidates("137Cs 60Co 22Na 133Ba 152Eu 207Bi"); // TODO: List supported sources
     
     fCommands[sourceCmd] = CommandName::isotope;
     
