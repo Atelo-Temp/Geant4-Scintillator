@@ -45,6 +45,7 @@ set(FINAL_SCRIPTS
   vis.mac
   gui.mac
   test.mac
+  spectra.mac
   137Cs.mac
   60Co.mac
   241Am.mac
