@@ -23,7 +23,7 @@ DetectorMessenger::DetectorMessenger(DetectorConstruction* detCon) : fDetectorCo
     // Various commands for modifying detector geometry
     auto crystalSizeCmd = new G4UIcmdWithADoubleAndUnit("/experiment/detector/crystalSize", this);
     crystalSizeCmd->SetGuidance("Set the dimensions of the scintillator crystal.");
-    crystalSizeCmd->SetParameterName("crystal-diameter", false);
+    crystalSizeCmd->SetParameterName("crystal_diameter", false);
     new G4UnitDefinition("inch", "in", "Length", 2.54 * cm);
     crystalSizeCmd->SetDefaultUnit("inch");
     // crystalSizeCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
@@ -36,7 +36,7 @@ DetectorMessenger::DetectorMessenger(DetectorConstruction* detCon) : fDetectorCo
     // ..
     auto reflectorThicknessAxialCmd = new G4UIcmdWithADoubleAndUnit("/experiment/detector/reflectorAxialThickness", this);
     reflectorThicknessAxialCmd->SetGuidance("Set the thickness of the reflector axially (at the radiation entrance window).");
-    reflectorThicknessAxialCmd->SetParameterName("reflector-thickness-axial", false);
+    reflectorThicknessAxialCmd->SetParameterName("reflector_thickness_axial", false);
     reflectorThicknessAxialCmd->SetDefaultUnit("cm");
     
     fCommands[reflectorThicknessAxialCmd] = CommandName::reflector_thickness_axial;
@@ -44,7 +44,7 @@ DetectorMessenger::DetectorMessenger(DetectorConstruction* detCon) : fDetectorCo
     // ...
     auto reflectorThicknessRadialCmd = new G4UIcmdWithADoubleAndUnit("/experiment/detector/reflectorRadialThickness", this);
     reflectorThicknessRadialCmd->SetGuidance("Set the thickness of the reflector radially.");
-    reflectorThicknessRadialCmd->SetParameterName("reflector-thickness-radial", false);
+    reflectorThicknessRadialCmd->SetParameterName("reflector_thickness_radial", false);
     reflectorThicknessRadialCmd->SetDefaultUnit("cm");
     
     fCommands[reflectorThicknessRadialCmd] = CommandName::reflector_thickness_radial;
@@ -63,7 +63,7 @@ DetectorMessenger::DetectorMessenger(DetectorConstruction* detCon) : fDetectorCo
     // ..
     auto enclosureThicknessAxialCmd = new G4UIcmdWithADoubleAndUnit("/experiment/detector/enclosureAxialThickness", this);
     enclosureThicknessAxialCmd->SetGuidance("Set the thickness of the enclosure axially (at the radiation entrance window).");
-    enclosureThicknessAxialCmd->SetParameterName("enclosure-thickness-axial", false);
+    enclosureThicknessAxialCmd->SetParameterName("enclosure_thickness_axial", false);
     enclosureThicknessAxialCmd->SetDefaultUnit("cm");
     
     fCommands[enclosureThicknessAxialCmd] = CommandName::enclosure_thickness_axial;
@@ -71,7 +71,7 @@ DetectorMessenger::DetectorMessenger(DetectorConstruction* detCon) : fDetectorCo
     // ...
     auto enclosureThicknessRadialCmd = new G4UIcmdWithADoubleAndUnit("/experiment/detector/enclosureRadialThickness", this);
     enclosureThicknessRadialCmd->SetGuidance("Set the thickness of the enclosure radially.");
-    enclosureThicknessRadialCmd->SetParameterName("enclosure-thickness-radial", false);
+    enclosureThicknessRadialCmd->SetParameterName("enclosure_thickness_radial", false);
     enclosureThicknessRadialCmd->SetDefaultUnit("cm");
     
     fCommands[enclosureThicknessRadialCmd] = CommandName::enclosure_thickness_radial;
@@ -81,7 +81,7 @@ DetectorMessenger::DetectorMessenger(DetectorConstruction* detCon) : fDetectorCo
     // ...
     auto enclosureMaterialAxialCmd = new G4UIcmdWithAString("/experiment/detector/enclosureAxialMaterial", this);
     enclosureMaterialAxialCmd->SetGuidance("Set the material of the enclosure axially (at the radiation entrance window).");
-    enclosureMaterialAxialCmd->SetParameterName("enclosure-material-axial", false);
+    enclosureMaterialAxialCmd->SetParameterName("enclosure_material_axial", false);
     enclosureMaterialAxialCmd->SetCandidates("Aluminium StainlessSteel"); // TODO: List supported sources
     
     fCommands[enclosureMaterialAxialCmd] = CommandName::enclosure_material_axial;
@@ -89,7 +89,7 @@ DetectorMessenger::DetectorMessenger(DetectorConstruction* detCon) : fDetectorCo
     // ...
     auto enclosureMaterialRadialCmd = new G4UIcmdWithAString("/experiment/detector/enclosureRadialMaterial", this);
     enclosureMaterialRadialCmd->SetGuidance("Set the material of the enclosure radially.");
-    enclosureMaterialRadialCmd->SetParameterName("enclosure-material-radial", false);
+    enclosureMaterialRadialCmd->SetParameterName("enclosure_material_radial", false);
     enclosureMaterialRadialCmd->SetCandidates("Aluminium StainlessSteel"); // TODO: List supported sources
     
     fCommands[enclosureMaterialRadialCmd] = CommandName::enclosure_material_radial;
@@ -100,7 +100,7 @@ DetectorMessenger::DetectorMessenger(DetectorConstruction* detCon) : fDetectorCo
     // ...
     auto sourceDetectorDistCmd = new G4UIcmdWithADoubleAndUnit("/experiment/source/sourceDetectorDist", this);
     sourceDetectorDistCmd->SetGuidance("Set the distance between the face of the detector and the source.");
-    sourceDetectorDistCmd->SetParameterName("source-detector-distance", false);
+    sourceDetectorDistCmd->SetParameterName("source_detector_distance", false);
     sourceDetectorDistCmd->SetDefaultUnit("cm");
     // sourceDetectorDistCmd->AvailableForStates(G4State_PreInit, G4State_Idle);
     // sourceDetectorDistCmd->SetToBeBroadcasted(false);
@@ -123,7 +123,7 @@ DetectorMessenger::DetectorMessenger(DetectorConstruction* detCon) : fDetectorCo
     // ...
     auto sourceWindowMaterialCmd = new G4UIcmdWithAString("/experiment/source/sourceWindowMaterial", this);
     sourceWindowMaterialCmd->SetGuidance("Set the material of the source retainer window.");
-    sourceWindowMaterialCmd->SetParameterName("source-window-material", false);
+    sourceWindowMaterialCmd->SetParameterName("source_window_material", false);
     sourceWindowMaterialCmd->SetCandidates("Mylar StainlessSteel"); // TODO: List supported sources
     
     fCommands[sourceWindowMaterialCmd] = CommandName::source_window_material;
@@ -133,8 +133,9 @@ DetectorMessenger::DetectorMessenger(DetectorConstruction* detCon) : fDetectorCo
     // ...
     auto sourceWindowThicknessCmd = new G4UIcmdWithADoubleAndUnit("/experiment/source/sourceWindowThickness", this);
     sourceWindowThicknessCmd->SetGuidance("Set the thickness of the source retainer window.");
-    sourceWindowThicknessCmd->SetParameterName("source-window-thickness", false);
+    sourceWindowThicknessCmd->SetParameterName("source_window_thickness", false);
     sourceWindowThicknessCmd->SetDefaultUnit("cm");
+    sourceWindowThicknessCmd->SetRange("source_window_thickness >= 0. && source_window_thickness <= 0.15");
     
     fCommands[sourceWindowThicknessCmd] = CommandName::source_window_thickness;
 };
