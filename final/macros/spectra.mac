@@ -30,6 +30,8 @@
 #/experiment/source/isotope 133Ba
 #/experiment/source/isotope 60Co
 #/experiment/source/isotope 22Na
+#/experiment/source/isotope 207Bi
+#/experiment/source/isotope 152Eu
 
 # Source retainer window material/thickness
 /experiment/source/sourceWindowMaterial Mylar # Mylar default
