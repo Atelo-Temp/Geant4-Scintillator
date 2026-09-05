@@ -246,17 +246,28 @@ TODO: Still needs to be updated to oop style ASCII infile handler
 
 > NOTE: Extension of subtract_background.cc
 
+31) oop_analysis.cc
+
+Introduces:
+- oop_discriminator.cc into oop_fit.cc ??
+
+> NOTE: Extension of oop_fit.cc & oop_discriminator.cc
+
 ## TODOS
 
-29) oop_analysis.cc
+32) oop_better_fit.cc
+
+Refined fitting methodology
+
+31) oop_low_e_fit.cc
+
+Handles fitting peaks close to the x-axis origin better (i.e., 241Am)
+
+32) ??.cc
 
 Literally just a cleaned up version of oop_fit.cc
 
-Integrate subtract_background.cc and oop_discriminator.cc into oop_fit.cc ??
-
-30) oop_better_fit.cc
-
-Refined fitting methodology
+Integrate subtract_background.cc ??
 
 30) residuals.cc
 
