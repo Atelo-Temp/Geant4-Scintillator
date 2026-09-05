@@ -180,7 +180,8 @@ void DetectorMaterials::DefineOpticalProperties() {
     // std::vector<G4double> absorptionLengthNaI = {30.*cm, 30.*cm, 30.*cm};
     // std::vector<G4double> absorptionLengthNaI = {50.*cm, 50.*cm, 50.*cm}; // increased collection at the photocathode
     // std::vector<G4double> absorptionLengthNaI = {56.234 * cm, 31.623 * cm, 0.794 * cm}; // Brown (2021) (corrigendum) & Miller et al (2024)
-    std::vector<G4double> const absorptionLengthNaI = {56.234 * cm, 100 * cm, 0.794 * cm}; // TEST: Establish mean distance travelled before detection at PC
+    std::vector<G4double> const absorptionLengthNaI = {56.234 * cm, 100 * cm, 0.794 * cm}; // Janecek et al (2010) 1 meter optical absorption length
+    // TEST: Establish mean distance travelled before detection at PC
     // ..
     MPTCrystal->AddProperty("ABSLENGTH", energy, absorptionLengthNaI); // NOTE: Trivial in that the process merely kills the particle
     // NOTE: This has effect on air too (WITHOUT SPECIFYING THIS, SIM WILL HANG INDEFINITELY, WHEN AIR RINDEX SPECIFIED)
@@ -482,10 +483,12 @@ void DetectorMaterials::DefineOpticalProperties() {
     // NOTE: Reflectors are typically diffuse (ground), as it promotes greater light collection
     
     // Specify surface roughness (For back painted surface)
-    fReflectorSurface->SetSigmaAlpha(0); // No specular lobe constant, so ...
+    // fReflectorSurface->SetSigmaAlpha(0); // No specular lobe constant, so ...
     // reflectorSurface->SetSigmaAlpha(0.023); // Mechanically polished - Janecek et al (2010)
     // reflectorSurface->SetSigmaAlpha(0.1); // Almost polished (specular)
-    // reflectorSurface->SetSigmaAlpha(0.2); // Ground - Janecek et al (2010) (~12 deg)
+    // fReflectorSurface->SetSigmaAlpha(0.21); // Ground - Janecek et al (2010) (~12 deg)
+    fReflectorSurface->SetSigmaAlpha(12. * deg); // Ground - Janecek et al (2010) (~12 deg)
+    // NOTE: Radians is default G4 unit, so passing ~0.21 == 12 * deg
     // reflectorSurface->SetSigmaAlpha(0.25); // Ground polished (partially diffuse)
     // reflectorSurface->SetSigmaAlpha(0.35);
     // reflectorSurface->SetSigmaAlpha(0.4);
@@ -819,12 +822,13 @@ void DetectorMaterials::DefineOpticalProperties() {
     auto MPTPhotocathode = new G4MaterialPropertiesTable();
     
     // Unified model, polished surface finish, dielectric->metal interface
-    // auto photocathodeSurface = new G4OpticalSurface("Photocathode", unified, polished, dielectric_metal);
-    fPhotocathodeSurface = new G4OpticalSurface("Photocathode", unified, ground, dielectric_metal);
+    auto photocathodeSurface = new G4OpticalSurface("Photocathode", unified, polished, dielectric_metal);
+    // fPhotocathodeSurface = new G4OpticalSurface("Photocathode", unified, ground, dielectric_metal);
     // NOTE: Polished more typical for PC
     
-    // ...
+    // Surface roughness values for ground finish:
     // photocathodeSurface->SetSigmaAlpha(0.0175);
+    // photocathodeSurface->SetSigmaAlpha(0.0226893); // Janecek et al 2010 (1.3 deg for polished surfaces, sig alpha only applicable to ground, but ...)
 
     // Reflectivity of the photocathode
     // std::vector<G4double> energyScoring = {1.239841939*eV / 0.700, 1.239841939*eV / 0.551, 1.239841939*eV / 0.400}; // 400 nm - 700 nm (visible range)

@@ -83,13 +83,14 @@
 # Run simulation for X events
 # /run/beamOn 10000 # (~2m for 3' crystal)
 # /run/beamOn 50000 # (~9m for 3' crystal)
-#/run/beamOn 100000 # (~17m) (~21m) (~19m) (~18m) (~22m) (~27m w/ reflections & ntuple merging) (~24m w/ reflections & no ntuple merging) (~24m w/ reflections v2 & ntuple merging) (~22m w/ reflections v2 & ntuple merging & absorb process caching) (~18-19m for 3' crystal w/ all but spectra output disabled) (~17m no grease) (~10m for 2' crystal)
+#/run/beamOn 100000 # 100k events (~17m) (~21m) (~19m) (~18m) (~22m) (~27m w/ reflections & ntuple merging) (~24m w/ reflections & no ntuple merging) (~24m w/ reflections v2 & ntuple merging) (~22m w/ reflections v2 & ntuple merging & absorb process caching) (~18-19m for 3' crystal w/ all but spectra output disabled) (~17m no grease) (~10m for 2' crystal)
 /run/beamOn 200000 # (~38m for 3' crystal) (~15m for 2' crystal) (~20m for 2' crystal)
 #/run/beamOn 300000 # (~56m for 3' crystal) (~36m for 2' crystal)
 # /run/beamOn 400000 # (~1hr 14m for 3' crystal)
 # /run/beamOn 500000 # (~1hr 30m - ~1hr 40m for 3' crystal)
 #/run/beamOn 800000 # (~19m for 1' crystal)
-# /run/beamOn 1000000 # (~3hr 35m for 3' crystal)
+# /run/beamOn 1000000 # 1m events (~3hr 35m for 3' crystal)
 #/run/beamOn 1200000 # 1.2m events (~?hr ?m for 3' crystal) (~2hr 6m for 2' crystal) (~?hr ?m for 1' crystal)
+#/run/beamOn 2000000 # 2m events
 
 # NOTE: Due to decay and optical photons, sim time could fluctuate a lot for same amount of events (only if random seed is enabled, else result is repeatable)
