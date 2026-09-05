@@ -226,13 +226,37 @@ Re-introduces:
 - Peak fitting
 <!-- - Exponential, etc, fitting ? (maybe save this for a later macro tbh, as its far less developed than peak fitting, so an extension of exponential_fit.cc with simplified file loading etc likely best stepping stone first) -->
 
-> NOTE: Extension of oop_sav.cc & spectra_fit.cc
+> NOTE: Extension of oop_save.cc & spectra_fit.cc
+
+29) oop_discriminator.cc
+
+Introduces:
+- Lower level discriminator
+- Channel offset
+
+> NOTE: Extension of oop_plot.cc (fitting capabilities were stripped back to keep the macro focused on new feature)
+
+30) subtract_and_save.cc
+
+Introduces:
+- The improved path handling methodology developed since subtract_background.cc was written
+- Saving of background subtracted plot (ASCII infile) as a ROOT histogram in .root file
+
+TODO: Still needs to be updated to oop style ASCII infile handler
+
+> NOTE: Extension of subtract_background.cc
 
 ## TODOS
 
-29) ???.cc
+29) oop_analysis.cc
 
 Literally just a cleaned up version of oop_fit.cc
+
+Integrate subtract_background.cc and oop_discriminator.cc into oop_fit.cc ??
+
+30) oop_better_fit.cc
+
+Refined fitting methodology
 
 30) residuals.cc
 
