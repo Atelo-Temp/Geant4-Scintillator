@@ -822,7 +822,7 @@ void DetectorMaterials::DefineOpticalProperties() {
     auto MPTPhotocathode = new G4MaterialPropertiesTable();
     
     // Unified model, polished surface finish, dielectric->metal interface
-    auto photocathodeSurface = new G4OpticalSurface("Photocathode", unified, polished, dielectric_metal);
+    fPhotocathodeSurface = new G4OpticalSurface("Photocathode", unified, polished, dielectric_metal);
     // fPhotocathodeSurface = new G4OpticalSurface("Photocathode", unified, ground, dielectric_metal);
     // NOTE: Polished more typical for PC
     
