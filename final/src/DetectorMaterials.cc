@@ -182,7 +182,7 @@ void DetectorMaterials::DefineOpticalProperties() {
     // std::vector<G4double> absorptionLengthNaI = {56.234 * cm, 31.623 * cm, 0.794 * cm}; // Brown (2021) (corrigendum) & Miller et al (2024)
     // std::vector<G4double> const absorptionLengthNaI = {56.234 * cm, 100. * cm, 0.794 * cm}; // Janecek et al (2010) 1 meter optical absorption length
     // std::vector<G4double> const absorptionLengthNaI = {100. * cm, 100. * cm, 100. * cm}; // Janecek et al (2010) 1 meter optical absorption length
-    std::vector<G4double> const absorptionLengthNaI = {177.826 * cm, 100. * cm, 2.511 * cm}; // Brown 2021 & Miller et al 2024 scaled by factor of ~3.162 (so emi max 100 cm)
+    std::vector<G4double> const absorptionLengthNaI = {177.826 * cm, 100. * cm, 2.511 * cm}; // Brown 2021 & Miller et al 2024 scaled by factor of ~3.162 (so @emi max 100 cm abslen)
     // TEST: Establish mean distance travelled before detection at PC
     // ..
     MPTCrystal->AddProperty("ABSLENGTH", energy, absorptionLengthNaI); // NOTE: Trivial in that the process merely kills the particle
