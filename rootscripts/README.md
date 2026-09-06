@@ -253,6 +253,11 @@ Introduces:
 
 > NOTE: Extension of oop_fit.cc & oop_discriminator.cc
 
+32) ultra_fit.cc
+
+Introduces:
+- Ntuple plotting reproducability via TRandom3 random engine with seeding
+
 ## TODOS
 
 32) oop_better_fit.cc
