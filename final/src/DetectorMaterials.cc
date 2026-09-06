@@ -488,6 +488,7 @@ void DetectorMaterials::DefineOpticalProperties() {
     fReflectorSurface->SetSigmaAlpha(0); // Sigma alpha not known, No specular lobe constant, so ...
     // reflectorSurface->SetSigmaAlpha(0.023); // Mechanically polished - Janecek et al (2010)
     // reflectorSurface->SetSigmaAlpha(0.1); // Almost polished (specular)
+    // fReflectorSurface->SetSigmaAlpha(3.8 * deg); // Etched - Janecek et al (2010) (~12 deg)
     // fReflectorSurface->SetSigmaAlpha(0.21); // Ground - Janecek et al (2010) (~12 deg)
     // fReflectorSurface->SetSigmaAlpha(12. * deg); // Ground - Janecek et al (2010) (~12 deg)
     // NOTE: Radians is default G4 unit, so passing ~0.21 == 12 * deg
