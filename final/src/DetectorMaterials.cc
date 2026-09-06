@@ -180,7 +180,9 @@ void DetectorMaterials::DefineOpticalProperties() {
     // std::vector<G4double> absorptionLengthNaI = {30.*cm, 30.*cm, 30.*cm};
     // std::vector<G4double> absorptionLengthNaI = {50.*cm, 50.*cm, 50.*cm}; // increased collection at the photocathode
     // std::vector<G4double> absorptionLengthNaI = {56.234 * cm, 31.623 * cm, 0.794 * cm}; // Brown (2021) (corrigendum) & Miller et al (2024)
-    std::vector<G4double> const absorptionLengthNaI = {56.234 * cm, 100 * cm, 0.794 * cm}; // Janecek et al (2010) 1 meter optical absorption length
+    // std::vector<G4double> const absorptionLengthNaI = {56.234 * cm, 100. * cm, 0.794 * cm}; // Janecek et al (2010) 1 meter optical absorption length
+    // std::vector<G4double> const absorptionLengthNaI = {100. * cm, 100. * cm, 100. * cm}; // Janecek et al (2010) 1 meter optical absorption length
+    std::vector<G4double> const absorptionLengthNaI = {177.826 * cm, 100. * cm, 2.511 * cm}; // Brown 2021 & Miller et al 2024 scaled by factor of ~3.162 (so emi max 100 cm)
     // TEST: Establish mean distance travelled before detection at PC
     // ..
     MPTCrystal->AddProperty("ABSLENGTH", energy, absorptionLengthNaI); // NOTE: Trivial in that the process merely kills the particle
@@ -483,11 +485,11 @@ void DetectorMaterials::DefineOpticalProperties() {
     // NOTE: Reflectors are typically diffuse (ground), as it promotes greater light collection
     
     // Specify surface roughness (For back painted surface)
-    // fReflectorSurface->SetSigmaAlpha(0); // No specular lobe constant, so ...
+    fReflectorSurface->SetSigmaAlpha(0); // Sigma alpha not known, No specular lobe constant, so ...
     // reflectorSurface->SetSigmaAlpha(0.023); // Mechanically polished - Janecek et al (2010)
     // reflectorSurface->SetSigmaAlpha(0.1); // Almost polished (specular)
     // fReflectorSurface->SetSigmaAlpha(0.21); // Ground - Janecek et al (2010) (~12 deg)
-    fReflectorSurface->SetSigmaAlpha(12. * deg); // Ground - Janecek et al (2010) (~12 deg)
+    // fReflectorSurface->SetSigmaAlpha(12. * deg); // Ground - Janecek et al (2010) (~12 deg)
     // NOTE: Radians is default G4 unit, so passing ~0.21 == 12 * deg
     // reflectorSurface->SetSigmaAlpha(0.25); // Ground polished (partially diffuse)
     // reflectorSurface->SetSigmaAlpha(0.35);
@@ -495,6 +497,7 @@ void DetectorMaterials::DefineOpticalProperties() {
     // reflectorSurface->SetSigmaAlpha(0.5); // Very Matte / Rough powder (strongly diffuse)
     // reflectorSurface->SetSigmaAlpha(0.75); // Rough powder (strongly diffuse)
     // reflectorSurface->SetSigmaAlpha(1); // Strongly diffuse
+    // NOTE: Make sigma alpha non-zero if specular lobe constant non-zero
     
     // TODO: IM PRETTY SURE SIGMA ALPHA IS SURFACE ROUGHNESS OF CRYSTAL, NOT REFLECTOR
     // ^ at Crystal->air gap interface, it probably is fairly rough
@@ -523,7 +526,7 @@ void DetectorMaterials::DefineOpticalProperties() {
     
     // Reflection constants (back painted)
     // std::vector<G4double> slcReflector = {0.05, 0.05, 0.05}; // Specular lobe constant
-    // std::vector<G4double> slcReflector = {1., 1., 1.};
+    // std::vector<G4double> slcReflector = {1., 1., 1.}; // Janecek et al (2010) 100% specular lobe w/ 3.8 or 12 deg sigma alpha (etched & ground respectively)
     // std::vector<G4double> bsReflector = {0.01, 0.01, 0.01}; // Backscatter constant
     // NOTE: Defaults to specular spike = 0, specular lobe = 0, backscatter = 0, diffuse lobe (lambertian) = 1
     // if other values are set to non-0, diffuse lobe constant (lambertian) will be 1 - sum of other components
