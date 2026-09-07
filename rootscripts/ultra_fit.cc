@@ -4045,7 +4045,10 @@ int draw_fit_stats(TH1* hpx, TList* listOfLines) {
  * tight of param limits will mess up the full fit
  */
 int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
+    ///////////////////////////////
     // 1) Grab the active histogram
+    ///////////////////////////////
+    
     if (!gSession) {
         std::cerr << "Error: No active session.\n";
         return 1;
@@ -4057,7 +4060,10 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
         std::cerr << "Error: No plotting histogram.\n";
     }
     
+    //////////////////////////////////////////////////////////////////////////////////
     // 2) Copy initialiser list contents to vector, check if theyre in ascending order
+    //////////////////////////////////////////////////////////////////////////////////
+    
     const int* centroid = centroids.begin(); // pointer to first address in initializer_list
     const int numPeaks = centroids.size();
     std::vector<int> centroidVec = {};
@@ -4076,14 +4082,20 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
     
     std::cout << "Num peaks: " << centroidVec.size() << "\n";
     
+    /////////////////////////////////////////////////////////////////
     // 3) If vector contents not sorted in ascending order, sort them
+    /////////////////////////////////////////////////////////////////
+    
     if (!isAscending) {
         std::cout << "Sorting centroid vector...\n";
         // Ensure centroids are in ascending order (i.e. 1100, 1300)
         std::sort(centroidVec.begin(), centroidVec.end());
     }
     
+    //////////////////////////////////////////////////////////////////////////////////////////
     // 4) Perform fits for each individual peak selected, cache the result pointer in a vector
+    //////////////////////////////////////////////////////////////////////////////////////////
+    
     std::vector<TFitResultPtr> fitResults = {};
     
     for (int i = 0; i < centroidVec.size(); i++) {
@@ -4099,8 +4111,9 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
     
     // return 1; // debug
     
-    ////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////
     // 3.1) Use the fitted photopeak params to define an exclusion zone
+    ///////////////////////////////////////////////////////////////////
     
     // Grab lowest energy photopeak centroid and fwhm from fit results
     double const lowEnergyCentroid = fitResults[0]->Parameter(1); // centroid = [1]
@@ -4138,8 +4151,13 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
     // NOTE: In the case of a single fitted peak, low energy and high energy centroid/fwhm
     // will be the same
     
-    // 3.2) Use sideband averaging to evaluate mean background in channels immediately
-    // to the left and right of the region of interest (the photopeak), and interpolate across the peak
+    ///////////////////////////////////////////////////////////////////
+    // 3.2) Estimate local background to the left and right of the peak
+    ///////////////////////////////////////////////////////////////////
+    
+    // NOTE: Using sideband averaging to evaluate mean background in channels immediately to
+    // the left and right of the region of interest (the photopeak), and interpolate across
+    // the peak
     
     TAxis const* xAxis = hpx->GetXaxis();
     
@@ -4149,7 +4167,9 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
     std::cout << "\nRight sideband\n\n";
     std::vector<double> const right = sideband_avg(hpx, xAxis, rightLow, rightHigh);
     
+    ////////////////////////////////////////////////////////////////////////////////////////
     // 3.3) Calculate initial estimate for first order polynomial params (slope & intercept)
+    ////////////////////////////////////////////////////////////////////////////////////////
     
     // slope = Δy / Δx
     double const deltaY = right[1] - left[1]; // [0] = xMean, [1] = yMean
@@ -4161,37 +4181,28 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
     // NOTE: y = mx+b => b = y - mx
     
     std::cout << "\nRough Slope: " << slope << " Rough Intercept: " << intercept << "\n";
-    ////////////////////////////////////////////////////////////////////////////////////////////
     
-    
-    
-    
-    
-    
+    /////////////////////////////////////////////////////////////////////////////
     // 4) Generate a full fit function string based on the number of peaks to fit
+    /////////////////////////////////////////////////////////////////////////////
+    
     std::string const fitString = fit_string(numPeaks);
     
     std::cout << "Fit function string: " << fitString << "\n";
     
-    
-    
-    
-    
-    
-    ////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////
     // 4.1) Append polynomial to the fit string
+    ///////////////////////////////////////////
+    
     std::string const fullFitString = fitString + " + pol1(" + std::to_string(numPeaks * 3) + ")";
     // NOTE: I.e., "gaus(0) + gaus(3) + gaus(3)" -> "gaus(0) + gaus(3) + gaus(6) + pol1(9)"
     std::cout << "Full Fit function string: " << fullFitString << "\n";
     // return 1;
-    ////////////////////////////////////////////////////////////////////////////////////////////
     
-    
-    
-    
-    
-    
+    //////////////////////////////////////////////////////
     // 5) Establish lower/upper bounds for full fit window
+    //////////////////////////////////////////////////////
+    
     double const rangeLow = fitResults[0]->Parameter(1) - (2.5 * roughFWHM); // NOTE: Generous 2.5
     double const rangeHigh = fitResults[numPeaks - 1]->Parameter(1) + (2.5 * roughFWHM);
     // NOTE: Using smallest rough low and biggest rough high
@@ -4201,27 +4212,22 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
     
     range(rangeLow, rangeHigh); // TEST: Auto zoom on fit window
     
+    ///////////////////////////////////////
     // 6) Instantiate the full fit function
-    // auto fullFitFn = new TF1("fullPrefitFn", fitString.c_str(), rangeLow, rangeHigh);
+    ///////////////////////////////////////
     
-    
-    
-    
-    ////////////////////////////////////////////////////////////////////////////////////////////
-    // 6.1) Instantiate the full fit function
     auto fullFitFn = new TF1("fullPrefitFn", fullFitString.c_str(), rangeLow, rangeHigh);
-    ////////////////////////////////////////////////////////////////////////////////////////////
 
-    
-    
-    
+    ////////////////////////////////////////////////
     // 7) Assign parameters to the full fit function
+    ////////////////////////////////////////////////
+    
     assign_peak_params(fullFitFn, fitResults);
     
-    
-    
-    ////////////////////////////////////////////////////////////////////////////////////////////
+    ///////////////////////////////////////////////////////////////////
     // 7.1) Assign linear component parameters to the full fit function
+    ///////////////////////////////////////////////////////////////////
+    
     int const polArg0IDX = numPeaks * 3;
     int const polArg1IDX = polArg0IDX + 1; // (numPeaks * 3) + 1)
     fullFitFn->SetParameter(polArg0IDX, intercept);
@@ -4229,12 +4235,11 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
     fullFitFn->SetParName(polArg0IDX, "Intercept");
     fullFitFn->SetParName(polArg1IDX, "Slope");
     // intercept, slope
-    ////////////////////////////////////////////////////////////////////////////////////////////
     
-    
-    
-    
+    /////////////////////////////////////////////////////////
     // 8) Attempt the full fit, and abort on unsuccessful fit
+    /////////////////////////////////////////////////////////
+    
     // TFitResultPtr const fullFitResult = hpx->Fit(fullFitFn, "RS+");
     // TFitResultPtr const fullFitResult = hpx->Fit(fullFitFn, "RS+0");
     TFitResultPtr const fullFitResult = hpx->Fit(fullFitFn, "RS+0L");
@@ -4256,7 +4261,9 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
         return 1;
     }
     
+    ///////////////////////////////////////////////
     // 9) Render the full fit line to the histogram
+    ///////////////////////////////////////////////
     
     // \/\/\/\/\/\/\/\/\/\/\/\/ TODO: render_fit()
     
@@ -4314,23 +4321,22 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
         func->Draw("same"); // draw each individual peak
     }
     
+    ////////////////////////////////////////////////////////////////////
+    // 11.1) Draw the first order poly across the entire histogram range 
+    ////////////////////////////////////////////////////////////////////
     
+    // (NOTE: useful for debugging)
     
-    ////////////////////////////////////////////////////////////////////////////////////////////
-    // 11.1)
-    // Draw the first order poly across the entire histogram range (NOTE: useful for debugging)
     auto polyFitted = new TF1("polyFitted", "pol1", xAxis->GetXmin(), xAxis->GetXmax());
     polyFitted->SetParameters(fittedParams[polArg0IDX], fittedParams[polArg1IDX]); // fitted intercept & slope
     // polyFitted->SetParNames("Intercept", "Slope"); // NOTE: not displaying in fit stats, so not really needed
     polyFitted->SetLineColor(kBlue);
     polyFitted->SetLineStyle(kDot);
     polyFitted->Draw("same");
-    ////////////////////////////////////////////////////////////////////////////////////////////
     
-    
-    
-    
+    /////////////////////////////////////////////////////////////////////
     // 12) Get integrated counts for individual fitted peaks (and errors)
+    /////////////////////////////////////////////////////////////////////
     
     std::vector<std::vector<double>> countsResults = {}; // TODO: object return type
     
@@ -4351,7 +4357,9 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
         // NOTE: Here *countsResults, or .value(), converts the optional type to a vector
     }
     
+    ////////////////////////////////////////////
     // 13) Compose custom list of fit statistics
+    ////////////////////////////////////////////
     
     auto listOfLines = new TList(); // TList*
     // auto listOfLines = new TPaveStats();
@@ -4393,9 +4401,10 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
         return 1;
     }
 
-    
-    ////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////
     // 13.1) Append fitted linear component stats to the list
+    /////////////////////////////////////////////////////////
+    
     char const* polyText1 = Form("Intercept = %.2f", fittedParams[polArg0IDX]); // Format the entry (#pm generates +/-)
     auto newLinePoly1 = new TLatex(0, 0, polyText1);
     newLinePoly1->SetTextFont(gStyle->GetStatFont()); // match font to existing stat box font
@@ -4407,12 +4416,10 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
     newLinePoly2->SetTextFont(gStyle->GetStatFont()); // match font to existing stat box font
     newLinePoly2->SetTextSize(gStyle->GetStatFontSize()); // match font size to existing stat box font size
     listOfLines->Add(newLinePoly2); // append the fwhm value & error to the fit stats
-    ////////////////////////////////////////////////////////////////////////////////////////////
-    
-    
-    
-    
+
+    ////////////////////////////////////////////////////////////
     // 14) Render the fit statistics box containing custom stats
+    ////////////////////////////////////////////////////////////
     
     // Handle statistics box and write custom value to it
     int statsDrawError = draw_fit_stats(hpx, listOfLines);
