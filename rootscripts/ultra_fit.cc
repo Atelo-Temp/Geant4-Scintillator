@@ -3559,7 +3559,7 @@ std::optional<TFitResultPtr> fit_individual(TH1* hpx, int const& roughCentroid, 
  * 
  * TODO: If bin content == 0 dont count it ??
  */
-std::vector<double> sideband_avg(TH1* hpx, TAxis const* xAxis, double const& xStart, double const& xEnd) {
+std::vector<double> weighted_sideband_avg(TH1* hpx, TAxis const* xAxis, double const& xStart, double const& xEnd) {
     // ...
     std::cout << "Band Start: " << xStart << " - Band End: " << xEnd << "\n";
     
@@ -3573,7 +3573,7 @@ std::vector<double> sideband_avg(TH1* hpx, TAxis const* xAxis, double const& xSt
     double xSumWeighted = 0; // Σ(x_i * y_i)
     
     // ...
-    for (int i = xStartBin; i < xEndBin; i++) {
+    for (int i = xStartBin; i <= xEndBin; i++) {
         // ...
         const double xBinCentre = xAxis->GetBinCenter(i); // x_i
         const double yVal = hpx->GetBinContent(i); // y_i
@@ -3587,6 +3587,68 @@ std::vector<double> sideband_avg(TH1* hpx, TAxis const* xAxis, double const& xSt
     const double xMean = xSumWeighted / ySum; // Σ(x_i * y_i) / Σ(y_i)
     // const double range = (xEnd - xStart) + 1; // N
     const double range = (xEndBin - xStartBin) + 1; // N
+    const double yMean = ySum / range; // Σ(y_i) / N
+    
+    // ...
+    std::cout << "X Mean: " << xMean << " - Y Mean: " << yMean << "\n";
+    
+    // Σ(y_i)
+    // const double ySum2 = hpx->Integral(xStart, xEnd);
+    // const double range2 = (xEnd - xStart) + 1;
+    // const double yMean2 = ySum2 / range2;
+    // std::cout << "X Mean: " << xMean << " - Y Mean 2: " << yMean2 << "\n";
+    // NOTE: Exactly equivalent to above
+    
+    // ...
+    return std::vector<double> { xMean, yMean };
+}
+
+/*
+ * Get average x and y values for a specific range of the histogram
+ * 
+ * x = Σ(x_i) / N
+ * 
+ * Where:
+ * - x_i = value of the specific sideband
+ * - N = number of bins + 1
+ * 
+ * x = Σ(x_i * y_i) / Σ(y_i)
+ * 
+ * y = Σ(y_i) / N
+ * 
+ * Where:
+ * - y_i = value of the specific sideband
+ * - N = number of bins + 1
+ * 
+ * TODO: If bin content == 0 dont count it ??
+ */
+std::vector<double> sideband_avg(TH1* hpx, TAxis const* xAxis, double const& xStart, double const& xEnd) {
+    // ...
+    std::cout << "Band Start: " << xStart << " - Band End: " << xEnd << "\n";
+    
+    int const xStartBin = hpx->FindFixBin(xStart);
+    int const xEndBin = hpx->FindFixBin(xEnd);
+    
+    std::cout << "Band Start Bin: " << xStartBin << " - Band End Bin: " << xEndBin << "\n";
+    
+    // ..
+    double ySum = 0; // Σ(y_i)
+    double xSum = 0; // Σ(x_i)
+    
+    // ...
+    for (int i = xStartBin; i <= xEndBin; i++) {
+        // ...
+        const double xBinCentre = xAxis->GetBinCenter(i); // x_i
+        const double yVal = hpx->GetBinContent(i); // y_i
+        
+        // ...
+        xSum += xBinCentre;
+        ySum += yVal;
+    }
+    
+    // ...
+    int const range = (xEndBin - xStartBin) + 1; // N
+    const double xMean = xSum / range; // Σ(x_i) / N
     const double yMean = ySum / range; // Σ(y_i) / N
     
     // ...
@@ -3746,73 +3808,6 @@ std::optional<std::vector<double>> get_counts(TH1* hpx, TF1* fitFn, TFitResultPt
     
     // return { totalCounts, countsError };
 }
-
-/*
- * Extract fit statistics for individual peaks, create and populate a new line for
- * each chosen statistic, then add them to the full list of lines
- * 
- * NOTE: TFitResultPtr is already lightweight, reference maybe not needed
- * 
- * TODO: Add prefix boolean flag (multipeak = true/false), or just pass number of peaks:
- * if only one peak fitted, no integer prefix
- * if >1 peak fitted, add peak number prefix, i.e.:
- * 1-Centroid, 1-FWHM, 1-Counts
- * 2-Centroid, 2-FWHM, 2-Counts
- * NOTE: Would likely have to take peak number as param to
- */
-// int get_stats_lines(TFitResultPtr const &result, std::vector<double> const &counts, TList* listOfLines) {    
-//     // Retrieve the fit chi squared & n.d.f
-//     double const chi2 = result->Chi2();
-//     double const ndf = result->Ndf();
-//     
-//     // Calculate the goodness of fit
-//     double const goodFit = chi2 / ndf;
-//     
-//     std::cout << "Goodness of Fit: " << goodFit << "\n";
-//     
-//     // Extract the fitted photopeak centroid and error on the result
-//     double const fittedCentroid = result->Parameter(1);
-//     double const fittedCentroidError = result->Error(1);
-//     
-//     // Calculate the updated FWHM, based on fitted sigma
-//     double const fittedSigma = result->Parameter(2);
-//     double const fittedFWHM = fittedSigma * 2.355;
-//     
-//     std::cout << "POST-FIT SIGMA: " << fittedSigma << "\n";
-//     std::cout << "POST-FIT FWHM: " << fittedFWHM << "\n";
-//     
-//     // Calculate the error on the fitted FWHM, based on fitted sigma error
-//     double const fittedSigmaError = result->Error(2);
-//     double const fittedFWHMError = fittedSigmaError * 2.355;
-//     
-//     // Get integrated photopeak counts and error on counts from input vector
-//     double const countsVal = counts[0];
-//     double const countsErr = counts[1];
-//     
-//     // Add centroid (+/- error) to the stats box
-//     char const* text1 = Form("Centroid = %.2f #pm %.2f", fittedCentroid, fittedCentroidError); // Format the entry (#pm generates +/-)
-//     auto newLine1 = new TLatex(0, 0, text1); // <- may have to do Form() for string
-//     newLine1->SetTextFont(gStyle->GetStatFont()); // match font to existing stat box font
-//     newLine1->SetTextSize(gStyle->GetStatFontSize()); // match font size to existing stat box font size
-//     listOfLines->Add(newLine1); // append the fwhm value & error to the fit stats
-// 
-//     // Add FWHM (+/- error) to the stats box
-//     char const* text2 = Form("FWHM = %.2f #pm %.2f", fittedFWHM, fittedFWHMError); // Format the entry (#pm generates +/-)
-//     auto newLine2 = new TLatex(0, 0, text2); // <- may have to do Form() for string
-//     newLine2->SetTextFont(gStyle->GetStatFont()); // match font to existing stat box font
-//     newLine2->SetTextSize(gStyle->GetStatFontSize()); // match font size to existing stat box font size
-//     listOfLines->Add(newLine2); // append the fwhm value & error to the fit stats
-//     
-//     // Add counts (+/- error) to the stats box
-//     char const* text3 = Form("Counts = %.2f #pm %.2f", countsVal, countsErr);
-//     auto newLine3 = new TLatex(0, 0, text3);
-//     newLine3->SetTextFont(gStyle->GetStatFont());
-//     newLine3->SetTextSize(gStyle->GetStatFontSize());
-//     listOfLines->Add(newLine3);
-//     
-//     // No errors, all good
-//     return 0;
-// }
 
 /*
  * Extract fit statistics for individual peaks, create and populate a new line for
