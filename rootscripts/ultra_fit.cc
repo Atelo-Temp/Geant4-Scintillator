@@ -24,6 +24,12 @@
 #include <iostream> // cerr, cin, cout
 #include <fstream> // ifstream
 #include <sstream> // istringstream
+#include <vector>
+#include <string>
+#include <string_view>
+#include <algorithm>
+#include <cmath>
+#include <cstdlib>
 #include <optional> // optional, nullopt
 #include <unordered_set> // NOTE: Import not technically needed (something else must be importing it)
 #include <unordered_map> // NOTE: ^ same
