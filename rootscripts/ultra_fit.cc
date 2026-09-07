@@ -1934,6 +1934,10 @@ class ROOTHandler {
         * TODO: Make post-processing optional
         * 
         * TODO: Make it so branch or branch name is actually passed in as param
+        * 
+        * TODO: The second call to smear_signal discards fractional data (passing double as int arg)
+        * ^ im not actually sure why ive even added option to smear doubles, photon counts are integer,
+        * and likely wouldnt want to smear other geant4 data (perhaps im currently missing why its there)
         */
         int fill_hist_ntuple(
             TH1* hpx,
@@ -2071,7 +2075,7 @@ class ROOTHandler {
                 else if (dataType == doubleType) {
                     if (doPostProcessing) {
                         // Apply smearing to the raw value to produce a signal
-                        double const signal = smear_signal(doubleEntry, sigmaFactor);
+                        double const signal = smear_signal(doubleEntry, sigmaFactor); // TODO: This discards fractional data (passing double as int arg)
                         
                         // Convert smeared signal to channel number
                         double channel = signal_to_channel(signal, nbins, xmax);
