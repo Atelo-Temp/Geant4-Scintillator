@@ -3231,7 +3231,7 @@ int save(std::string const path) {
 int range(double start, double end) {
     // Grab the active histogram and canvas
     if (!gSession) {
-        std::cerr << "Error: No active session.\n";
+        std::cerr << "\nError: No active session.\n";
         return 1;
     }
     
@@ -3251,7 +3251,7 @@ int range(double start, double end) {
     canvas->Modified();
     canvas->Update();
     
-    std::cout << "Zoomed to: " << start << " - " << end << "\n";
+    std::cout << "\nZoomed to: " << start << " - " << end << "\n";
     
     // No errors, all good
     return 0;
@@ -3263,7 +3263,7 @@ int range(double start, double end) {
 int reset() {
     // Grab the active histogram and canvas
     if (!gSession) {
-        std::cerr << "Error: No active session.\n";
+        std::cerr << "\nError: No active session.\n";
         return 1;
     }
     
@@ -3328,8 +3328,19 @@ std::optional<TFitResultPtr> fit_individual(TH1* hpx, int const& roughCentroid, 
     }
     
     // TEST
-    double const searchLow = roughCentroid - (1.5 * roughFWHM);
-    double const searchHigh = roughCentroid + (1.5 * roughFWHM);
+    // double const searchLow = roughCentroid - (1.5 * roughFWHM);
+    // double const searchHigh = roughCentroid + (1.5 * roughFWHM);
+    
+    // Attempt to find a local maximum greater than the supplied centroid
+    
+    double searchLow = roughCentroid - (1.5 * roughFWHM);
+    double searchHigh = roughCentroid + (1.5 * roughFWHM);
+    
+    if (searchLow < 0.) searchLow = 0.;
+    
+    double const xmax = hpx->GetXaxis()->GetXmax();
+    
+    if (searchHigh > xmax) searchHigh = xmax;
     
     int const searchLowBin = hpx->FindFixBin(searchLow);
     int const searchHighBin = hpx->FindFixBin(searchHigh);
@@ -3545,6 +3556,8 @@ std::optional<TFitResultPtr> fit_individual(TH1* hpx, int const& roughCentroid, 
  * 
  * Where:
  * - N = number of bins + 1
+ * 
+ * TODO: If bin content == 0 dont count it ??
  */
 std::vector<double> sideband_avg(TH1* hpx, TAxis const* xAxis, double const& xStart, double const& xEnd) {
     // ...
@@ -4088,18 +4101,34 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
     double const lowEnergyCentroid = fitResults[0]->Parameter(1); // centroid = [1]
     double const lowEnergyFWHM = fitResults[0]->Parameter(2) * 2.355; // sigma = [2]
     
+    std::cout << "\nLow FWHM: " << lowEnergyFWHM << "\n";
+    
     // Band to the the left of the photopeak
-    double const leftLow = lowEnergyCentroid - (2 * lowEnergyFWHM);
-    double const leftHigh = lowEnergyCentroid - (1.5 * lowEnergyFWHM);
+    // double const leftLow = lowEnergyCentroid - (2 * lowEnergyFWHM);
+    // double const leftHigh = lowEnergyCentroid - (1.5 * lowEnergyFWHM);
+    double const leftLow = lowEnergyCentroid - (1.5 * lowEnergyFWHM); // TEST -- 2 * FWHM -> 1.5 * FWHM is a little aggressive i think
+    double const leftHigh = lowEnergyCentroid - (1 * lowEnergyFWHM); // TEST
     // NOTE: from -1.5*FWHM where gaussian returns to ~0 (0.2%), to -2*FWHM (0.0...%)
+    
+    std::cout << "\nLeft low: " << leftLow << " | Left high: " << leftHigh << "\n";
+    
+    // TODO: Handle left low/high being negative values
     
     // Grab highest energy photopeak centroid and fwhm from fit results
     double const highEnergyCentroid = fitResults[numPeaks - 1]->Parameter(1); // centroid = [1]
     double const highEnergyFWHM = fitResults[numPeaks - 1]->Parameter(2) * 2.355; // sigma = [2]
     
+    std::cout << "\nHigh FWHM: " << lowEnergyFWHM << "\n";
+    
     // Band to the the right of the photopeak
-    double const rightLow = highEnergyCentroid + (1.5 * highEnergyFWHM);
-    double const rightHigh = highEnergyCentroid + (2 * highEnergyFWHM);
+    // double const rightLow = highEnergyCentroid + (1.5 * highEnergyFWHM);
+    // double const rightHigh = highEnergyCentroid + (2 * highEnergyFWHM);
+    double const rightLow = highEnergyCentroid + (1. * highEnergyFWHM); // TEST -- 2 * FWHM -> 1.5 * FWHM is a little aggressive i think
+    double const rightHigh = highEnergyCentroid + (1.5 * highEnergyFWHM); // TEST
+    
+    std::cout << "\nRight low: " << rightLow << " | Right high: " << rightHigh << "\n";
+    
+    // TODO: Handle right low/high being negative values
     
     // NOTE: In the case of a single fitted peak, low energy and high energy centroid/fwhm
     // will be the same
