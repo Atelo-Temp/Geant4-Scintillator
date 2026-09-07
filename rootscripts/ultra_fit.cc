@@ -3218,8 +3218,20 @@ int save_to(std::string const& path, TH1* hpx, std::string const& name) {
 int save(std::string const path) {
     std::cout << "\nAttempting to retrieve histogram...\n";
     
+    // Ensure session handler is instantiated
+    if (!gSession) {
+        std::cerr << "Aborting: Please call plot() before replotting.\n";
+        return 1;
+    }
+    
     // Get the active histogram for this plotting session
     TH1* hpx = gSession->get_hpx();
+    
+    // Handle missing histogram/canvas
+    if (!hpx) {
+        std::cerr << "\nAborting: Histogram not found!\n";
+        return 1;
+    }
     
     std::cout << "\nExtracting histogram name...\n";
     
