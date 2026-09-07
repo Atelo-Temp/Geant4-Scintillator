@@ -56,7 +56,10 @@ class PlotSession;
 PlotSession* gSession = nullptr;
 
 // ...
-int const SEED = 42;
+static int const SEED = 42;
+
+// ...
+static double const SigmaToFWHM = 2 * sqrt(2 * log(2));
 
 // TODO: Eventually move class definitions to headers
 
@@ -3430,7 +3433,7 @@ std::optional<TFitResultPtr> fit_individual(TH1* hpx, int const& roughCentroid, 
 
     // Instead of relying on automatic RMS, which is not reliable for merged peaks etc,
     // require the user to state a rough FWHM value deduced by eye, and derive sigma from it
-    double const roughSigma = roughFWHM / 2.355;
+    double const roughSigma = roughFWHM / SigmaToFWHM;
     std::cout << "Pre-fit Sigma: " << roughSigma << "\n";
     
     // TEST - Prefix arguent names
@@ -3499,7 +3502,7 @@ std::optional<TFitResultPtr> fit_individual(TH1* hpx, int const& roughCentroid, 
     double const prefitAmplitude = initialResult->Parameter(0);
     double const prefitCentroid = initialResult->Parameter(1);
     double const prefitSigma = initialResult->Parameter(2);
-    double const prefitFWHM = prefitSigma * 2.355;
+    double const prefitFWHM = prefitSigma * SigmaToFWHM;
     
     // Base the fit window around the true centroid to avoid lopsidedness in the fit
     double const refitLow = prefitCentroid - (2 * prefitFWHM);
@@ -3877,14 +3880,14 @@ int get_stats_lines(TFitResultPtr const &result, std::vector<std::vector<double>
         
         // Calculate the updated FWHM, based on fitted sigma
         double const fittedSigma = result->Parameter(arg2IDX);
-        double const fittedFWHM = fittedSigma * 2.355;
+        double const fittedFWHM = fittedSigma * SigmaToFWHM;
         
         std::cout << "POST-FIT SIGMA: " << fittedSigma << "\n";
         std::cout << "POST-FIT FWHM: " << fittedFWHM << "\n";
         
         // Calculate the error on the fitted FWHM, based on fitted sigma error
         double const fittedSigmaError = result->Error(arg2IDX);
-        double const fittedFWHMError = fittedSigmaError * 2.355;
+        double const fittedFWHMError = fittedSigmaError * SigmaToFWHM;
         
         // Get integrated photopeak counts and error on counts from input vector
         double const countsVal = counts[i][0];
@@ -4129,7 +4132,7 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
     
     // Grab lowest energy photopeak centroid and fwhm from fit results
     double const lowEnergyCentroid = fitResults[0]->Parameter(1); // centroid = [1]
-    double const lowEnergyFWHM = fitResults[0]->Parameter(2) * 2.355; // sigma = [2]
+    double const lowEnergyFWHM = fitResults[0]->Parameter(2) * SigmaToFWHM; // sigma = [2]
     
     std::cout << "\nLow FWHM: " << lowEnergyFWHM << "\n";
     
@@ -4146,7 +4149,7 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
     
     // Grab highest energy photopeak centroid and fwhm from fit results
     double const highEnergyCentroid = fitResults[numPeaks - 1]->Parameter(1); // centroid = [1]
-    double const highEnergyFWHM = fitResults[numPeaks - 1]->Parameter(2) * 2.355; // sigma = [2]
+    double const highEnergyFWHM = fitResults[numPeaks - 1]->Parameter(2) * SigmaToFWHM; // sigma = [2]
     
     std::cout << "\nHigh FWHM: " << lowEnergyFWHM << "\n";
     
@@ -4288,7 +4291,10 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
     // and why "hpx->Draw("HIST")" doesnt work alone, so calling draw on the stored fn is the way,
     // it is also not enough to just call Modified() & Update().
     
+    /////////////////////////////////////////////////////////////////////////////////
     // 10) Grab the individual parameters from the full fit, storing them in a vector
+    /////////////////////////////////////////////////////////////////////////////////
+    
     // NOTE: 1 peak = 3 params, 2 peaks = 6 params, etc
     
 //     std::vector<double> fittedParams = {};
@@ -4301,7 +4307,10 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
     std::vector<double> fittedParams = fullFitResult->Parameters();
     // TEST - Use TFitResultPtr method to return vector containing results ...
     
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////
     // 11) Create "draw only" copies of the individual peak fits, populated from full fit, then render them
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////
+    
     // NOTE: Could also have step 3 (fit_individual) return refit functions
     // NOTE: Could also populate from "fitResults" vector, containing individual peak TFitResultPtr
     
@@ -4334,7 +4343,7 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
     }
     
     ////////////////////////////////////////////////////////////////////
-    // 11.1) Draw the first order poly across the entire histogram range 
+    // 11.1) Draw the first order poly across the entire histogram range
     ////////////////////////////////////////////////////////////////////
     
     // (NOTE: useful for debugging)
