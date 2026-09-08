@@ -69,7 +69,7 @@ static double const SigmaToFWHM = 2 * sqrt(2 * log(2));
  * NOTE: Executes automatically on script start (shares name with the macro file)
  * NOTE: Choose another function name if you wish to manually call it instead
  */
-int test_fit() {
+int instant_fit() {
     // Usage
     std::cout << "\n-----------------------------------------------------------------------\n";
     std::cout << "\nConvert ASCII & ROOT Ntuples to Root Histogram.\n";
@@ -3312,7 +3312,6 @@ int reset() {
     return 0;
 }
 
-
 /*
  * Manually input estimated photopeak centroid and FWHM values, fit a gaussian 
  * to it, and display the fit
@@ -3747,17 +3746,39 @@ int assign_peak_params(TF1* fitFn, std::vector<std::vector<double>> const& fitPa
         // for more than one peak
         
         // Set full fit function parametes using individual peak fit results
-        fitFn->SetParameter(gausArg0Start, fitParamsVec[i][0]); // amplitude
+        double const initialAmplitude = fitParamsVec[i][0];
+        fitFn->SetParameter(gausArg0Start, initialAmplitude); // amplitude
         fitFn->SetParName(gausArg0Start, arg0Name.c_str());
-        std::cout << "Set par " << gausArg0Start << " - " << arg0Name << " to " << fitParamsVec[i][0] << "\n";
+        std::cout << "Set par " << gausArg0Start << " - " << arg0Name << " to " << initialAmplitude << "\n";
         
-        fitFn->SetParameter(gausArg1Start, fitParamsVec[i][1]); // mean
+        double const initialCentroid = fitParamsVec[i][1];
+        fitFn->SetParameter(gausArg1Start, initialCentroid); // mean
         fitFn->SetParName(gausArg1Start, arg1Name.c_str());
-        std::cout << "Set par " << gausArg1Start << " - " << arg1Name << " to " << fitParamsVec[i][1] << "\n";
+        std::cout << "Set par " << gausArg1Start << " - " << arg1Name << " to " << initialCentroid << "\n";
         
-        fitFn->SetParameter(gausArg2Start, fitParamsVec[i][2]); // sigma
+        double const initialSigma = fitParamsVec[i][2];
+        fitFn->SetParameter(gausArg2Start, initialSigma); // sigma
         fitFn->SetParName(gausArg2Start, arg2Name.c_str());
-        std::cout << "Set par " << gausArg2Start << " - " << arg2Name << " to " << fitParamsVec[i][2] << "\n";
+        std::cout << "Set par " << gausArg2Start << " - " << arg2Name << " to " << initialSigma << "\n";
+        
+        // Ensure amplitude doesnt drop too far below/above supplied value
+        // fitFn->SetParLimits(0, initialAmplitude * 0.8, initialAmplitude * 5);
+        // NOTE: Assuming worst case of passing centroid as the literal tail of the gaussian,
+        // par min = initial amplitude, and fitter should never search below this, however,
+        // also have to account for passing the pico top of a single channel that resides above the rest
+        // NOTE: Conversely, if centroid is on tail, the true amplitude could be several factors
+        // greater than the initial value
+        // fitFn->SetParLimits(0, 0., initialAmplitude * 6);
+        // TODO: Amplitude is a bit of a fickle one
+        
+        // Ensure centroid stays within the fit window
+        double xmin;
+        double xmax;
+        fitFn->GetRange(xmin, xmax);
+        fitFn->SetParLimits(1, xmin, xmax);
+        
+        // Ensure sigma doesnt become negative, and cap it at double the initial fit
+        fitFn->SetParLimits(2, 0., initialSigma * 2.); // par idx, par min, par max
     }
     
     // ...
@@ -4431,10 +4452,6 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
     ////////////////////////////////////////////
     
     auto listOfLines = new TList(); // TList*
-    // auto listOfLines = new TPaveStats();
-    // listOfLines->InsertText();
-    // listOfLines->AddText();
-    // listOfLines->
     
     // Get chi-square / n.d.f for full fit
     double const chi2 = fullFitResult->Chi2();
@@ -4446,20 +4463,6 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
     newLine1->SetTextFont(gStyle->GetStatFont()); // match font to existing stat box font
     newLine1->SetTextSize(gStyle->GetStatFontSize()); // match font size to existing stat box font size
     listOfLines->Add(newLine1); // append the fwhm value & error to the fit stats
-    
-//     for (int i = 0; i < numPeaks; i++) {
-//         // Write custom statistics to list for each fitted peak
-//         int statsLinesError = get_stats_lines(fitResults[i], countsResults[i], listOfLines);
-//         // TODO: Individual peak fits are giving FWHM much larger than the full fit,
-//         // yet im displaying initial fit values, maybe change this:
-//         // int statsLinesError = get_stats_lines(fullFitResult, countsResults[i], listOfLines);
-//         
-//         // Handle statistics writing
-//         if (statsLinesError) {
-//             std::cerr << "\nError: Failed get fit statistics!\n";
-//             return 1;
-//         }
-//     }
     
     // Write custom statistics to list for each fitted peak    
     int statsLinesError = get_stats_lines(fullFitResult, countsResults, listOfLines);
