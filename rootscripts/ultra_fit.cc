@@ -3778,10 +3778,8 @@ struct CountsResult {
  * 
  * NOTE: Takes "draw-only" copy of individual peak fits
  * 
- * NOTE: TFitResultPtr from the individual initial peak fits is required to avoid 
+ * NOTE: Ensure fit fn and cov matrix are from same fit to avoid:
  * IntegralError failing due to last fitter "not being compatible" with current TF1
- * 
- * TODO: Total area - background area (for lab spectra with background)
  */
 std::optional<std::vector<double>> get_counts(TH1* hpx, TF1* fitFn, TMatrixDSym* gausCovMatrix) {
     // Handle missing histogram
@@ -3823,7 +3821,9 @@ std::optional<std::vector<double>> get_counts(TH1* hpx, TF1* fitFn, TMatrixDSym*
     // +/- num photons, rather than counts
     // NOTE: Feeding the covariance matrix
     
-    std::cout << "COUNTS: " << totalCounts << ", ERROR [SQRT(COUNTS)]: +/-" << countsError << "\n";
+    // std::cout << "COUNTS: " << totalCounts << ", ERROR [SQRT(COUNTS)]: +/-" << countsError << "\n";
+    std::cout << "COUNTS: " << totalCounts << ", UNCERTAINTY: +/-" << countsError << "\n";
+    // NOTE: "countsError" is propagated fit uncertainty, not simply sqrt(N)
     
     // std::vector<double> countResults = { totalCounts, countsError };
 
