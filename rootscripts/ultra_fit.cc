@@ -3783,7 +3783,7 @@ struct CountsResult {
  * 
  * TODO: Total area - background area (for lab spectra with background)
  */
-std::optional<std::vector<double>> get_counts(TH1* hpx, TF1* fitFn, TFitResultPtr const result) {
+std::optional<std::vector<double>> get_counts(TH1* hpx, TF1* fitFn, TMatrixDSym* gausCovMatrix) {
     // Handle missing histogram
     if (!hpx) {
         std::cerr << "\nError (getCounts()): Histogram not found!\n";
@@ -3813,12 +3813,12 @@ std::optional<std::vector<double>> get_counts(TH1* hpx, TF1* fitFn, TFitResultPt
     // by the Energy/Bin (kev/Bin), or photons/Bin, converts it back to pure counts
     
     // Calculate integral for the area under the fitted gaussian curve
-    double const area = fitFn->Integral(xmin, xmax); // NOTE: Is energy * counts (or num photons * counts) in current form
+    double const area = fitFn->Integral(xmin, xmax); // NOTE: Is energy * counts (or num photons * counts) (or channel * counts) in current form
     double const totalCounts = area / binWidth; // NOTE: Now is just counts
     
     // Get the error (calculated as: sqrt(totalCounts), in counting statistics)
-    // double const countsError = fit->IntegralError(xmin, xmax) / binWidth; // TODO: This requires the actually fitted function, not the drawing only copy
-    double const countsError = fitFn->IntegralError(xmin, xmax, fitFn->GetParameters(), result->GetCovarianceMatrix().GetMatrixArray()) / binWidth;
+    double const countsError = fitFn->IntegralError(xmin, xmax, fitFn->GetParameters(), gausCovMatrix->GetMatrixArray()) / binWidth;
+    // NOTE: This requires the actually fitted function, not the drawing only copy
     // NOTE: Must also be divided by bin width, otherwise it would be:
     // +/- num photons, rather than counts
     // NOTE: Feeding the covariance matrix
@@ -4359,11 +4359,21 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
     // 12) Get integrated counts for individual fitted peaks (and errors)
     /////////////////////////////////////////////////////////////////////
     
+    // Grab the covariance matrix for the full fit
+    TMatrixDSym fitCovMatrix = fullFitResult->GetCovarianceMatrix();
+    
+    // ...
     std::vector<std::vector<double>> countsResults = {}; // TODO: object return type
     
     for (int i = 0; i < numPeaks; i++) {
+        // Slice out the 3x3 covariance matrix for gaussian i
+        int const subStart = i * 3;
+        int const subEnd = i * 3 + 2;
+        TMatrixDSym gausCovMatrix(3);
+        fitCovMatrix.GetSub(subStart, subEnd, subStart, subEnd, gausCovMatrix);
+        
         // Calculate counts in the fitted photopeak via integration
-        std::optional<std::vector<double>> countsResult = get_counts(hpx, peakFunctions[i], fitResults[i]);
+        std::optional<std::vector<double>> countsResult = get_counts(hpx, peakFunctions[i], &gausCovMatrix);
         // NOTE: Counts is not a std::vector<double> yet, it is still optional type
         
         // Handle nullopt return
