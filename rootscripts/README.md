@@ -257,6 +257,23 @@ Introduces:
 
 Introduces:
 - Ntuple plotting reproducability via TRandom3 random engine with seeding
+- Improved centroid finder now caps low/high search window within axis bounds
+- More conservative sideband low/high estimate
+- Fix to off by one bug in sideband averaging method
+- Changed from weighted sideband average to arithmetic (but keeping both methods incase of future use)
+- Explicit c-lib imports instead of via ROOT libs
+- Railguards for null session
+- SigmaToFWHM global constant
+- Proper covariance matrix pairing with fit integral
+
+> NOTE: Extension of oop_analysis.cc
+
+33) instant_fit.cc
+
+Complete rewrite of fitting methodology, no longer performs gaussian only initial fits and refits,
+goes straight to gaus + pol fit, which ends up being much more reliable
+
+> NOTE: Extension of ultra_fit.cc
 
 ## TODOS
 
