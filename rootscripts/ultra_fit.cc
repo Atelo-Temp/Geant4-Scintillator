@@ -3312,7 +3312,6 @@ int reset() {
     return 0;
 }
 
-
 /*
  * Manually input estimated photopeak centroid and FWHM values, fit a gaussian 
  * to it, and display the fit
@@ -3341,6 +3340,11 @@ int reset() {
  * centroid provided
  * - Or, use peakNum, i.e., if search encounters 2 peaks, but peakNum = 1, go for
  * the first peak, else if peakNum = 2, go for the second peak
+ * 
+ * TODO: Likely want to model a linear component here ("gaus + pol1")
+ * 
+ * TODO: If two supplied centroids are within some factor * rough fwhm of one another,
+ * skip the individual fit
  */
 std::optional<TFitResultPtr> fit_individual(TH1* hpx, int const& roughCentroid, int const& roughFWHM, int const& peakNum) {
     // Log input params to stdout
@@ -3747,17 +3751,35 @@ int assign_peak_params(TF1* fitFn, std::vector<TFitResultPtr> const& fitResultsV
         // for more than one peak
         
         // Set full fit function parametes using individual peak fit results
-        fitFn->SetParameter(gausArg0Start, fitResultsVec[i]->Parameter(0)); // amplitude
+        double const initialAmplitude = fitResultsVec[i]->Parameter(0);
+        fitFn->SetParameter(gausArg0Start, initialAmplitude); // amplitude
         fitFn->SetParName(gausArg0Start, arg0Name.c_str());
-        std::cout << "Set par " << gausArg0Start << " - " << arg0Name << " to " << fitResultsVec[i]->Parameter(0) << "\n";
+        std::cout << "Set par " << gausArg0Start << " - " << arg0Name << " to " << initialAmplitude << "\n";
         
-        fitFn->SetParameter(gausArg1Start, fitResultsVec[i]->Parameter(1)); // mean
+        double const initialMean = fitResultsVec[i]->Parameter(1);
+        fitFn->SetParameter(gausArg1Start, initialMean); // mean
         fitFn->SetParName(gausArg1Start, arg1Name.c_str());
-        std::cout << "Set par " << gausArg1Start << " - " << arg1Name << " to " << fitResultsVec[i]->Parameter(1) << "\n";
+        std::cout << "Set par " << gausArg1Start << " - " << arg1Name << " to " << initialMean << "\n";
         
-        fitFn->SetParameter(gausArg2Start, fitResultsVec[i]->Parameter(2)); // sigma
+        double const initialSigma = fitResultsVec[i]->Parameter(2);
+        fitFn->SetParameter(gausArg2Start, initialSigma); // sigma
         fitFn->SetParName(gausArg2Start, arg2Name.c_str());
-        std::cout << "Set par " << gausArg2Start << " - " << arg2Name << " to " << fitResultsVec[i]->Parameter(2) << "\n";
+        std::cout << "Set par " << gausArg2Start << " - " << arg2Name << " to " << initialSigma << "\n";
+        
+        // Ensure amplitude doesnt drop too far below/above supplied value
+        // fitFn->SetParLimits(0, initialAmplitude * 0.8, initialAmplitude * 2);
+        fitFn->SetParLimits(0, 0., initialAmplitude * 2);
+        // TODO: 0.8*A for lower bound messes up 244 keV 152Eu peak fit in 244, 344 dual fit
+        // there are likely cases where 2. * A messed it up too, this limit needs revising
+        
+        // Ensure centroid stays within the fit window
+        double xmin;
+        double xmax;
+        fitFn->GetRange(xmin, xmax);
+        fitFn->SetParLimits(1, xmin, xmax);
+        
+        // Ensure sigma doesnt become negative, and cap it at double the initial fit
+        fitFn->SetParLimits(2, 0., initialSigma * 2.); // par idx, par min, par max
     }
     
     // ...
@@ -4231,7 +4253,8 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
     // 6) Instantiate the full fit function
     ///////////////////////////////////////
     
-    auto fullFitFn = new TF1("fullPrefitFn", fullFitString.c_str(), rangeLow, rangeHigh);
+    std::string fullFitFnName = "fullPrefitFn";
+    auto fullFitFn = new TF1(fullFitFnName.c_str(), fullFitString.c_str(), rangeLow, rangeHigh);
 
     ////////////////////////////////////////////////
     // 7) Assign parameters to the full fit function
@@ -4393,10 +4416,6 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
     ////////////////////////////////////////////
     
     auto listOfLines = new TList(); // TList*
-    // auto listOfLines = new TPaveStats();
-    // listOfLines->InsertText();
-    // listOfLines->AddText();
-    // listOfLines->
     
     // Get chi-square / n.d.f for full fit
     double const chi2 = fullFitResult->Chi2();
@@ -4408,20 +4427,6 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
     newLine1->SetTextFont(gStyle->GetStatFont()); // match font to existing stat box font
     newLine1->SetTextSize(gStyle->GetStatFontSize()); // match font size to existing stat box font size
     listOfLines->Add(newLine1); // append the fwhm value & error to the fit stats
-    
-//     for (int i = 0; i < numPeaks; i++) {
-//         // Write custom statistics to list for each fitted peak
-//         int statsLinesError = get_stats_lines(fitResults[i], countsResults[i], listOfLines);
-//         // TODO: Individual peak fits are giving FWHM much larger than the full fit,
-//         // yet im displaying initial fit values, maybe change this:
-//         // int statsLinesError = get_stats_lines(fullFitResult, countsResults[i], listOfLines);
-//         
-//         // Handle statistics writing
-//         if (statsLinesError) {
-//             std::cerr << "\nError: Failed get fit statistics!\n";
-//             return 1;
-//         }
-//     }
     
     // Write custom statistics to list for each fitted peak    
     int statsLinesError = get_stats_lines(fullFitResult, countsResults, listOfLines);
