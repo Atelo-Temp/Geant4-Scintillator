@@ -3838,13 +3838,16 @@ std::optional<std::vector<double>> get_counts(TH1* hpx, TF1* fitFn, TMatrixDSym*
     double const totalCounts = area / binWidth; // NOTE: Now is just counts
     
     // Get the error (calculated as: sqrt(totalCounts), in counting statistics)
-    double const countsError = fitFn->IntegralError(xmin, xmax, fitFn->GetParameters(), gausCovMatrix->GetMatrixArray()) / binWidth;
+    double const areaError = fitFn->IntegralError(xmin, xmax, fitFn->GetParameters(), gausCovMatrix->GetMatrixArray());
+    double const countsError = areaError / binWidth;
     // NOTE: This requires the actually fitted function, not the drawing only copy
     // NOTE: Must also be divided by bin width, otherwise it would be:
     // +/- num photons, rather than counts
     // NOTE: Feeding the covariance matrix
     
-    std::cout << "COUNTS: " << totalCounts << ", ERROR [SQRT(COUNTS)]: +/-" << countsError << "\n";
+    // std::cout << "COUNTS: " << totalCounts << ", ERROR [SQRT(COUNTS)]: +/-" << countsError << "\n";
+    std::cout << "COUNTS: " << totalCounts << ", UNCERTAINTY: +/-" << countsError << "\n";
+    // NOTE: "countsError" is propagated fit uncertainty, not simply sqrt(N)
     
     // std::vector<double> countResults = { totalCounts, countsError };
 
@@ -4375,20 +4378,22 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
     std::vector<TF1*> peakFunctions = {};
     
     for (int i = 0; i < numPeaks; i++) {
-        int const peakArg0IDX = i * 3;
+        int const peakArg0IDX = i * 3; // amplitude idx = 0, 3, 6, ..
         
         double const amplitude = fittedParams[peakArg0IDX];
         double const mean = fittedParams[peakArg0IDX + 1];
         double const sigma = fittedParams[peakArg0IDX + 2];
         
         std::string const name = "peak" + std::to_string(i);
-        double const peakLow = mean - (4 * sigma);
-        double const peakHigh = mean + (4 * sigma);
+        double const peakLow = mean - (5 * sigma);
+        double const peakHigh = mean + (5 * sigma);
+        // NOTE: +/- 5 sigma covers 99.9999% of gaussian area for subsequent integration
         
         std::cout << name << " " << peakLow << " - " << peakHigh << "\n";
         std::cout << "Amplitude: " << amplitude << " Mean: " << mean << " Sigma: " << sigma << "\n";
         
         auto func = new TF1(name.c_str(), "gaus", peakLow, peakHigh);
+        // auto func = new TF1(name.c_str(), "gaus", xmin, xmax);
         
         func->SetParameters(amplitude, mean, sigma);
         // NOTE: Not displaying in fit stats, so setting ParNames not really needed
@@ -4412,7 +4417,6 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
     polyFitted->SetLineColor(kBlue);
     polyFitted->SetLineStyle(kDot);
     polyFitted->Draw("same");
-    
     
     /////////////////////////////////////////////////////////////////////
     // 12) Get integrated counts for individual fitted peaks (and errors)
