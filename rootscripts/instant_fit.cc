@@ -3558,6 +3558,12 @@ std::optional<TFitResultPtr> fit_individual(TH1* hpx, int const& roughCentroid, 
     return refitResult;
 }
 
+// ...
+struct SidebandResult {
+    double const xMean;
+    double const yMean;
+};
+
 /*
  * Get average x and y values for a specific range of the histogram
  * 
@@ -3583,7 +3589,7 @@ std::optional<TFitResultPtr> fit_individual(TH1* hpx, int const& roughCentroid, 
  * 
  * TODO: If bin content == 0 dont count it ??
  */
-std::vector<double> weighted_sideband_avg(TH1* hpx, TAxis const* xAxis, double const& xStart, double const& xEnd) {
+SidebandResult weighted_sideband_avg(TH1* hpx, TAxis const* xAxis, double const& xStart, double const& xEnd) {
     // ...
     std::cout << "Band Start: " << xStart << " - Band End: " << xEnd << "\n";
     
@@ -3624,7 +3630,7 @@ std::vector<double> weighted_sideband_avg(TH1* hpx, TAxis const* xAxis, double c
     // NOTE: Exactly equivalent to above
     
     // ...
-    return std::vector<double> { xMean, yMean };
+    return SidebandResult { xMean, yMean };
 }
 
 /*
@@ -3646,7 +3652,7 @@ std::vector<double> weighted_sideband_avg(TH1* hpx, TAxis const* xAxis, double c
  * 
  * TODO: If bin content == 0 dont count it ??
  */
-std::vector<double> sideband_avg(TH1* hpx, TAxis const* xAxis, double const& xStart, double const& xEnd) {
+SidebandResult sideband_avg(TH1* hpx, TAxis const* xAxis, double const& xStart, double const& xEnd) {
     // ...
     std::cout << "Band Start: " << xStart << " - Band End: " << xEnd << "\n";
     
@@ -3686,7 +3692,7 @@ std::vector<double> sideband_avg(TH1* hpx, TAxis const* xAxis, double const& xSt
     // NOTE: Exactly equivalent to above
     
     // ...
-    return std::vector<double> { xMean, yMean };
+    return SidebandResult { xMean, yMean };
 }
 
 /*
@@ -4004,7 +4010,6 @@ int draw_fit_stats(TH1* hpx, TList* listOfLines) {
     // "bl" = Border-left shadow (drop-shadow cast under bottom left corner ) (omittable)
     // "NDC" ensures stats box scales with window size and stays in position
     
-    
     // Handle missing stats box
     if (!ps) {
         std::cerr << "\nError: Stats box object not found.\n";
@@ -4116,7 +4121,7 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
         centroidVec.push_back(centroid[i]);
         
         // If vector is found to be in non-ascending order (unsorted, descending, etc), flag it
-        if (i >= 1 && (centroid[i] < centroid [i - 1])) isAscending = false;
+        if (i >= 1 && (centroid[i] < centroid[i - 1])) isAscending = false;
     }
     
     std::cout << "Num peaks: " << centroidVec.size() << "\n";
@@ -4131,42 +4136,70 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
         std::sort(centroidVec.begin(), centroidVec.end());
     }
     
+    ///////////////////////////////
+    // 3.1) Find improved centroids
+    ///////////////////////////////
+    
+    // TODO: Perform a narrow local peak search based on supplied centroid and fwhm
+    
+    // TODO: If distance between supplied centroids is smaller than rough fwhm, maybe skip
+    
+    // TODO: If there is more than one centroid, ensure that the search is bound
+    // to less than 2nd centroid minus 1.5 * FWHM
+    
+    // TODO: Look for dy/dx = 0
+    
     ///////////////////////////////////////////////////////////////////
     // 3.1) Use the fitted photopeak params to define an exclusion zone
     ///////////////////////////////////////////////////////////////////
     
+    // TODO: Handle left low/high being below xmin, and right high/low being beyond xmax
+    // TODO: Also, dont want to go into underflow bin (bin 0)
+    
+    // NOTE: Distances from centroid to tail as a factor of FWHM, and corresponding % reurn to baseline:
+    // Centroid - (0.911 * FWHM) = 90% return to baseline
+    // Centroid - (0.967 * FWHM) = 92.5% return to baseline
+    // Centroid - (1.040 * FWHM) = 95% return to baseline
+    // Centroid - (1.154 * FWHM) = 97.5% return to baseline
+    // Centroid - (1.289 * FWHM) = 99% return to baseline
+    // Centroid - (1.578 * FWHM) = 99.9% return to baseline
+    // Centroid - (1.823 * FWHM) = 99.99% return to baseline
+    // Centroid - (2.038 * FWHM) = 99.999% return to baseline
+    
     // Grab lowest energy photopeak centroid and fwhm from fit results
-    double const lowEnergyCentroid = centroidVec[0]; // centroid = [1]
-    double const lowEnergyFWHM = roughFWHM; // sigma = [2]
+    double const lowEnergyCentroid = centroidVec[0];
+    double const lowEnergyFWHM = roughFWHM;
     
     std::cout << "\nLow FWHM: " << lowEnergyFWHM << "\n";
     
     // Band to the the left of the photopeak
-    // double const leftLow = lowEnergyCentroid - (2 * lowEnergyFWHM);
+    // ...
+    double const leftLow = lowEnergyCentroid - (2. * lowEnergyFWHM);
+    // double const leftLow = lowEnergyCentroid - (1.5 * lowEnergyFWHM); // TEST -- 2 * FWHM -> 1.5 * FWHM is a little aggressive i think
+    // ...
     // double const leftHigh = lowEnergyCentroid - (1.5 * lowEnergyFWHM);
-    double const leftLow = lowEnergyCentroid - (1.5 * lowEnergyFWHM); // TEST -- 2 * FWHM -> 1.5 * FWHM is a little aggressive i think
-    double const leftHigh = lowEnergyCentroid - (1 * lowEnergyFWHM); // TEST
+    // double const leftHigh = lowEnergyCentroid - (1. * lowEnergyFWHM);
+    double const leftHigh = lowEnergyCentroid - (1.289 * lowEnergyFWHM); // TEST -- 1 * FWHM leaves > 5% of tail, this leaves just 1%
     // NOTE: from -1.5*FWHM where gaussian returns to ~0 (0.2%), to -2*FWHM (0.0...%)
     
     std::cout << "\nLeft low: " << leftLow << " | Left high: " << leftHigh << "\n";
     
-    // TODO: Handle left low/high being negative values
-    
     // Grab highest energy photopeak centroid and fwhm from fit results
-    double const highEnergyCentroid = centroidVec[numPeaks - 1]; // centroid = [1]
-    double const highEnergyFWHM = roughFWHM; // sigma = [2]
+    double const highEnergyCentroid = centroidVec[centroidVec.size() - 1];
+    double const highEnergyFWHM = roughFWHM;
     
-    std::cout << "\nHigh FWHM: " << lowEnergyFWHM << "\n";
+    std::cout << "\nHigh FWHM: " << highEnergyFWHM << "\n";
     
     // Band to the the right of the photopeak
+    // ...
     // double const rightLow = highEnergyCentroid + (1.5 * highEnergyFWHM);
-    // double const rightHigh = highEnergyCentroid + (2 * highEnergyFWHM);
-    double const rightLow = highEnergyCentroid + (1. * highEnergyFWHM); // TEST -- 2 * FWHM -> 1.5 * FWHM is a little aggressive i think
-    double const rightHigh = highEnergyCentroid + (1.5 * highEnergyFWHM); // TEST
+    // double const rightLow = highEnergyCentroid + (1. * highEnergyFWHM); // TEST -- 2 * FWHM -> 1.5 * FWHM is a little aggressive i think
+    double const rightLow = highEnergyCentroid + (1.289 * highEnergyFWHM); // TEST -- 1 * FWHM leaves > 5% of tail, this leaves just 1%
+    // ...
+    double const rightHigh = highEnergyCentroid + (2. * highEnergyFWHM);
+    // double const rightHigh = highEnergyCentroid + (1.5 * highEnergyFWHM); // TEST
     
     std::cout << "\nRight low: " << rightLow << " | Right high: " << rightHigh << "\n";
-    
-    // TODO: Handle right low/high being negative values
     
     // NOTE: In the case of a single fitted peak, low energy and high energy centroid/fwhm
     // will be the same
@@ -4181,26 +4214,48 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
     
     TAxis const* xAxis = hpx->GetXaxis();
     
-    std::cout << "\nLeft sideband\n";
-    std::vector<double> const left = sideband_avg(hpx, xAxis, leftLow, leftHigh);
+    std::cout << "\n> Left sideband\n\n";
+    SidebandResult const left = sideband_avg(hpx, xAxis, leftLow, leftHigh);
+    // std::vector<double> const left = weighted_sideband_avg(hpx, xAxis, leftLow, leftHigh); // TODO: Maybe use weighted avg for left sideband
     
-    std::cout << "\nRight sideband\n\n";
-    std::vector<double> const right = sideband_avg(hpx, xAxis, rightLow, rightHigh);
+    std::cout << "\n> Right sideband\n\n";
+    SidebandResult const right = sideband_avg(hpx, xAxis, rightLow, rightHigh);
+    // std::vector<double> const left = weighted_sideband_avg(hpx, xAxis, leftLow, leftHigh);
+    
+    // TODO: MAYBE A DIFFERENT TYPE OF SIDEBAND AVG, PRIORITISING LOW VALS
     
     ////////////////////////////////////////////////////////////////////////////////////////
     // 3.3) Calculate initial estimate for first order polynomial params (slope & intercept)
     ////////////////////////////////////////////////////////////////////////////////////////
     
+    // TODO: Start at left centroid, go left until dy/dx approaches ~0
+    // TODO: Repeat for right centroid, go left until dy/dx approaches ~0
+    
     // slope = Δy / Δx
-    double const deltaY = right[1] - left[1]; // [0] = xMean, [1] = yMean
-    double const deltaX = right[0] - left[0];
-    double const slope = deltaY / deltaX; // gradient of the line
+    
+    // ...
+    double const deltaY = right.yMean - left.xMean; // [0] = xMean, [1] = yMean
+    // NOTE: Even though left mean Y is the larger value, we still want to subtract it from
+    // right mean Y, since it will give us our relevant slope sign
+    
+    // ...
+    double const deltaX = right.xMean - left.xMean;
+    // NOTE: Here we want a positive distance value, so take left from right
+    
+    double const roughSlope = deltaY / deltaX; // gradient of the line
+    std::cout << "\n>>> Rough Slope: " << roughSlope << "\n";
+    
+    // If slope comes out positivbe, a negative slope close to zero slope is a decent starting estimate
+    double const slope = (roughSlope > 0.) ? -0.01 : roughSlope;
+    std::cout << "\n>>> Slope: " << slope << "\n";
     
     // intercept = y - (slope * x)
-    double const intercept = right[1] - slope * right[0]; // y-intercept (value of y when x = 0)
+    
+    // ...
+    double const intercept = right.yMean - slope * right.xMean; // y-intercept (value of y when x = 0)
     // NOTE: y = mx+b => b = y - mx
     
-    std::cout << "\nRough Slope: " << slope << " Rough Intercept: " << intercept << "\n";
+    std::cout << "\n>>> Rough Intercept: " << intercept << "\n";
     
     /////////////////////////////////////////////////////////////////////////////
     // 4) Generate a full fit function string based on the number of peaks to fit
@@ -4278,10 +4333,16 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
     
     int const polArg0IDX = numPeaks * 3;
     int const polArg1IDX = polArg0IDX + 1; // (numPeaks * 3) + 1)
+    
+    // ...
     fullFitFn->SetParameter(polArg0IDX, intercept);
     fullFitFn->SetParameter(polArg1IDX, slope);
     fullFitFn->SetParName(polArg0IDX, "Intercept");
     fullFitFn->SetParName(polArg1IDX, "Slope");
+    
+    // ...
+    fullFitFn->SetParLimits(polArg0IDX, 0., gPad->GetUymax()); // prevent intercep from going negative at all, or beyond the highest bin
+    fullFitFn->SetParLimits(polArg1IDX, -50., 0.); // prevent slope from going too negative, or going positive at all
     // intercept, slope
     
     ///////////////////////////////////////
@@ -4324,6 +4385,9 @@ int fit(std::initializer_list<int> const centroids, int const roughFWHM) {
     
     // ...
     TFitResultPtr const fullFitResult = hpx->Fit(fullFitFn, "RS0L");
+    
+    // TFitResultPtr const fullFitResult = hpx->Fit(fullFitFn, "RS0LB");
+    // "B" = use this to fix or set parameter limits with predefined funcs (i.e., "gaus"),
     
     // Handle fit error (NOTE: success = 0)
     // if (!fullFitResult) {
