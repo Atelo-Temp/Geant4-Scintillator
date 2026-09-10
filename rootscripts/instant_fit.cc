@@ -3740,9 +3740,9 @@ int assign_peak_params(TF1* fitFn, std::vector<std::vector<double>> const& fitPa
         std::cout << "Setting params for peak: " << i << "\n";
         
         // Fit parameter indices
-        int const gausArg0Start = i * 3; // 0, 3, 6, etc
-        int const gausArg1Start = gausArg0Start + 1; // 1, 4, 7, etc
-        int const gausArg2Start = gausArg0Start + 2; // 2, 5, 8, etc
+        int const gausArg0idx = i * 3; // 0, 3, 6, etc
+        int const gausArg1idx = gausArg0idx + 1; // 1, 4, 7, etc
+        int const gausArg2idx = gausArg0idx + 2; // 2, 5, 8, etc
         
         // Prefix parameter names
         std::string const arg0Name = std::to_string(i) + "-Amplitude"; // 0-Amplitude, 1-Amplitude, 2-Amplitude, etc
@@ -3753,22 +3753,22 @@ int assign_peak_params(TF1* fitFn, std::vector<std::vector<double>> const& fitPa
         
         // Set full fit function parametes using individual peak fit results
         double const initialAmplitude = fitParamsVec[i][0];
-        fitFn->SetParameter(gausArg0Start, initialAmplitude); // amplitude
-        fitFn->SetParName(gausArg0Start, arg0Name.c_str());
-        std::cout << "Set par " << gausArg0Start << " - " << arg0Name << " to " << initialAmplitude << "\n";
+        fitFn->SetParameter(gausArg0idx, initialAmplitude); // amplitude
+        fitFn->SetParName(gausArg0idx, arg0Name.c_str());
+        std::cout << "Set par " << gausArg0idx<< " - " << arg0Name << " to " << initialAmplitude << "\n";
         
         double const initialCentroid = fitParamsVec[i][1];
-        fitFn->SetParameter(gausArg1Start, initialCentroid); // mean
-        fitFn->SetParName(gausArg1Start, arg1Name.c_str());
-        std::cout << "Set par " << gausArg1Start << " - " << arg1Name << " to " << initialCentroid << "\n";
+        fitFn->SetParameter(gausArg1idx, initialCentroid); // mean
+        fitFn->SetParName(gausArg1idx, arg1Name.c_str());
+        std::cout << "Set par " << gausArg1idx<< " - " << arg1Name << " to " << initialCentroid << "\n";
         
         double const initialSigma = fitParamsVec[i][2];
-        fitFn->SetParameter(gausArg2Start, initialSigma); // sigma
-        fitFn->SetParName(gausArg2Start, arg2Name.c_str());
-        std::cout << "Set par " << gausArg2Start << " - " << arg2Name << " to " << initialSigma << "\n";
+        fitFn->SetParameter(gausArg2idx, initialSigma); // sigma
+        fitFn->SetParName(gausArg2idx, arg2Name.c_str());
+        std::cout << "Set par " << gausArg2idx<< " - " << arg2Name << " to " << initialSigma << "\n";
         
         // Ensure amplitude doesnt drop too far below/above supplied value
-        // fitFn->SetParLimits(0, initialAmplitude * 0.8, initialAmplitude * 5);
+        // fitFn->SetParLimits(gausArg0idx, initialAmplitude * 0.8, initialAmplitude * 5);
         // NOTE: Assuming worst case of passing centroid as the literal tail of the gaussian,
         // par min = initial amplitude, and fitter should never search below this, however,
         // also have to account for passing the pico top of a single channel that resides above the rest
@@ -3781,10 +3781,10 @@ int assign_peak_params(TF1* fitFn, std::vector<std::vector<double>> const& fitPa
         double xmin;
         double xmax;
         fitFn->GetRange(xmin, xmax);
-        fitFn->SetParLimits(1, xmin, xmax);
+        fitFn->SetParLimits(gausArg1idx, xmin, xmax);
         
         // Ensure sigma doesnt become negative, and cap it at double the initial fit
-        fitFn->SetParLimits(2, 0., initialSigma * 2.); // par idx, par min, par max
+        fitFn->SetParLimits(gausArg2idx, 0., initialSigma * 2.); // par idx, par min, par max
     }
     
     // ...
