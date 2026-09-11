@@ -4287,7 +4287,7 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     
     fullFitFn->SetParLimits(polArg0IDX, 0., 1e9); // prevent intercep from going negative at all
     fullFitFn->SetParLimits(polArg1IDX, -50., 0.); // prevent slope from going too negative, or going positive at all
-    fullFitFn->SetParLimits(polArg2IDX, 0., coefficient * 0.8); // prevent quadratic coefficint from concaving up, 
+    fullFitFn->SetParLimits(polArg2IDX, 0., coefficient * 5.); // prevent quadratic coefficint from concaving up, 
     
     ///////////////////////////////////////
     // 7.2) Ensure histogram range is reset
