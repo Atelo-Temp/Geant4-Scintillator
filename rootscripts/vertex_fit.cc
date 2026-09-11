@@ -3435,7 +3435,6 @@ int assign_peak_params(TF1* fitFn, std::vector<std::vector<double>> const& fitPa
         // Ensure sigma doesnt become negative, and cap it at double the initial fit
         fitFn->SetParLimits(gausArg2idx, 0., initialSigma * 2.); // par idx, par min, par max
         
-        
 //         double const prefitAmplitudeLimitLow = roughAmplitude * 0.85;
 //         double const prefitAmplitudeLimitHigh = roughAmplitude * 1.1;
 //         prefitFn->SetParLimits(0, prefitAmplitudeLimitLow, prefitAmplitudeLimitHigh); // amplitude is arg[0]
@@ -3450,7 +3449,6 @@ int assign_peak_params(TF1* fitFn, std::vector<std::vector<double>> const& fitPa
 //         std::cout << ">>> Amplitude Low: " << prefitAmplitudeLimitLow << " Rough Amplitude: " << roughAmplitude << " Amplitude High: " << prefitAmplitudeLimitHigh << "\n";
 //         std::cout << ">>> Mean Lower Window: " << roughLow << " Mean Low: " << prefitCentroidLimitLow << " Rough Mean: " << roughMean << " Mean High: " << prefitCentroidLimitHigh << " Mean Upper Window: " << roughHigh << "\n";
 //         std::cout << ">>> Sigma Low: " << prefitSigmaLimitLow << " Rough Sigma: " << roughSigma << " Sigma High: " << prefitSigmaLimitHigh << "\n";
-//         
 //         
 //         double const refitAmplitudeLimitLow = prefitAmplitude * 0.9;
 //         double const refitAmplitudeLimitHigh = prefitAmplitude * 1.1;
@@ -3602,22 +3600,16 @@ int get_stats_lines(TFitResultPtr const &result, std::vector<std::vector<double>
         // Add centroid (+/- error) to the stats box
         char const* text1 = Form("%i-Centroid = %.2f #pm %.2f", i, fittedCentroid, fittedCentroidError); // Format the entry (#pm generates +/-)
         auto newLine1 = new TLatex(0, 0, text1); // <- may have to do Form() for string
-        newLine1->SetTextFont(gStyle->GetStatFont()); // match font to existing stat box font
-        newLine1->SetTextSize(gStyle->GetStatFontSize()); // match font size to existing stat box font size
         listOfLines->Add(newLine1); // append the fwhm value & error to the fit stats
 
         // Add FWHM (+/- error) to the stats box
         char const* text2 = Form("%i-FWHM = %.2f #pm %.2f", i, fittedFWHM, fittedFWHMError); // Format the entry (#pm generates +/-)
         auto newLine2 = new TLatex(0, 0, text2); // <- may have to do Form() for string
-        newLine2->SetTextFont(gStyle->GetStatFont()); // match font to existing stat box font
-        newLine2->SetTextSize(gStyle->GetStatFontSize()); // match font size to existing stat box font size
         listOfLines->Add(newLine2); // append the fwhm value & error to the fit stats
         
         // Add counts (+/- error) to the stats box
         char const* text3 = Form("%i-Counts = %.2f #pm %.2f", i, countsVal, countsErr);
         auto newLine3 = new TLatex(0, 0, text3);
-        newLine3->SetTextFont(gStyle->GetStatFont());
-        newLine3->SetTextSize(gStyle->GetStatFontSize());
         listOfLines->Add(newLine3);
     }
     
@@ -3644,39 +3636,19 @@ int draw_fit_stats(TH1* hpx, TList* listOfLines) {
     // note decimal, which can cause unexpected bit settings, using 111 treats its as a decimal,
     // so avoid SetOptFit(0111), and use SetOptFit(111) instead.
     
-    // TEST
-    // c->Update(); // NOTE: This can be omitted with the working combo
-    // gPad->Update(); // ^ same
-    // hpx->SetStats(1); // NOTE: Tried using this instead of SetOptFit, doesnt work, causes stats box not found
-    // hpx->SetStats(0); // this is called later, might be wiggle room in location, but if it aint broke...
-    
     // Handle missing histogram
     if (!hpx) {
         std::cerr << "\nError (draw_fit_stats()): Histogram not found!\n";
         return 1;
     }
     
-    // gPad->Update(); // TEST
+    // Set the position of each corner of the stats box
+    double const bottomLeftX = 0.7;
+    double const bottomLeftY = 0.8;
+    double const topRightX = 0.98;
+    double const topRightY = 0.97;
     
-    // Get a pointer to the stats box object
-    // auto ps = (TPaveStats*)(hpx->FindObject("stats"));
-    // auto ps = reinterpret_cast<TPaveStats*>(hpx->FindObject("stats"));
-    // auto ps = dynamic_cast<TPaveStats*>(hpx->FindObject("stats")); // NOTE: Works w/ combo
-    // auto ps = dynamic_cast<TPaveStats*>(hpx->GetListOfFunctions()->FindObject("stats")); // NOTE: Works w/ combo
-    // auto ps = dynamic_cast<TPaveStats*>(c->GetPrimitive("stats")); // NOTE: Works w/ combo
-    // NOTE: Casting the ambiguous return type of find object (TObject*), to TPaveStats object
-    
-    // ...
-    double const bottomLeftX = 0.65;
-    double const bottomLeftY = 0.7;
-    double const topRightX = 0.88;
-    double const topRightY = 0.88;
-    
-    // ...
-    // auto ps = new TPaveStats(); // TEST
-    // auto ps = new TPaveStats(0.65, 0.70, 0.88, 0.88, "brNDC");
-    // auto ps = new TPaveStats(0.65, 0.70, 0.88, 0.88, "blNDC");
-    // auto ps = new TPaveStats(0.65, 0.70, 0.88, 0.88, "NDC");
+    // Create the stats box
     auto ps = new TPaveStats(bottomLeftX, bottomLeftY, topRightX, topRightY, "NDC");
     // NOTE: Args = X1, Y1, X2, Y2, option
     // these represent normalised device coordinates (NDC), where NDC maps 0.0 (bottom left) to 1.0 (top right)
@@ -3693,28 +3665,15 @@ int draw_fit_stats(TH1* hpx, TList* listOfLines) {
         return 1;
     }
     
-    // ps->SetX1NDC(0);
-    // ps->SetX2NDC(1000);
-    
     // Detach from root auto management (need to use when doing set stats 0 and ps draw)
     ps->SetName("mystats"); // NOTE: Without this, get segmentation violation (segfault)
     
-    // ...
-    // ps->Clear();
-    
-    // TEST
-    // ps->SetBorderSize(1);
-    // ps->SetFillColor(0);
-    // ps->SetTextFont(42);
-    // ps->SetTextSize(0.035);
-    // TEST
+    // Pave stats styling
+    ps->SetBorderSize(1); // disables the default drop shadow
+    ps->SetFillColor(0); // change grey default background to white
     
     // Get existing statistics box content
     TList* existingLines = ps->GetListOfLines();
-    // auto existingLines = new TList();
-    
-    // ...
-    // existingLines->Clear();
     
     // Append the custom stats to the TPaveStats list
     // for (int i = 0; i < listOfLines->GetSize(); i++) {
@@ -3722,30 +3681,12 @@ int draw_fit_stats(TH1* hpx, TList* listOfLines) {
     // }
     existingLines->AddAll(listOfLines); // NOTE: Does same as above
     
-    // Display the custom statistics box
-    // hpx->SetStats(0); // Disable auto future stats regeneration
-    // ps->Draw(); // Redraw custom box
-    // c->Update(); // this can actually be omitted too
-    
     // Attach custom stats box to list of primitives so it draws with the plot
     gPad->GetListOfPrimitives()->Add(ps);
     
     // Display the custom statistics box
     gPad->Modified();
     gPad->Update();
-    
-    ////////////////////////////////////////////////////////////////////////////
-    
-    // auto statsBox = new TPaveStats();
-    
-//     for (int i = 0; i < listOfLines->GetSize(); i++) {
-//         // TObject* newLine = listOfLines->At(i);
-//         auto newLine = static_cast<TLatex*>(listOfLines->At(i));
-//         // We know its a list of TLatex*, not TObject*, as it was populated in pipeline
-//         
-//         // statsBox->AddText(newLine);
-//         // statsBox->InsertText();
-//     }
     
     // No errors, all good
     return 0;
@@ -4409,7 +4350,7 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     // ...
     // delete hpx->GetListOfFunctions()->FindObject(backgroundFitName.c_str());
     TObject* bkgFit = gPad->GetListOfPrimitives()->FindObject(backgroundFitName.c_str());
-    // if (bkgFit) gPad->GetListOfPrimitives()->Remove(bkgFit);
+    if (bkgFit) gPad->GetListOfPrimitives()->Remove(bkgFit);
     
     // Query the gpad for things rendered to the canvas rather than the histo
     TObject* bkgHpx = gPad->GetListOfPrimitives()->FindObject(backgroundName.c_str());
@@ -4544,6 +4485,12 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     
     auto listOfLines = new TList(); // TList*
     
+    // Set style before creation (updating it after creation will not work)
+    int fontType = 43;
+    int fontSize = 16;
+    gStyle->SetTextFont(fontType);
+    gStyle->SetTextSize(fontSize);
+    
     // Get chi-square / n.d.f for full fit
     double const chi2 = fullFitResult->Chi2();
     double const ndf = fullFitResult->Ndf();
@@ -4551,8 +4498,6 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     // Create a line
     char const* text1 = Form("#chi^{2} / ndf = %.2f / %.2f", chi2, ndf); // Format the entry (#pm generates +/-)
     auto newLine1 = new TLatex(0, 0, text1); // <- may have to do Form() for string
-    newLine1->SetTextFont(gStyle->GetStatFont()); // match font to existing stat box font
-    newLine1->SetTextSize(gStyle->GetStatFontSize()); // match font size to existing stat box font size
     listOfLines->Add(newLine1); // append the fwhm value & error to the fit stats
     
     // Write custom statistics to list for each fitted peak    
@@ -4571,24 +4516,60 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     if (bkgComponent == "pol1" || bkgComponent == "pol2") {
         char const* polyText1 = Form("Intercept = %.2f", fittedParams[bkgArg0IDX]); // Format the entry (#pm generates +/-)
         auto newLinePoly1 = new TLatex(0, 0, polyText1);
-        newLinePoly1->SetTextFont(gStyle->GetStatFont()); // match font to existing stat box font
-        newLinePoly1->SetTextSize(gStyle->GetStatFontSize()); // match font size to existing stat box font size
         listOfLines->Add(newLinePoly1); // append the fwhm value & error to the fit stats
         
         // char const* polyText2 = Form("Slope = %.2f", fittedParams[bkgArg1IDX]); // Format the entry (#pm generates +/-)
         char const* polyText2 = Form("Linear Coefficient = %.2f", fittedParams[bkgArg1IDX]); // Format the entry (#pm generates +/-)
         auto newLinePoly2 = new TLatex(0, 0, polyText2);
-        newLinePoly2->SetTextFont(gStyle->GetStatFont()); // match font to existing stat box font
-        newLinePoly2->SetTextSize(gStyle->GetStatFontSize()); // match font size to existing stat box font size
         listOfLines->Add(newLinePoly2); // append the fwhm value & error to the fit stats
     }
     if (bkgComponent == "pol2") {
         char const* polyText3 = Form("Quadratic Coefficient = %.2f", fittedParams[bkgArg1IDX + 1]); // Format the entry (#pm generates +/-)
         auto newLinePoly3 = new TLatex(0, 0, polyText3);
-        newLinePoly3->SetTextFont(gStyle->GetStatFont()); // match font to existing stat box font
-        newLinePoly3->SetTextSize(gStyle->GetStatFontSize()); // match font size to existing stat box font size
         listOfLines->Add(newLinePoly3); // append the fwhm value & error to the fit stats
     }
+    
+    ///////////////////////////
+    // Update graphics settings
+    ///////////////////////////
+    
+    // Hide title
+    gStyle->SetOptTitle(0);
+    
+    int const axesFontSize = 21;
+    
+    // Set y-axis title, positioning, offset, font and font size
+    TAxis* yAxis = hpx->GetYaxis();
+    yAxis->SetTitle("Counts");
+    yAxis->CenterTitle(true);
+    yAxis->SetTitleOffset(2.2);
+    yAxis->SetTitleFont(fontType);
+    yAxis->SetTitleSize(axesFontSize);
+    // NOTE: Setting title/font to gPad itself doesnt work as intended here, use axes themselves
+    
+    // Set x-axis title, positioning, offset, font and font size
+    xAxis->SetTitle("Channel");
+    xAxis->CenterTitle(true);
+    xAxis->SetTitleOffset(1.3);
+    xAxis->SetTitleFont(fontType);
+    xAxis->SetTitleSize(axesFontSize);
+    
+    // Set the axes tick number sizes
+    xAxis->SetLabelFont(fontType);
+    xAxis->SetLabelSize(axesFontSize);
+    yAxis->SetLabelFont(fontType);
+    yAxis->SetLabelSize(axesFontSize);
+    // NOTE: Doing it on axes instead of gStyle means gPad update works, rather than canvas update
+    
+    // Reduce whitespace
+    gPad->SetLeftMargin(0.08);
+    gPad->SetRightMargin(0.01);
+    gPad->SetBottomMargin(0.08);
+    gPad->SetTopMargin(0.01);
+    
+    // Needed to update 
+    gPad->Modified();
+    gPad->Update();
     
     ////////////////////////////////////////////////////////////
     // 14) Render the fit statistics box containing custom stats
