@@ -4118,6 +4118,30 @@ int fit(int const view_low, int const view_high, int const numPeaks, double cons
     
     if (!hpx) {
         std::cerr << "Error: No plotting histogram.\n";
+        return 1;
+    }
+    
+    ///////////////////////
+    // 1.1) Validate params
+    ///////////////////////
+    
+    TAxis* xAxis = hpx->GetXaxis();
+    int const xmin = xAxis->GetXmin();
+    int const xmax = xAxis->GetXmax();
+    
+    if ((view_low < xmin) || (view_high > xmax)) {
+        std::cerr << "Error: View range out of axis bounds.\n";
+        return 1;
+    }
+    
+    if ((numPeaks < 1) || (numPeaks > 25)) {
+        std::cerr << "Error: Please select a number of peaks between 1 and 25.\n";
+        return 1;
+    }
+    
+    if (roughFWHM <= 0.) {
+        std::cerr << "Error: Please supply positive FWHM value.\n";
+        return 1;
     }
     
     //////////////////////////////////////
@@ -4252,9 +4276,8 @@ int fit(int const view_low, int const view_high, int const numPeaks, double cons
     
     std::string backgroundName = "bkg";
     int const numBins = hpx->GetNbinsX();
-    TAxis* xAxis = hpx->GetXaxis();
     
-    auto hpxBackground = new TH1D(backgroundName.c_str(), "bkg-hist", numBins, xAxis->GetXmin(), xAxis->GetXmax());
+    auto hpxBackground = new TH1D(backgroundName.c_str(), "bkg-hist", numBins, xmin, xmax);
     
     for (int bin = 1; bin <= numBins; bin++) {
         // hpxBackground->SetBinContent(bin, dest[bin]);
@@ -4490,9 +4513,6 @@ int fit(int const view_low, int const view_high, int const numPeaks, double cons
     // NOTE: Using smallest rough low and biggest rough high
     // NOTE: These can be fed to first order polynomial when its introduced
     
-    double const xmax = xAxis->GetXmax();
-    double const xmin = xAxis->GetXmin();
-    
     double const lowEnergyCentroid = centroidVec[0];
     double const highEnergyCentroid = centroidVec[centroidVec.size() - 1];
     double const lowEnergyFWHM = fwhmVec[0];
@@ -4724,7 +4744,7 @@ int fit(int const view_low, int const view_high, int const numPeaks, double cons
     // polyFitted->SetLineStyle(kDot);
     // polyFitted->Draw("same");
     
-    auto polyFitted = new TF1("polyFitted", "pol2", xAxis->GetXmin(), xAxis->GetXmax());
+    auto polyFitted = new TF1("polyFitted", "pol2", xmin, xmax);
     polyFitted->SetParameters(fittedParams[polArg0IDX], fittedParams[polArg1IDX], fittedParams[polArg2IDX]); // fitted intercept & slope
     // polyFitted->SetParNames("Intercept", "Slope"); // NOTE: not displaying in fit stats, so not really needed
     polyFitted->SetLineColor(kBlue);
