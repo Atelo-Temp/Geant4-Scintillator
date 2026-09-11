@@ -40,6 +40,7 @@ target_link_libraries(rootscripts PRIVATE
     ROOT::Tree # NTuples
     ROOT::Graf # Graphs?
     ROOT::Gpad # TCanvas (Graphics?)
+    ROOT::Spectrum
 )
 
 

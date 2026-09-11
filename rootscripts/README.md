@@ -275,6 +275,18 @@ goes straight to gaus + pol fit, which ends up being much more reliable
 
 > NOTE: Extension of ultra_fit.cc
 
+34) vertex_fit.cc (alt: vicinity_fit.cc)
+
+Introduces:
+- TSpectrum peak search
+- TSpectrum local noise (background) estimation
+- FWHM search
+
+Another complete rewrite of fitting methodology, Fit() API now only requires a window and number of peaks,
+and automates every aspect of parameter finding for the full fit, supplying extremely accurate initial values
+
+> NOTE: Extension of instant_fit.cc
+
 ## TODOS
 
 32) oop_better_fit.cc
