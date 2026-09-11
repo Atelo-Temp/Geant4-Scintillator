@@ -3842,7 +3842,7 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     auto spectrum = new TSpectrum(numPeaksRequested);
     
     // Convert supplied rough fwhm to sigma
-    double const roughSigma = roughFWHM / SigmaToFWHM;
+    double const searchSigma = roughFWHM / SigmaToFWHM;
     
     // Background search options
     // std::string const searchOptions = "new";
@@ -3862,7 +3862,7 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     double const threshold = 0.3;
     
     // Search for peaks in the histogram
-    int const numFound = spectrum->Search(hpx, roughSigma, searchOptions.c_str(), threshold); // hpx, sigma, option, threshold
+    int const numFound = spectrum->Search(hpx, searchSigma, searchOptions.c_str(), threshold); // hpx, sigma, option, threshold
     
     // Get and draw the found peak markers
     TList* functions = hpx->GetListOfFunctions();
@@ -3958,7 +3958,7 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     }
     
     // Instantiate a new histogram for the estimated background
-    std::string backgroundName = "bkg";
+    std::string const backgroundName = "bkg";
     int const numBins = hpx->GetNbinsX();
     
     auto hpxBackground = new TH1D(backgroundName.c_str(), "bkg-hist", numBins, xmin, xmax);
@@ -3985,7 +3985,7 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
 
     // Estimate linear component params by fitting to found background
     
-    std::string backgroundFitName = "bkgFit";
+    std::string const backgroundFitName = "bkgFit";
     
     TF1* backgroundFit = nullptr;
     TFitResultPtr backgroundFitResult = nullptr;
@@ -4158,7 +4158,7 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
                 // r(x) = h(x) - B(x)
                 double const totalCounts = hpx->GetBinContent(currentBin);
                 // double const backgroundCounts = hpxBackground->GetBinContent(currentBin);
-                double const backgroundCounts = backgroundFit->Eval(currentBin);
+                double const backgroundCounts = backgroundFit->Eval(xAxis->GetBinCenter(currentBin));
                 double const residualBinHeight = totalCounts - backgroundCounts;
                 
                 // std::cout << "Residual height: " << residualBinHeight << "\n"; // NOTE: for debugging
