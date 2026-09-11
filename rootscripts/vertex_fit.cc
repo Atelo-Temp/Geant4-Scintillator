@@ -3778,7 +3778,7 @@ int draw_fit_stats(TH1* hpx, TList* listOfLines) {
  * - Or, use peakNum, i.e., if search encounters 2 peaks, but peakNum = 1, go for
  * the first peak, else if peakNum = 2, go for the second peak
  */
-int fit(int const view_low, int const view_high, int const numPeaksRequested, double const roughFWHM = 40.) {
+int fit(int const view_low, int const view_high, int const numPeaksRequested, double const roughFWHM = 40., std::string const bkgComponent = "pol1") {
     ///////////////////////////////
     // 1) Grab the active histogram
     ///////////////////////////////
@@ -3816,6 +3816,16 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     if (roughFWHM <= 0.) {
         std::cerr << "\nError: Please supply positive FWHM value.\n";
         return 1;
+    }
+    
+    if ((bkgComponent != "pol1") && (bkgComponent != "pol2") && (bkgComponent != "expo")) {
+        std::cerr << "\nError: Please choose either 'pol1', 'pol2', or 'expo' for background component.\n";
+        return 1;
+    }
+    
+    if (bkgComponent == "expo") {
+        std::cerr << "\nError: Not yet imlpemeted.\n";
+        return 1;        
     }
     
     //////////////////////////////////////
@@ -3977,34 +3987,48 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     
     std::string backgroundFitName = "bkgFit";
     
-    // NOTE: The linear estimation is reliable most of the time, just cuts troughs between peaks
-    // when the outer window edges are raised
-    // auto backgroundFit = new TF1("bkgFit", "pol1", view_low, view_high);
-    // backgroundFit->SetLineColor(kBlue);
-    // backgroundFit->SetLineWidth(1);
-    // TFitResultPtr const backgroundFitResult = hpxBackground->Fit(backgroundFit, "RS+0");
-    // backgroundFit->Draw("same"); // NOTE: Call draw from the fit function, not the result
+    TF1* backgroundFit = nullptr;
+    TFitResultPtr backgroundFitResult = nullptr;
     
-    // NOTE: The expo does well sometimes, better than the 1st order polynomial here and there,
-    // but often cuts off the bottom of the peak nearest to lower/upper window bounds more
-    // auto comptonBkg = new TF1("bkgFit", "expo", view_low, view_high);
-    // comptonBkg->SetLineColor(kGreen);
-    // comptonBkg->SetLineWidth(1);
-    // auto comptonFitResult = hpxBackground->Fit(comptonBkg, "RS+0");
-    // comptonBkg->Draw("same");
-    
-    // NOTE: This is far less restricting at window edges, while still capturing the curve well
-    auto backgroundFit = new TF1(backgroundFitName.c_str(), "pol2", view_low, view_high);
-    // backgroundFit->SetLineColor(kPlum);
-    // backgroundFit->SetLineColor(kMagenta);
-    backgroundFit->SetLineColor(kTeal);
-    backgroundFit->SetLineWidth(1);
-    // backgroundFit->SetLineStyle();
-    // backgroundFit->SetParLimits(2, 0., 1e9); // Ensure quadratic coefficient always positive, so concaved down
-    TFitResultPtr const backgroundFitResult = hpxBackground->Fit(backgroundFit, "RS+0B");
-    backgroundFit->Draw("same");
-    
+    if (bkgComponent == "pol1") {
+        // NOTE: The linear estimation is reliable most of the time, just cuts troughs between peaks
+        // when the outer window edges are raised
+        backgroundFit = new TF1("bkgFit", "pol1", view_low, view_high);
+        backgroundFit->SetLineColor(kBlue);
+        backgroundFit->SetLineWidth(1);
+        backgroundFit->SetParLimits(0, 0., 1e9); // ensure intercept is positive
+        backgroundFit->SetParLimits(1, -1e9, 0.); // ensure slope is negative
+        backgroundFitResult = hpxBackground->Fit(backgroundFit, "RS+0B");
+        backgroundFit->Draw("same"); // NOTE: Call draw from the fit function, not the result
+    }
+    else if (bkgComponent == "pol2") {
+        // NOTE: This is far less restricting at window edges, while still capturing the curve well
+        backgroundFit = new TF1(backgroundFitName.c_str(), "pol2", view_low, view_high);
+        // backgroundFit->SetLineColor(kPlum);
+        // backgroundFit->SetLineColor(kMagenta);
+        backgroundFit->SetLineColor(kTeal);
+        backgroundFit->SetLineWidth(1);
+        // backgroundFit->SetLineStyle();
+        // backgroundFit->SetParLimits(2, 0., 1e9); // Ensure quadratic coefficient always positive, so concaved down
+        backgroundFitResult = hpxBackground->Fit(backgroundFit, "RS+0B");
+        backgroundFit->Draw("same");
+    }
+    else if (bkgComponent == "expo") {
+        // NOTE: The expo does well sometimes, better than the 1st order polynomial here and there,
+        // but often cuts off the bottom of the peak nearest to lower/upper window bounds more
+        backgroundFit = new TF1("bkgFit", "expo", view_low, view_high);
+        backgroundFit->SetLineColor(kGreen);
+        backgroundFit->SetLineWidth(1);
+        backgroundFitResult = hpxBackground->Fit(backgroundFit, "RS+0B");
+        backgroundFit->Draw("same");
+    }
     // TODO: Explore potential sensible limits
+    
+    // Handle fit error (NOTE: success = 0)
+    if (backgroundFitResult->Status() != 0) {
+        std::cerr << "\nError: Failed to perform initial fit!\n";
+        return 1;
+    }
     
     //////////////////////////////////////////////////////////////////////////////
     // 6) Copy tspectrum found peaks to vector, check if theyre in ascending order
@@ -4176,10 +4200,17 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     // 9.1) Append polynomial to the fit string
     ///////////////////////////////////////////
     
-    // std::string const fullFitString = fitString + " + pol1(" + std::to_string(numPeaks * 3) + ")";
-    // NOTE: I.e., "gaus(0) + gaus(3) + gaus(3)" -> "gaus(0) + gaus(3) + gaus(6) + pol1(9)"
-    std::string const fullFitString = fitString + " + pol2(" + std::to_string(numPeaks * 3) + ")";
+    std::string fullFitString;
+    
+    if (bkgComponent == "pol1") {
+        std::string const fullFitString = fitString + " + pol1(" + std::to_string(numPeaks * 3) + ")";
+        // NOTE: I.e., "gaus(0) + gaus(3) + gaus(3)" -> "gaus(0) + gaus(3) + gaus(6) + pol1(9)"
+    }
+    else if (bkgComponent == "pol2") {
+        std::string const fullFitString = fitString + " + pol2(" + std::to_string(numPeaks * 3) + ")";
     // NOTE: I.e., "gaus(0) + gaus(3) + gaus(3)" -> "gaus(0) + gaus(3) + gaus(6) + pol2(9)"
+    }
+    
     std::cout << "\nFull Fit function string: " << fullFitString << "\n";
     
     ////////////////////////////////////////////////////////
@@ -4200,8 +4231,10 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     // The Gaussian itself mathematically extends to infinity.
     // double const rangeLow = lowEnergyCentroid - (2.5 * lowEnergyFWHM);
     // double const rangeHigh = highEnergyCentroid + (2.5 * highEnergyFWHM);
-    double const rangeLow = lowEnergyCentroid - (2 * lowEnergyFWHM);
-    double const rangeHigh = highEnergyCentroid + (2 * highEnergyFWHM);
+    // double const rangeLow = lowEnergyCentroid - (2.038 * lowEnergyFWHM); // 99.999%
+    // double const rangeHigh = highEnergyCentroid + (2.038 * highEnergyFWHM);
+    double const rangeLow = lowEnergyCentroid - (1.823 * lowEnergyFWHM); // 99.99%
+    double const rangeHigh = highEnergyCentroid + (1.823 * highEnergyFWHM);
      // NOTE: You usually want the fit window to extend well into the tails/background
     // because the fitter needs tail information to constrain sigma properly.
     // If the window is too tight:
@@ -4215,7 +4248,6 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     // - but not neighboring peaks
     
     std::cout << "\nFull fit low: " << rangeLow << " - Full fit high: " << rangeHigh << "\n";
-    
     
     /////////////////////////////////////////
     // 9.3) Instantiate the full fit function
@@ -4252,39 +4284,56 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     // 7.1) Assign linear component parameters to the full fit function
     ///////////////////////////////////////////////////////////////////
     
-    // Extract fit params from linear fit
-    double intercept = backgroundFit->GetParameter(0);
-    double slope = backgroundFit->GetParameter(1);
-    double coefficient = backgroundFit->GetParameter(2);
-    
-    std::cout << "\nInitial slope: " << slope << " | Initial intercept: " << intercept << " | Initial concave: " << coefficient << "\n";
-    
-    int const polArg0IDX = numPeaks * 3;
-    int const polArg1IDX = polArg0IDX + 1; // (numPeaks * 3) + 1)
-    int const polArg2IDX = polArg1IDX + 1;
+    int const bkgArg0IDX = numPeaks * 3;
+    int const bkgArg1IDX = bkgArg0IDX + 1; // (numPeaks * 3) + 1)
     
     // ...
-    fullFitFn->SetParameter(polArg0IDX, intercept); // crosses y-axis (x = 0)
-    fullFitFn->SetParameter(polArg1IDX, slope); // rate of change of the func at x = 0
-    fullFitFn->SetParameter(polArg2IDX, coefficient); // represents curvature, concave up if positive, down if negative
-    
+    if ((bkgComponent == "pol1") || (bkgComponent == "pol2")) {
+        // Extract fit params from linear fit
+        double intercept = backgroundFit->GetParameter(0);
+        double slope = backgroundFit->GetParameter(1);
+        
+        std::cout << "\nInitial slope: " << slope << " | Initial intercept: " << intercept << "\n";
+        
+        // ...
+        fullFitFn->SetParameter(bkgArg0IDX, intercept); // crosses y-axis (x = 0)
+        fullFitFn->SetParameter(bkgArg1IDX, slope); // rate of change of the func at x = 0
+        
+        
+        // ...
+        // fullFitFn->SetParName(bkgArg0IDX, "Intercept");
+        // fullFitFn->SetParName(bkgArg1IDX, "Slope");
+        
+        fullFitFn->SetParName(bkgArg0IDX, "Constant Intercept");
+        fullFitFn->SetParName(bkgArg1IDX, "Linear Coefficient");
+        // NOTE: These default to p0, p1, etc, without explicit naming
+        
+        // TODO: Maybe consider limits tighter to initial fit
+        // fullFitFn->SetParLimits(bkgArg0IDX, 0., 1e9); // prevent intercep from going negative at all
+        // fullFitFn->SetParLimits(bkgArg1IDX, -50., 0.); // prevent slope from going too negative, or going positive at all
+        
+        
+        // fullFitFn->SetParLimits(bkgArg0IDX, 0., 1e9); // prevent intercep from going negative at all
+        // fullFitFn->SetParLimits(bkgArg1IDX, -1e9, 0.); // prevent slope from going positive at all
+    }
     // ...
-    // fullFitFn->SetParName(polArg0IDX, "Intercept");
-    // fullFitFn->SetParName(polArg1IDX, "Slope");
-    // fullFitFn->SetParName(polArg2IDX, "Coefficient");
-    fullFitFn->SetParName(polArg0IDX, "Constant Intercept");
-    fullFitFn->SetParName(polArg1IDX, "Linear Coefficient");
-    fullFitFn->SetParName(polArg2IDX, "Quadratic Coefficient");
-    // NOTE: These default to p0, p1, etc, without explicit naming
-    
-    // TODO: Maybe consider limits tighter to initial fit
-    // fullFitFn->SetParLimits(polArg0IDX, 0., 1e9); // prevent intercep from going negative at all
-    // fullFitFn->SetParLimits(polArg1IDX, -50., 0.); // prevent slope from going too negative, or going positive at all
-    // fullFitFn->SetParLimits(polArg2IDX, -1e9, 0.); // prevent quadratic coefficint from concaving up, 
-    
-    // fullFitFn->SetParLimits(polArg0IDX, 0., 1e9); // prevent intercep from going negative at all
-    // fullFitFn->SetParLimits(polArg1IDX, -1e9, 0.); // prevent slope from going positive at all
-    // fullFitFn->SetParLimits(polArg2IDX, 0., coefficient * 5.); // prevent quadratic coefficint from concaving up, 
+    if (bkgComponent == "pol2") {
+        
+        double coefficient = backgroundFit->GetParameter(2);
+        
+        std::cout << "\nInitial concave: " << coefficient << "\n";
+        
+        int const bkgArg2IDX = bkgArg1IDX + 1;
+        
+        fullFitFn->SetParameter(bkgArg2IDX, coefficient); // represents curvature, concave up if positive, down if negative
+        
+        // fullFitFn->SetParName(bkgArg2IDX, "Coefficient");
+        
+        fullFitFn->SetParName(bkgArg2IDX, "Quadratic Coefficient");
+        
+        // fullFitFn->SetParLimits(polArg2IDX, -1e9, 0.); // prevent quadratic coefficint from concaving up, 
+        // fullFitFn->SetParLimits(polArg2IDX, 0., coefficient * 5.); // prevent quadratic coefficint from concaving up, 
+    }
     
     ///////////////////////////////////////
     // 7.2) Ensure histogram range is reset
@@ -4440,19 +4489,22 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     
     // (NOTE: useful for debugging)
     
-    // auto polyFitted = new TF1("polyFitted", "pol1", xAxis->GetXmin(), xAxis->GetXmax());
-    // polyFitted->SetParameters(fittedParams[polArg0IDX], fittedParams[polArg1IDX]); // fitted intercept & slope
-    // // polyFitted->SetParNames("Intercept", "Slope"); // NOTE: not displaying in fit stats, so not really needed
-    // polyFitted->SetLineColor(kBlue);
-    // polyFitted->SetLineStyle(kDot);
-    // polyFitted->Draw("same");
-    
-    auto polyFitted = new TF1("polyFitted", "pol2", xmin, xmax);
-    polyFitted->SetParameters(fittedParams[polArg0IDX], fittedParams[polArg1IDX], fittedParams[polArg2IDX]); // fitted intercept & slope
-    // polyFitted->SetParNames("Intercept", "Slope"); // NOTE: not displaying in fit stats, so not really needed
-    polyFitted->SetLineColor(kBlue);
-    polyFitted->SetLineStyle(kDot);
-    polyFitted->Draw("same");
+    if (bkgComponent == "pol1") {
+        // auto polyFitted = new TF1("polyFitted", "pol1", xAxis->GetXmin(), xAxis->GetXmax());
+        // polyFitted->SetParameters(fittedParams[polArg0IDX], fittedParams[polArg1IDX]); // fitted intercept & slope
+        // // polyFitted->SetParNames("Intercept", "Slope"); // NOTE: not displaying in fit stats, so not really needed
+        // polyFitted->SetLineColor(kBlue);
+        // polyFitted->SetLineStyle(kDot);
+        // polyFitted->Draw("same");
+    }
+    if (bkgComponent == "pol2") {
+        auto polyFitted = new TF1("polyFitted", "pol2", xmin, xmax);
+        polyFitted->SetParameters(fittedParams[bkgArg0IDX], fittedParams[bkgArg1IDX], fittedParams[bkgArg1IDX + 1]); // fitted intercept & slope
+        // polyFitted->SetParNames("Intercept", "Slope"); // NOTE: not displaying in fit stats, so not really needed
+        polyFitted->SetLineColor(kBlue);
+        polyFitted->SetLineStyle(kDot);
+        polyFitted->Draw("same");
+    }
     
     /////////////////////////////////////////////////////////////////////
     // 12) Get integrated counts for individual fitted peaks (and errors)
@@ -4464,10 +4516,11 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     // ...
     std::vector<std::vector<double>> countsResults = {}; // TODO: object return type
     
+    // ...
     for (int i = 0; i < numPeaks; i++) {
+        // Slice out the 3x3 covariance matrix for gaussian i
         int const subStart = i * 3;
         int const subEnd = i * 3 + 2;
-        // Slice out the 3x3 covariance matrix for gaussian i
         TMatrixDSym gausCovMatrix(3);
         fitCovMatrix.GetSub(subStart, subEnd, subStart, subEnd, gausCovMatrix);
         
@@ -4517,25 +4570,28 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     // 13.1) Append fitted linear component stats to the list
     /////////////////////////////////////////////////////////
     
-    char const* polyText1 = Form("Intercept = %.2f", fittedParams[polArg0IDX]); // Format the entry (#pm generates +/-)
-    auto newLinePoly1 = new TLatex(0, 0, polyText1);
-    newLinePoly1->SetTextFont(gStyle->GetStatFont()); // match font to existing stat box font
-    newLinePoly1->SetTextSize(gStyle->GetStatFontSize()); // match font size to existing stat box font size
-    listOfLines->Add(newLinePoly1); // append the fwhm value & error to the fit stats
+    if (bkgComponent == "pol1" || bkgComponent == "pol2") {
+        char const* polyText1 = Form("Intercept = %.2f", fittedParams[bkgArg0IDX]); // Format the entry (#pm generates +/-)
+        auto newLinePoly1 = new TLatex(0, 0, polyText1);
+        newLinePoly1->SetTextFont(gStyle->GetStatFont()); // match font to existing stat box font
+        newLinePoly1->SetTextSize(gStyle->GetStatFontSize()); // match font size to existing stat box font size
+        listOfLines->Add(newLinePoly1); // append the fwhm value & error to the fit stats
+        
+        // char const* polyText2 = Form("Slope = %.2f", fittedParams[bkgArg1IDX]); // Format the entry (#pm generates +/-)
+        char const* polyText2 = Form("Linear Coefficient = %.2f", fittedParams[bkgArg1IDX]); // Format the entry (#pm generates +/-)
+        auto newLinePoly2 = new TLatex(0, 0, polyText2);
+        newLinePoly2->SetTextFont(gStyle->GetStatFont()); // match font to existing stat box font
+        newLinePoly2->SetTextSize(gStyle->GetStatFontSize()); // match font size to existing stat box font size
+        listOfLines->Add(newLinePoly2); // append the fwhm value & error to the fit stats
+    }
+    if (bkgComponent == "pol2") {
+        char const* polyText3 = Form("Quadratic Coefficient = %.2f", fittedParams[bkgArg1IDX + 1]); // Format the entry (#pm generates +/-)
+        auto newLinePoly3 = new TLatex(0, 0, polyText3);
+        newLinePoly3->SetTextFont(gStyle->GetStatFont()); // match font to existing stat box font
+        newLinePoly3->SetTextSize(gStyle->GetStatFontSize()); // match font size to existing stat box font size
+        listOfLines->Add(newLinePoly3); // append the fwhm value & error to the fit stats
+    }
     
-    // char const* polyText2 = Form("Slope = %.2f", fittedParams[polArg1IDX]); // Format the entry (#pm generates +/-)
-    char const* polyText2 = Form("Linear Coefficient = %.2f", fittedParams[polArg1IDX]); // Format the entry (#pm generates +/-)
-    auto newLinePoly2 = new TLatex(0, 0, polyText2);
-    newLinePoly2->SetTextFont(gStyle->GetStatFont()); // match font to existing stat box font
-    newLinePoly2->SetTextSize(gStyle->GetStatFontSize()); // match font size to existing stat box font size
-    listOfLines->Add(newLinePoly2); // append the fwhm value & error to the fit stats
-    
-    char const* polyText3 = Form("Quadratic Coefficient = %.2f", fittedParams[polArg2IDX]); // Format the entry (#pm generates +/-)
-    auto newLinePoly3 = new TLatex(0, 0, polyText3);
-    newLinePoly3->SetTextFont(gStyle->GetStatFont()); // match font to existing stat box font
-    newLinePoly3->SetTextSize(gStyle->GetStatFontSize()); // match font size to existing stat box font size
-    listOfLines->Add(newLinePoly3); // append the fwhm value & error to the fit stats
-
     ////////////////////////////////////////////////////////////
     // 14) Render the fit statistics box containing custom stats
     ////////////////////////////////////////////////////////////
@@ -4553,27 +4609,11 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     // 15) Zoom in on area of interest
     //////////////////////////////////
     
-//     double const centroidLow = peakFunctions[0]->GetParameter(1);
-//     double const centroidHigh = peakFunctions[peakFunctions.size() - 1]->GetParameter(1);
-//     
-//     double const meanViewpoint = (centroidLow + centroidHigh) / 2;
-//     
-//     double const sigmaHigh = peakFunctions[peakFunctions.size() - 1]->GetParameter(2);
-//     
-//     double const initialRescale = meanViewpoint - centroidLow;
-//     
-//     double const viewWindowLow = meanViewpoint - initialRescale - (4 * sigmaHigh);
-//     double const viewWindowHigh = meanViewpoint + initialRescale + (4 * sigmaHigh);
-    
-    // range(
-    //     viewWindowLow < xmin ? xmin : viewWindowLow,
-    //     viewWindowHigh > xmax ? xmax : viewWindowHigh
-    // ); // TEST: Auto zoom on fit window
-    
     range(
         rangeLow < xmin ? xmin : rangeLow,
         rangeHigh > xmax ? xmax : rangeHigh
     ); // TEST: Auto zoom on fit window
     
+    // Success
     return 0;
 }
