@@ -4104,7 +4104,7 @@ int draw_fit_stats(TH1* hpx, TList* listOfLines) {
  * than the fwhm result from the full fit, using that larger fwhm with too
  * tight of param limits will mess up the full fit
  */
-int fit(int const view_low, int const view_high, int const numPeaks, double const roughFWHM = 40.) {
+int fit(int const view_low, int const view_high, int const numPeaksRequested, double const roughFWHM = 40.) {
     ///////////////////////////////
     // 1) Grab the active histogram
     ///////////////////////////////
@@ -4130,17 +4130,17 @@ int fit(int const view_low, int const view_high, int const numPeaks, double cons
     int const xmax = xAxis->GetXmax();
     
     if ((view_low < xmin) || (view_high > xmax)) {
-        std::cerr << "Error: View range out of axis bounds.\n";
+        std::cerr << "\nError: View range out of axis bounds.\n";
         return 1;
     }
     
-    if ((numPeaks < 1) || (numPeaks > 25)) {
-        std::cerr << "Error: Please select a number of peaks between 1 and 25.\n";
+    if ((numPeaksRequested < 1) || (numPeaksRequested > 25)) {
+        std::cerr << "\nError: Please select a number of peaks between 1 and 25.\n";
         return 1;
     }
     
     if (roughFWHM <= 0.) {
-        std::cerr << "Error: Please supply positive FWHM value.\n";
+        std::cerr << "\nError: Please supply positive FWHM value.\n";
         return 1;
     }
     
@@ -4156,7 +4156,7 @@ int fit(int const view_low, int const view_high, int const numPeaks, double cons
     
     // Define maximum expected peaks and resolution
     // int num_peaks = 2;
-    auto spectrum = new TSpectrum(numPeaks);
+    auto spectrum = new TSpectrum(numPeaksRequested);
     
     // ....
     double const roughSigma = roughFWHM / SigmaToFWHM;
@@ -4183,7 +4183,14 @@ int fit(int const view_low, int const view_high, int const numPeaks, double cons
     
     // Get and draw the found peak markers
     TList* functions = hpx->GetListOfFunctions();
-    auto polyMarker = static_cast<TPolyMarker*>(functions->FindObject("TPolyMarker"));
+    TObject* foundPolyMarker = functions->FindObject("TPolyMarker");
+    
+    if (!foundPolyMarker) {
+        std::cerr << "\nError: Please poly marker not found.\n";
+        return 1;
+    }
+    
+    auto polyMarker = static_cast<TPolyMarker*>(foundPolyMarker);
     polyMarker->Draw("SAME");
     
     // Retrieve the positions of the peaks
@@ -4338,10 +4345,10 @@ int fit(int const view_low, int const view_high, int const numPeaks, double cons
     std::vector<double> centroidVec = {};
     bool isAscending = true; // sorted centroids flag
     
-    std::cout << "\nNum peaks: " << numPeaks << "\n\n";
+    std::cout << "\nNum peaks: " << numFound << "\n\n";
     
     // ...
-    for (int i = 0; i < numPeaks; i++) {
+    for (int i = 0; i < numFound; i++) {
         std::cout << "Centroid #" << i << ": " << xPositions[i] << "\n";
         centroidVec.push_back(xPositions[i]);
         
@@ -4349,7 +4356,8 @@ int fit(int const view_low, int const view_high, int const numPeaks, double cons
         if (i >= 1 && (xPositions[i] < xPositions[i - 1])) isAscending = false;
     }
     
-    // std::cout << "\nNum peaks: " << centroidVec.size() << "\n";
+    int const numPeaks = centroidVec.size();
+    // std::cout << "\nNum peaks: " << numPeaks << "\n";
     
     /////////////////////////////////////////////////////////////////
     // 6.1) If vector contents not sorted in ascending order, sort them
@@ -4371,7 +4379,7 @@ int fit(int const view_low, int const view_high, int const numPeaks, double cons
     
     std::vector<double> amplitudeVec = {};
     
-    for (int i = 0; i < centroidVec.size(); i++) {
+    for (int i = 0; i < numPeaks; i++) {
         std::cout << "Centroid #" << i << ": " << centroidVec[i] << "\n";
         
         int const centroidBin = xAxis->FindBin(centroidVec[i]);
@@ -4401,7 +4409,7 @@ int fit(int const view_low, int const view_high, int const numPeaks, double cons
     std::vector<double> fwhmVec = {};
     
     // For each peak
-    for (int i = 0; i < centroidVec.size(); i++) {
+    for (int i = 0; i < numPeaks; i++) {
         std::cout << "Centroid #" << i << ": " << centroidVec[i] << "\n";
         
         // ...
@@ -4430,7 +4438,7 @@ int fit(int const view_low, int const view_high, int const numPeaks, double cons
                 
                 // If our search travels over to the neighbouring peak before returning to half maximum
                 // NOTE: Only valid if more than one peak, and there is a peak to the left or right
-                if (centroidVec.size() > 1) {
+                if (numPeaks > 1) {
                     // If we arent at the leftmost centroid, check for crossover to left centroid
                     if ((i > 0) && (currentBin <= xAxis->FindBin(centroidVec[i - 1]))) {
                         std::cout << "> Reached left neighbouring peak.\n";
@@ -4438,7 +4446,7 @@ int fit(int const view_low, int const view_high, int const numPeaks, double cons
                         break;
                     }
                     // If we arent at the rightmost centroid, check for crossover to right centroid
-                    else if ((i < centroidVec.size() - 1) && (currentBin >= xAxis->FindBin(centroidVec[i + 1]))) {
+                    else if ((i < (numPeaks - 1)) && (currentBin >= xAxis->FindBin(centroidVec[i + 1]))) {
                         std::cout << "> Reached right neighbouring peak.\n";
                         std::cout << xAxis->FindBin(centroidVec[i + 1]) << "\n";
                         break;
@@ -4514,7 +4522,7 @@ int fit(int const view_low, int const view_high, int const numPeaks, double cons
     // NOTE: These can be fed to first order polynomial when its introduced
     
     double const lowEnergyCentroid = centroidVec[0];
-    double const highEnergyCentroid = centroidVec[centroidVec.size() - 1];
+    double const highEnergyCentroid = centroidVec[numPeaks - 1];
     double const lowEnergyFWHM = fwhmVec[0];
     double const highEnergyFWHM = fwhmVec[fwhmVec.size() - 1];
 
