@@ -2426,6 +2426,9 @@ class PlotSession {
         
         // ...
         TCanvas* m_canvas = nullptr;
+        
+        // ...
+        std::string fitReport;
     
     // ...
     public:
@@ -2568,6 +2571,25 @@ class PlotSession {
         TCanvas* get_canvas() {
             // ...
             return m_canvas;
+        }
+        /*
+         * ...
+         */
+        int set_report(std::string report) {
+            // Ensure no stale state from prior fits
+            fitReport.clear();
+            
+            // ..
+            fitReport = report;
+            
+            return 0;
+        }
+        /*
+         * ...
+         */
+        std::string get_report() {
+            // ...
+            return fitReport;
         }
 };
 
@@ -3825,9 +3847,6 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
         std::cout << ">>> Peak #" << i << " at X = " << xPositions[i] << ", Y = " << yPositions[i] << "\n";
     }
     
-    // gPad->Modified();
-    // gPad->Update();
-    
     ///////////////////////////////////
     // 4) Estimate the local background
     ///////////////////////////////////
@@ -4315,7 +4334,9 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     // ...
     // TFitResultPtr const fullFitResult = hpx->Fit(fullFitFn, "RS0L+");
     // TFitResultPtr const fullFitResult = hpx->Fit(fullFitFn, "RS0LB");
-    TFitResultPtr const fullFitResult = hpx->Fit(fullFitFn, "RS0L+B");
+    
+    // ...
+    std::string const fitOpt = "RS0L+B";
     // "R" = use the range of the function
     // "S" = return a TFitResultPtr for further analysis
     // "M" = attempts to improve the fit quality
@@ -4325,6 +4346,8 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     // "B" = use this to fix or set parameter limits with predefined funcs (i.e., "gaus"),
     // else default initial values and limits may be used
     // NOTE: Using log likelihood here seems to do ok
+    
+    TFitResultPtr const fullFitResult = hpx->Fit(fullFitFn, fitOpt.c_str());
     
     // NOTE: Append to function list ("+"), disable auto draw ("0"), respect limits/initial param val ("B")
     // NOTE: Implementing log likelihood method on the refit causes weird behaviour
@@ -4501,7 +4524,7 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     listOfLines->Add(newLine1); // append the fwhm value & error to the fit stats
     
     // Write custom statistics to list for each fitted peak    
-    int statsLinesError = get_stats_lines(fullFitResult, countsResults, listOfLines);
+    int const statsLinesError = get_stats_lines(fullFitResult, countsResults, listOfLines);
         
     // Handle statistics writing
     if (statsLinesError) {
@@ -4576,7 +4599,7 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     ////////////////////////////////////////////////////////////
     
     // Handle statistics box and write custom value to it
-    int statsDrawError = draw_fit_stats(hpx, listOfLines);
+    int const statsDrawError = draw_fit_stats(hpx, listOfLines);
     
     // Handle statistics drawing error
     if (statsDrawError) {
@@ -4593,6 +4616,114 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
         rangeHigh > xmax ? xmax : rangeHigh
     ); // TEST: Auto zoom on fit window
     
+    /////////////////////////////////////////////////////////////////////////////
+    // 16) Pipe fit data into the cached string stream, for optional saving later
+    /////////////////////////////////////////////////////////////////////////////
+    
+    std::ostringstream report;
+    
+    fullFitResult->ROOT::Fit::FitResult::Print(report, true);
+
+    report << "\nFit formula: " << fullFitString
+           << "\nFit options: " << fitOpt
+           << "\nFit window: " << fullFitFn->GetXmin()
+           << " to " << fullFitFn->GetXmax()
+           << "\nBin width: " << hpx->GetBinWidth(1)
+           << "\nFit status: " << fullFitResult->Status()
+           << "\nCovariance Status: " << fullFitResult->CovMatrixStatus()
+           << "\n";
+           
+    for (int i = 0; i < numPeaks; i++) {
+        int const amplitudeIdx = 3 * i;
+        int const centroidIdx = amplitudeIdx + 1;
+        int const sigmaIdx = centroidIdx + 1;
+        
+        report << "\nPeak #" << i
+               << "\nCentroid: " << fullFitResult->Parameter(centroidIdx)
+               << " +/- "
+               << fullFitResult->Error(centroidIdx)
+               << "\nFWHM: " << fullFitResult->Parameter(sigmaIdx) * SigmaToFWHM
+               << " +/- "
+               << fullFitResult->Error(sigmaIdx) * SigmaToFWHM
+               << "\nAmplitude: " << fullFitResult->Parameter(amplitudeIdx)
+               << " +/- "
+               << fullFitResult->Error(amplitudeIdx)
+               << "\nNet counts: " << countsResults[i][0]
+               << " +/- " << countsResults[i][1]
+               << "\n";
+    }
+    
+    // fullFitResult->GetCovarianceMatrix().Print();
+    
+    std::cout << report.str();
+    
+    gSession->set_report(report.str());
+    
     // Success
+    return 0;
+}
+
+/*
+ * ...
+ */
+int save_fit(std::string const dirPath, std::string const filename) {
+    if (!gSession) {
+        std::cerr << "Error: No active session.\n";
+        return 1;
+    }
+    
+    std::string const fitReport = gSession->get_report();
+    
+    if (fitReport.empty()) {
+        std::cerr << "Error: No fit report.\n";
+        return 1;
+    }
+    
+    TCanvas* canvas = gSession->get_canvas();
+    
+    if (!canvas) {
+        std::cerr << "Error: No canvas.\n";
+        return 1;
+    }
+    
+    std::string tempPath = dirPath;
+    
+    if (dirPath.rfind('/') != (dirPath.size() - 1)) tempPath += "/";
+    // NOTE: Single quotes denote single character literal, vs double quotes for string literal
+    
+    // ..
+    std::string const expandedPath = expand_path(tempPath);
+    std::string const fullPath = expandedPath + filename;
+    
+    // ...
+    std::string const textPath = fullPath + ".txt";
+    std::string const pngPath = fullPath + ".png";
+    std::string const pdfPath = fullPath + ".pdf";
+    
+    std::cout << "Text path: " << textPath << "\n";
+    std::cout << "Png path: " << pngPath << "\n";
+    std::cout << "PDF path: " << pdfPath << "\n";
+    
+    std::ofstream out(textPath.data());
+    
+    if (!out) {
+        std::cerr << "Error: Cannot open " << textPath << "\n";
+        return 1;
+    }
+    
+    out << fitReport;
+    out.close();
+    
+    if (!out) {
+        std::cerr << "Error: Failed to write " << textPath << "\n";
+        return 1;
+    }
+    
+    // ...
+    canvas->Modified();
+    canvas->Update();
+    canvas->SaveAs(pngPath.c_str());
+    canvas->SaveAs(pdfPath.c_str());
+    
     return 0;
 }
