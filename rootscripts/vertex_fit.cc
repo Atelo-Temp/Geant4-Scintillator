@@ -3996,8 +3996,8 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
         backgroundFit = new TF1("bkgFit", "pol1", view_low, view_high);
         backgroundFit->SetLineColor(kBlue);
         backgroundFit->SetLineWidth(1);
-        backgroundFit->SetParLimits(0, 0., 1e9); // ensure intercept is positive
-        backgroundFit->SetParLimits(1, -1e9, 0.); // ensure slope is negative
+        // backgroundFit->SetParLimits(0, 0., 1e9); // ensure intercept is positive
+        // backgroundFit->SetParLimits(1, -1e9, 0.); // ensure slope is negative
         backgroundFitResult = hpxBackground->Fit(backgroundFit, "RS+0B");
         backgroundFit->Draw("same"); // NOTE: Call draw from the fit function, not the result
     }
@@ -4203,11 +4203,11 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     std::string fullFitString;
     
     if (bkgComponent == "pol1") {
-        std::string const fullFitString = fitString + " + pol1(" + std::to_string(numPeaks * 3) + ")";
+        fullFitString = fitString + " + pol1(" + std::to_string(numPeaks * 3) + ")";
         // NOTE: I.e., "gaus(0) + gaus(3) + gaus(3)" -> "gaus(0) + gaus(3) + gaus(6) + pol1(9)"
     }
     else if (bkgComponent == "pol2") {
-        std::string const fullFitString = fitString + " + pol2(" + std::to_string(numPeaks * 3) + ")";
+        fullFitString = fitString + " + pol2(" + std::to_string(numPeaks * 3) + ")";
     // NOTE: I.e., "gaus(0) + gaus(3) + gaus(3)" -> "gaus(0) + gaus(3) + gaus(6) + pol2(9)"
     }
     
@@ -4299,7 +4299,6 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
         fullFitFn->SetParameter(bkgArg0IDX, intercept); // crosses y-axis (x = 0)
         fullFitFn->SetParameter(bkgArg1IDX, slope); // rate of change of the func at x = 0
         
-        
         // ...
         // fullFitFn->SetParName(bkgArg0IDX, "Intercept");
         // fullFitFn->SetParName(bkgArg1IDX, "Slope");
@@ -4311,7 +4310,6 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
         // TODO: Maybe consider limits tighter to initial fit
         // fullFitFn->SetParLimits(bkgArg0IDX, 0., 1e9); // prevent intercep from going negative at all
         // fullFitFn->SetParLimits(bkgArg1IDX, -50., 0.); // prevent slope from going too negative, or going positive at all
-        
         
         // fullFitFn->SetParLimits(bkgArg0IDX, 0., 1e9); // prevent intercep from going negative at all
         // fullFitFn->SetParLimits(bkgArg1IDX, -1e9, 0.); // prevent slope from going positive at all
@@ -4490,12 +4488,12 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     // (NOTE: useful for debugging)
     
     if (bkgComponent == "pol1") {
-        // auto polyFitted = new TF1("polyFitted", "pol1", xAxis->GetXmin(), xAxis->GetXmax());
-        // polyFitted->SetParameters(fittedParams[polArg0IDX], fittedParams[polArg1IDX]); // fitted intercept & slope
-        // // polyFitted->SetParNames("Intercept", "Slope"); // NOTE: not displaying in fit stats, so not really needed
-        // polyFitted->SetLineColor(kBlue);
-        // polyFitted->SetLineStyle(kDot);
-        // polyFitted->Draw("same");
+        auto polyFitted = new TF1("polyFitted", "pol1", xAxis->GetXmin(), xAxis->GetXmax());
+        polyFitted->SetParameters(fittedParams[bkgArg0IDX], fittedParams[bkgArg1IDX]); // fitted intercept & slope
+        // polyFitted->SetParNames("Intercept", "Slope"); // NOTE: not displaying in fit stats, so not really needed
+        polyFitted->SetLineColor(kBlue);
+        polyFitted->SetLineStyle(kDot);
+        polyFitted->Draw("same");
     }
     if (bkgComponent == "pol2") {
         auto polyFitted = new TF1("polyFitted", "pol2", xmin, xmax);
