@@ -3831,10 +3831,10 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     // Define maximum expected peaks and resolution
     auto spectrum = new TSpectrum(numPeaksRequested);
     
-    // ....
+    // Convert supplied rough fwhm to sigma
     double const roughSigma = roughFWHM / SigmaToFWHM;
     
-    // ...
+    // Background search options
     // std::string const searchOptions = "new";
     // std::string const searchOptions = "new nobackground";
     // std::string const searchOptions = "new nodraw";
@@ -3881,41 +3881,34 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     // 4) Estimate the local background
     ///////////////////////////////////
     
-    // int const numBins = hpx->GetNbinsX();
-    
+    // Region of interest focused on supplied range, to avoid overfitting of background to high/low channels
     int const roiBins = view_high - view_low + 1;
     
-    // double source[numBins];
-    // std::vector<double> source = {};
+    std::vector<double> source(roiBins); // insantiated with size = roiBins
     
-    // for (int i = 0; i < numBins; i++) {
-    //     source.push_back(hpx->GetBinContent(i));
-    // }
-    
-    std::vector<double> source(roiBins);
-    
+    // Fill source vector with contents of histogram within the ROI
     for (int i = 0; i < roiBins; i++) {
         source[i] = hpx->GetBinContent(view_low + i);
     }
     
-    // // int num_passes = 20;
+    // int num_passes = 20;
     int numPasses = 40; // NOTE: This is much better than 20 for 244, 344 keV peaks
-    // range(0, 2048);
     // int num_passes = 60;
     // int num_passes = 1;
     
+    // ROI bins must be greater than num passes * 2 + 1, if not, reduce num passes accordingly
     if (roiBins < ((2 * numPasses) + 1)) {
         numPasses = (roiBins - 1) / 2;
     }
     
     std::cout << "\nNum passes: " << numPasses << "\n";
     
+    // ...
     // TH1* hpxBackground = spectrum->Background(hpx, numPasses, "same");
-    
-    // double* dest = source.data();
     
     std::cout << "\nCalculating background...\n";
     
+    // ...
     // spectrum->Background(
     //     dest,
     //     numBins,
@@ -3954,13 +3947,14 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
         throw std::runtime_error(error);
     }
     
+    // Instantiate a new histogram for the estimated background
     std::string backgroundName = "bkg";
     int const numBins = hpx->GetNbinsX();
     
     auto hpxBackground = new TH1D(backgroundName.c_str(), "bkg-hist", numBins, xmin, xmax);
     
+    // Fill the histogram
     for (int bin = 1; bin <= numBins; bin++) {
-        // hpxBackground->SetBinContent(bin, dest[bin]);
         if ((bin >= view_low) && (bin <= view_high)) {
             hpxBackground->SetBinContent(bin, source[bin - view_low]);
         }
@@ -3969,6 +3963,7 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
         }
     }
     
+    // Draw the histogram on the same canvas as the existing histogram
     hpxBackground->SetLineColor(kRed);
     // hpxBackground->SetLineStyle(2);
     // hpxBackground->Draw("hist SAME");
@@ -4006,7 +4001,7 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     backgroundFit->SetLineWidth(1);
     // backgroundFit->SetLineStyle();
     // backgroundFit->SetParLimits(2, 0., 1e9); // Ensure quadratic coefficient always positive, so concaved down
-    TFitResultPtr const backgroundFitResult = hpxBackground->Fit(backgroundFit, "RS+0");
+    TFitResultPtr const backgroundFitResult = hpxBackground->Fit(backgroundFit, "RS+0B");
     backgroundFit->Draw("same");
     
     // TODO: Explore potential sensible limits
@@ -4203,8 +4198,10 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     // NOTE: the region of the histogram ROOT is allowed to use for the fit.
     // (it’s a fit window, not a Gaussian width parameter)
     // The Gaussian itself mathematically extends to infinity.
-    double const rangeLow = lowEnergyCentroid - (2.5 * lowEnergyFWHM);
-    double const rangeHigh = highEnergyCentroid + (2.5 * highEnergyFWHM);
+    // double const rangeLow = lowEnergyCentroid - (2.5 * lowEnergyFWHM);
+    // double const rangeHigh = highEnergyCentroid + (2.5 * highEnergyFWHM);
+    double const rangeLow = lowEnergyCentroid - (2 * lowEnergyFWHM);
+    double const rangeHigh = highEnergyCentroid + (2 * highEnergyFWHM);
      // NOTE: You usually want the fit window to extend well into the tails/background
     // because the fitter needs tail information to constrain sigma properly.
     // If the window is too tight:
@@ -4285,9 +4282,9 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     // fullFitFn->SetParLimits(polArg1IDX, -50., 0.); // prevent slope from going too negative, or going positive at all
     // fullFitFn->SetParLimits(polArg2IDX, -1e9, 0.); // prevent quadratic coefficint from concaving up, 
     
-    fullFitFn->SetParLimits(polArg0IDX, 0., 1e9); // prevent intercep from going negative at all
-    fullFitFn->SetParLimits(polArg1IDX, -50., 0.); // prevent slope from going too negative, or going positive at all
-    fullFitFn->SetParLimits(polArg2IDX, 0., coefficient * 5.); // prevent quadratic coefficint from concaving up, 
+    // fullFitFn->SetParLimits(polArg0IDX, 0., 1e9); // prevent intercep from going negative at all
+    // fullFitFn->SetParLimits(polArg1IDX, -1e9, 0.); // prevent slope from going positive at all
+    // fullFitFn->SetParLimits(polArg2IDX, 0., coefficient * 5.); // prevent quadratic coefficint from concaving up, 
     
     ///////////////////////////////////////
     // 7.2) Ensure histogram range is reset
@@ -4365,7 +4362,7 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     // ...
     // delete hpx->GetListOfFunctions()->FindObject(backgroundFitName.c_str());
     TObject* bkgFit = gPad->GetListOfPrimitives()->FindObject(backgroundFitName.c_str());
-    if (bkgFit) gPad->GetListOfPrimitives()->Remove(bkgFit);
+    // if (bkgFit) gPad->GetListOfPrimitives()->Remove(bkgFit);
     
     // Query the gpad for things rendered to the canvas rather than the histo
     TObject* bkgHpx = gPad->GetListOfPrimitives()->FindObject(backgroundName.c_str());
