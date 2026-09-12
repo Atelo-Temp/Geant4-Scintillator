@@ -3709,6 +3709,13 @@ int draw_fit_stats(TH1* hpx, TList* listOfLines) {
         return 1;
     }
     
+    // Query the gpad for pre-existing stat box
+    TObject* oldStats = gPad->GetListOfPrimitives()->FindObject("mystats");
+    if (oldStats) {
+        gPad->GetListOfPrimitives()->Remove(oldStats);
+        delete oldStats;
+    }
+    
     // Set the position of each corner of the stats box
     double const bottomLeftX = 0.75;
     double const bottomLeftY = 0.8;
