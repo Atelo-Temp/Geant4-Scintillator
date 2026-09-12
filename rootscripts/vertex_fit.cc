@@ -65,6 +65,9 @@ static int const SEED = 42;
 // ...
 static double const SigmaToFWHM = 2 * sqrt(2 * log(2));
 
+// int fontType = 43; // 3 suffix = pixels (helvetical/arial)
+int const fontType = 42; // 2 suffix = relative (also helvetical/arial)
+
 /*
  * ...
  */
@@ -2685,7 +2688,7 @@ std::optional<TCanvas*> create_canvas(std::string const& name = "canvas") {
  * NOTE: May not always want to setOptStat(0), is useful for energy spectra,
  * but for exponentials etc, having a way to leave it enabled is useful
  */
-int render_hist(TH1* hpx, TCanvas* canvas, bool const hideDefaultStats = true) {
+int render_hist(TH1* hpx, TCanvas* canvas, bool const hideTitle = true, bool const hideDefaultStats = true) {
     // Handle missing canvas
     if (!canvas) {
         std::cerr << "\nError (render_hist()): Couldnt find canvas!\n";
@@ -2724,6 +2727,11 @@ int render_hist(TH1* hpx, TCanvas* canvas, bool const hideDefaultStats = true) {
         // hpx->SetStats(kFALSE); // TEST
     }
     
+    // Remove the default title
+    if (hideTitle) {
+        gStyle->SetOptTitle(0);
+    }
+    
     // canvas->Update(); // TEST
     
     // Draw histogram to the canvas with default option
@@ -2732,6 +2740,11 @@ int render_hist(TH1* hpx, TCanvas* canvas, bool const hideDefaultStats = true) {
     // NOTE: With histos filled from ASCII & ntuples, "HIST" no longer needed, and for TH1 created
     // by Geant4, the draw option "HIST" is set to the object when loading it from the root file
     // NOTE: Calling this after SetOptStat means no need to update canvas
+    
+    // ...
+    hpx->SetMinimum(0);
+    gPad->Modified();
+    gPad->Update();
     
     // ...
     std::cout << "\nHistogram rendered to canvas.\n";
@@ -3667,10 +3680,10 @@ int draw_fit_stats(TH1* hpx, TList* listOfLines) {
     }
     
     // Set the position of each corner of the stats box
-    double const bottomLeftX = 0.7;
+    double const bottomLeftX = 0.75;
     double const bottomLeftY = 0.8;
     double const topRightX = 0.98;
-    double const topRightY = 0.97;
+    double const topRightY = 0.975;
     
     // Create the stats box
     auto ps = new TPaveStats(bottomLeftX, bottomLeftY, topRightX, topRightY, "NDC");
@@ -4511,10 +4524,10 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     auto listOfLines = new TList(); // TList*
     
     // Set style before creation (updating it after creation will not work)
-    int fontType = 43;
-    int fontSize = 16;
+    // int const fontSize = 16;
+    float const statsFontSize = 0.02;
     gStyle->SetTextFont(fontType);
-    gStyle->SetTextSize(fontSize);
+    gStyle->SetTextSize(statsFontSize);
     
     // Get chi-square / n.d.f for full fit
     double const chi2 = fullFitResult->Chi2();
@@ -4554,28 +4567,35 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
         listOfLines->Add(newLinePoly3); // append the fwhm value & error to the fit stats
     }
     
-    ///////////////////////////
-    // Update graphics settings
-    ///////////////////////////
+    //////////////////////////////
+    // X) Update graphics settings
+    //////////////////////////////
     
-    // Hide title
-    gStyle->SetOptTitle(0);
-    
-    int const axesFontSize = 21;
+    // int const axesFontSize = 21; // Absolute pixel size
+    float const axesFontSize = 0.03; // Relative to frame height size
     
     // Set y-axis title, positioning, offset, font and font size
     TAxis* yAxis = hpx->GetYaxis();
     yAxis->SetTitle("Counts");
     yAxis->CenterTitle(true);
-    yAxis->SetTitleOffset(2.2);
+    // yAxis->SetTitleOffset(2.2);
+    // yAxis->SetTitleOffset(0);
     yAxis->SetTitleFont(fontType);
     yAxis->SetTitleSize(axesFontSize);
+    
+    // auto yTitle = new TLatex();
+    // yTitle->SetTextFont(fontType);
+    // yTitle->SetTextSize(axesFontSize);
+    // yTitle->SetTextAngle(90);
+    // yTitle->DrawLatexNDC(0.02, 0.5, "Counts");
+    
     // NOTE: Setting title/font to gPad itself doesnt work as intended here, use axes themselves
     
     // Set x-axis title, positioning, offset, font and font size
     xAxis->SetTitle("Channel");
     xAxis->CenterTitle(true);
-    xAxis->SetTitleOffset(1.3);
+    // xAxis->SetTitleOffset(1.3);
+    xAxis->SetTitleOffset(1.2);
     xAxis->SetTitleFont(fontType);
     xAxis->SetTitleSize(axesFontSize);
     
@@ -4587,9 +4607,10 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     // NOTE: Doing it on axes instead of gStyle means gPad update works, rather than canvas update
     
     // Reduce whitespace
+    // gPad->SetLeftMargin(0.08);
     gPad->SetLeftMargin(0.08);
-    gPad->SetRightMargin(0.01);
-    gPad->SetBottomMargin(0.08);
+    gPad->SetRightMargin(0.08);
+    gPad->SetBottomMargin(0.1);
     gPad->SetTopMargin(0.01);
     
     // Needed to update 
