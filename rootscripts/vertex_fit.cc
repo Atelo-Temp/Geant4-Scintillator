@@ -25,6 +25,7 @@
 #include <TPolyMarker.h>
 
 // C lib
+#include <cstring>
 #include <iostream> // cerr, cin, cout
 #include <fstream> // ifstream
 #include <sstream> // istringstream
@@ -1131,7 +1132,7 @@ class ROOTHandler {
         * TODO: Not sure whether to define some of these maps in load_root, and pass in pointers
         * to this function, or leave as is, will revisit this design choice later
         */
-        std::optional<QueryReturnType> get_root_types() {
+        std::optional<QueryReturnType> get_root_types(bool const hideEmptyObjects = true) {
             // Handle unloaded root file (i.e., via calling this method directly, or some bug)
             if (!inROOT) {
                 std::cerr << "\nError: File not found!\n";
@@ -1186,6 +1187,35 @@ class ROOTHandler {
                 // Returns the type of object this key is associated with (i.e., TTree, TH1D, etc)
                 char const* objectType = key->GetClassName();
                 // std::cout << "CLASSNAME: " << objectType << "\n";
+                
+                // TEST - TODO: Consider better implementation
+                // TODO: List empty objects in stdout
+                if (hideEmptyObjects) {
+                    if (strcmp(objectType, "TH1D") == 0 ) {
+                        auto hpx = inROOT->Get<TH1D>(objectName);
+                        if (hpx->GetEntries() == 0) continue;
+                    }
+                    if (strcmp(objectType, "TH1I") == 0) {
+                        auto hpx = inROOT->Get<TH1I>(objectName);
+                        if (hpx->GetEntries() == 0) continue;
+                    }
+                    else if (strcmp(objectType, "TTree") == 0) {
+                        auto ntuple = inROOT->Get<TTree>(objectName);
+                        if (ntuple->GetListOfBranches()->IsEmpty()) continue;
+                        
+                        TObjArray* branches = ntuple->GetListOfBranches();
+                        bool allEmpty = true;
+                        
+                        for (int i = 0; i < branches->GetEntries(); i++) {
+                            auto branch = dynamic_cast<TBranch*>(branches->At(i));
+                            if (branch && branch->GetEntries() > 0) {
+                                allEmpty = false;
+                            }
+                        }
+                        
+                        if (allEmpty) continue;
+                    }
+                }
                 
                 // If they object type key already exists in the object, pull the existing entry,
                 // add the new name to the vector, update the entry in the map
