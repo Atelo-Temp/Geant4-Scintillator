@@ -23,6 +23,8 @@
 // TSpectrum
 #include <TSpectrum.h>
 #include <TPolyMarker.h>
+// ...
+#include <TLegend.h>
 
 // C lib
 #include <cstring>
@@ -3675,7 +3677,20 @@ int get_stats_lines(TFitResultPtr const &result, std::vector<CountsResult> const
         listOfLines->Add(newLine2); // append the fwhm value & error to the fit stats
         
         // Add counts (+/- error) to the stats box
-        char const* text3 = Form("%i-Counts = %.2f #pm %.2f", i, countsVal, countsErr);
+        // char const* text3 = Form("%i-Counts = %.2f #pm %.2f", i, countsVal, countsErr);
+        // auto newLine3 = new TLatex(0, 0, text3);
+        // listOfLines->Add(newLine3);
+        
+        // Determine order of magnitude (exponent)
+        int const exponent = std::floor(std::log10(countsVal));
+        
+        // Scale values to the mantissa base
+        double const scale = std::pow(10, exponent);
+        double const scaledCountsVal = countsVal / scale;
+        double const scaledCountsErr = countsErr / scale;
+        
+        // Construct TLatex strings using printf style formatting
+        char const* text3 = Form("%i-Counts = (%.3f #pm %.3f) #times 10^{%d}", i, scaledCountsVal, scaledCountsErr, exponent);
         auto newLine3 = new TLatex(0, 0, text3);
         listOfLines->Add(newLine3);
     }
@@ -3717,10 +3732,15 @@ int draw_fit_stats(TH1* hpx, TList* listOfLines) {
     }
     
     // Set the position of each corner of the stats box
+    // double const bottomLeftX = 0.75;
+    // double const bottomLeftY = 0.66;
+    // double const topRightX = 0.99;
+    // double const topRightY = 0.99;
+    
     double const bottomLeftX = 0.75;
-    double const bottomLeftY = 0.8;
-    double const topRightX = 0.98;
-    double const topRightY = 0.975;
+    double const bottomLeftY = 0.10;
+    double const topRightX = 0.99;
+    double const topRightY = 0.74;
     
     // Create the stats box
     auto ps = new TPaveStats(bottomLeftX, bottomLeftY, topRightX, topRightY, "NDC");
@@ -4431,13 +4451,14 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     TObject* bkgHpx = gPad->GetListOfPrimitives()->FindObject(backgroundName.c_str());
     if (bkgHpx) gPad->GetListOfPrimitives()->Remove(bkgHpx);
     
+    hpx->SetLineColor(kBlack);
+    
     // Update the canvas to reflect the change
     gPad->Modified();
     gPad->Update();
     
     // Draw the fit line (ROOT internally stores the fit function with the histogram after fitting)
-    // hpx->GetFunction("fullPrefitFn")->Draw("same");
-    // fullFitFn->SetLineColor(kBlue);
+    fullFitFn->SetLineColor(kRed); // NOTE: This is default, but explicitly defining
     fullFitFn->Draw("same");
     // NOTE: The "HIST" option suppresses drawing associated functions (including fits),
     // hence why "hpx->Draw()" works here instead of drawing the fit fn (but we lose the histogram view),
@@ -4448,16 +4469,10 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     // 10) Grab the individual parameters from the full fit, storing them in a vector
     /////////////////////////////////////////////////////////////////////////////////
     
-    // NOTE: 1 peak = 3 params, 2 peaks = 6 params, etc
+    // NOTE: 1 peak = 3 params, 2 peaks = 6 params, etc (plus x params for background component)
     
-//     std::vector<double> fittedParams = {};
-//     // NOTE: Using C array with (size = numPeaks * 3) causes error
-//     
-//     for (int i = 0; i < numPeaks * 3; i++) {
-//         fittedParams.push_back(fullFitFn->GetParameter(i));
-//     }
-    // TEST - No need to deal with C style arrays etc due to using function methods
-    std::vector<double> fittedParams = fullFitResult->Parameters();
+    // No need to deal with C style arrays etc due to using function methods
+    std::vector<double> const fittedParams = fullFitResult->Parameters();
     // TEST - Use TFitResultPtr method to return vector containing results ...
     
     ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -4492,9 +4507,15 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
         
         peakFunctions.push_back(func); // cache pointers for "draw-only" peak functions
         
-        func->SetLineColor(kGreen - 3); // change the colour of the drawn function
+        // func->SetLineColor(kGreen - 3); // change the colour of the drawn function
+        func->SetLineColor(kGreen + 2); // change the colour of the drawn function
         
         func->Draw("same"); // draw each individual peak
+    }
+    
+    if (peakFunctions.size() != numPeaks) {
+        std::cerr << "\nError: Failed to define gaussian components\n";
+        return 1;
     }
     
     ////////////////////////////////////////////////////////////////////
@@ -4503,8 +4524,10 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     
     // (NOTE: useful for debugging)
     
+    TF1* polyFitted = nullptr;
+    
     if (bkgComponent == "pol1") {
-        auto polyFitted = new TF1("polyFitted", "pol1", xAxis->GetXmin(), xAxis->GetXmax());
+        polyFitted = new TF1("polyFitted", "pol1", xAxis->GetXmin(), xAxis->GetXmax());
         polyFitted->SetParameters(fittedParams[bkgArg0IDX], fittedParams[bkgArg1IDX]); // fitted intercept & slope
         // polyFitted->SetParNames("Intercept", "Slope"); // NOTE: not displaying in fit stats, so not really needed
         polyFitted->SetLineColor(kBlue);
@@ -4512,12 +4535,17 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
         polyFitted->Draw("same");
     }
     if (bkgComponent == "pol2") {
-        auto polyFitted = new TF1("polyFitted", "pol2", xmin, xmax);
+        polyFitted = new TF1("polyFitted", "pol2", xmin, xmax);
         polyFitted->SetParameters(fittedParams[bkgArg0IDX], fittedParams[bkgArg1IDX], fittedParams[bkgArg1IDX + 1]); // fitted intercept & slope
         // polyFitted->SetParNames("Intercept", "Slope"); // NOTE: not displaying in fit stats, so not really needed
         polyFitted->SetLineColor(kBlue);
         polyFitted->SetLineStyle(kDot);
         polyFitted->Draw("same");
+    }
+    
+    if (!polyFitted) {
+        std::cerr << "\nError: Failed to draw background component.\n";
+        return 1;
     }
     
     /////////////////////////////////////////////////////////////////////
@@ -4562,16 +4590,16 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     
     // Set style before creation (updating it after creation will not work)
     // int const fontSize = 16;
-    float const statsFontSize = 0.02;
+    float const statsFontSize = 0.025;
     gStyle->SetTextFont(fontType);
     gStyle->SetTextSize(statsFontSize);
     
     // Get chi-square / n.d.f for full fit
     double const chi2 = fullFitResult->Chi2();
-    double const ndf = fullFitResult->Ndf();
+    unsigned int const ndf = fullFitResult->Ndf();
     
     // Create a line
-    char const* text1 = Form("#chi^{2} / ndf = %.2f / %.2f", chi2, ndf); // Format the entry (#pm generates +/-)
+    char const* text1 = Form("#chi^{2} / ndf = %.2f / %d", chi2, ndf); // Format the entry (#pm generates +/-)
     auto newLine1 = new TLatex(0, 0, text1); // <- may have to do Form() for string
     listOfLines->Add(newLine1); // append the fwhm value & error to the fit stats
     
@@ -4611,6 +4639,13 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     // int const axesFontSize = 21; // Absolute pixel size
     float const axesFontSize = 0.03; // Relative to frame height size
     
+    TCanvas* canvas = gSession->get_canvas();
+    
+    if (!canvas) {
+        std::cerr << "Error: No canvas.\n";
+        return 1;
+    }
+    
     // Set y-axis title, positioning, offset, font and font size
     TAxis* yAxis = hpx->GetYaxis();
     yAxis->SetTitle("Counts");
@@ -4619,6 +4654,8 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     // yAxis->SetTitleOffset(0);
     yAxis->SetTitleFont(fontType);
     yAxis->SetTitleSize(axesFontSize);
+    // yAxis->SetTickLength(0.015);
+    yAxis->SetTickLength(0.016875);
     
     // auto yTitle = new TLatex();
     // yTitle->SetTextFont(fontType);
@@ -4635,6 +4672,7 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     xAxis->SetTitleOffset(1.2);
     xAxis->SetTitleFont(fontType);
     xAxis->SetTitleSize(axesFontSize);
+    xAxis->SetTickLength(0.03);
     
     // Set the axes tick number sizes
     xAxis->SetLabelFont(fontType);
@@ -4645,10 +4683,16 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     
     // Reduce whitespace
     // gPad->SetLeftMargin(0.08);
+    // gPad->SetRightMargin(0.08);
+    // gPad->SetBottomMargin(0.1);
+    // gPad->SetTopMargin(0.01);
     gPad->SetLeftMargin(0.08);
-    gPad->SetRightMargin(0.08);
-    gPad->SetBottomMargin(0.1);
+    gPad->SetRightMargin(0.26);
+    gPad->SetBottomMargin(0.10);
     gPad->SetTopMargin(0.01);
+    
+    // ...
+    gPad->SetTicks(1, 1);
     
     // Needed to update 
     gPad->Modified();
@@ -4666,6 +4710,50 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
         std::cerr << "\nFailed draw fit statistics!\n";
         return 1;
     }
+    
+    /////////////////////////////////
+    // 15) Create and render a legend 
+    /////////////////////////////////
+    
+    // ...
+    if (auto oldLegend = gPad->GetListOfPrimitives()->FindObject("fitLegend")) {
+        gPad->GetListOfPrimitives()->Remove(oldLegend);
+    }
+    
+    // ...
+    // double const bottomLeftX = 0.75;
+    // double const bottomLeftY = 0.46;
+    // double const topRightX = 0.99;
+    // double const topRightY = 0.62;
+    double const bottomLeftX = 0.75;
+    double const bottomLeftY = 0.76;
+    double const topRightX = 0.99;
+    double const topRightY = 0.99;
+    
+    // ...
+    auto legend = new TLegend(bottomLeftX, bottomLeftY, topRightX, topRightY);
+    
+    // ...
+    legend->SetName("fitLegend");
+    // legend->SetBorderSize(0);
+    legend->SetBorderSize(1);
+    legend->SetFillStyle(0);
+    legend->SetTextFont(fontType);
+    legend->SetTextSize(statsFontSize);
+    
+    // ..
+    legend->AddEntry(hpx, "Measured data", "l");
+    legend->AddEntry(fullFitFn, "Full fit", "l");
+    std::string const backgroundLegend = (bkgComponent == "pol1") ? "Linear background" : "Quadratic background";
+    legend->AddEntry(polyFitted, backgroundLegend.c_str(), "l");
+    legend->AddEntry(peakFunctions.front(), "Gaussian components", "l");
+    
+    // ...
+    legend->Draw();
+    
+    // Needed to update 
+    gPad->Modified();
+    gPad->Update();
     
     //////////////////////////////////
     // 15) Zoom in on area of interest
@@ -4720,6 +4808,11 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     std::cout << report.str();
     
     gSession->set_report(report.str());
+    
+    // ...
+    canvas->SetWindowSize(1920, 1080);
+    gPad->Modified();
+    gPad->Update();
     
     // Success
     return 0;
@@ -4780,6 +4873,9 @@ int save_fit(std::string const dirPath, std::string const filename) {
         std::cerr << "Error: Failed to write " << textPath << "\n";
         return 1;
     }
+    
+    //
+    // 2,558 × 1,237
     
     // ...
     canvas->Modified();
