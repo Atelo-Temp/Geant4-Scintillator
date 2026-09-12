@@ -65,6 +65,14 @@ static int const SEED = 42;
 // ...
 static double const SigmaToFWHM = 2 * sqrt(2 * log(2));
 
+/*
+ * ...
+ */
+struct CountsResult {
+    double const totalCounts;
+    double const countsError;
+};
+
 // TODO: Eventually move class definitions to headers
 
 /*
@@ -3487,12 +3495,6 @@ int assign_peak_params(TF1* fitFn, std::vector<std::vector<double>> const& fitPa
     return 0;
 }
 
-// TODO
-struct CountsResult {
-    double const totalCounts;
-    double const countsError;
-};
-
 /*
  * Calculate integrated counts under the fit curve, and errors
  * 
@@ -3506,7 +3508,7 @@ struct CountsResult {
  * 
  * TODO: Total area - background area (for lab spectra with background)
  */
-std::optional<std::vector<double>> get_counts(TH1* hpx, TF1* fitFn, TMatrixDSym* gausCovMatrix) {
+std::optional<CountsResult> get_counts(TH1* hpx, TF1* fitFn, TMatrixDSym* gausCovMatrix) {
     // Handle missing histogram
     if (!hpx) {
         std::cerr << "\nError (getCounts()): Histogram not found!\n";
@@ -3555,7 +3557,7 @@ std::optional<std::vector<double>> get_counts(TH1* hpx, TF1* fitFn, TMatrixDSym*
 
     // return countResults;
     
-    return std::vector<double> { totalCounts, countsError };
+    return CountsResult { totalCounts, countsError };
     
     // return { totalCounts, countsError };
 }
@@ -3578,7 +3580,7 @@ std::optional<std::vector<double>> get_counts(TH1* hpx, TF1* fitFn, TMatrixDSym*
  * 
  * TODO: Take peak number as param or no
  */
-int get_stats_lines(TFitResultPtr const &result, std::vector<std::vector<double>> const &counts, TList* listOfLines) {
+int get_stats_lines(TFitResultPtr const &result, std::vector<CountsResult> const &counts, TList* listOfLines) {
     // ...
     int const numPeaks = counts.size();
     // NOTE: This kinda feels dirty, even though its a valid approach,
@@ -3616,8 +3618,8 @@ int get_stats_lines(TFitResultPtr const &result, std::vector<std::vector<double>
         double const fittedFWHMError = fittedSigmaError * SigmaToFWHM;
         
         // Get integrated photopeak counts and error on counts from input vector
-        double const countsVal = counts[i][0];
-        double const countsErr = counts[i][1];
+        double const countsVal = counts[i].totalCounts;
+        double const countsErr = counts[i].countsError;
         
         // Add centroid (+/- error) to the stats box
         char const* text1 = Form("%i-Centroid = %.2f #pm %.2f", i, fittedCentroid, fittedCentroidError); // Format the entry (#pm generates +/-)
@@ -4476,7 +4478,7 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
     TMatrixDSym fitCovMatrix = fullFitResult->GetCovarianceMatrix();
     
     // ...
-    std::vector<std::vector<double>> countsResults = {}; // TODO: object return type
+    std::vector<CountsResult> countsResults = {}; // TODO: object return type
     
     // ...
     for (int i = 0; i < numPeaks; i++) {
@@ -4487,7 +4489,7 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
         fitCovMatrix.GetSub(subStart, subEnd, subStart, subEnd, gausCovMatrix);
         
         // Calculate counts in the fitted photopeak via integration
-        std::optional<std::vector<double>> countsResult = get_counts(hpx, peakFunctions[i], &gausCovMatrix);
+        std::optional<CountsResult> countsResult = get_counts(hpx, peakFunctions[i], &gausCovMatrix);
         // NOTE: Counts is not a std::vector<double> yet, it is still optional type
         
         // Handle nullopt return
@@ -4626,6 +4628,8 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
 
     report << "\nFit formula: " << fullFitString
            << "\nFit options: " << fitOpt
+           << "\nTSpectrum window: " << view_low
+           << " to " << view_high
            << "\nFit window: " << fullFitFn->GetXmin()
            << " to " << fullFitFn->GetXmax()
            << "\nBin width: " << hpx->GetBinWidth(1)
@@ -4648,8 +4652,8 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
                << "\nAmplitude: " << fullFitResult->Parameter(amplitudeIdx)
                << " +/- "
                << fullFitResult->Error(amplitudeIdx)
-               << "\nNet counts: " << countsResults[i][0]
-               << " +/- " << countsResults[i][1]
+               << "\nNet counts: " << countsResults[i].totalCounts
+               << " +/- " << countsResults[i].countsError
                << "\n";
     }
     
