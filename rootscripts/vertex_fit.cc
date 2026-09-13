@@ -30,6 +30,7 @@
 #include <cstring>
 #include <iostream> // cerr, cin, cout
 #include <fstream> // ifstream
+#include <limits>
 #include <sstream> // istringstream
 #include <vector>
 #include <string>
@@ -41,6 +42,7 @@
 #include <unordered_set> // NOTE: Import not technically needed (something else must be importing it)
 #include <unordered_map> // NOTE: ^ same
 #include <variant>
+#include <iomanip> // std::setprecision
 
 // Object containing file path and file extension
 struct PathResult {
@@ -4788,6 +4790,18 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
         int const centroidIdx = amplitudeIdx + 1;
         int const sigmaIdx = centroidIdx + 1;
         
+        // Maximum safe precision
+        int const precision = std::numeric_limits<double>::max_digits10 - 1;
+        
+        // Convert centroid-sigma covariance to centroid-fwhm covariance
+        double const centroidFWHMCovarianceValue = fullFitResult->GetCovarianceMatrix()[1][2] * SigmaToFWHM;
+        std::ostringstream centroidFWHMCovariance;
+        centroidFWHMCovariance << std::scientific << std::setprecision(precision) << centroidFWHMCovarianceValue;
+        
+        // Correlation is dimensionless, hence centroid-FWHM is identical to centroid-sigma correlation
+        std::ostringstream centroidSigmaCorrelation;
+        centroidSigmaCorrelation << std::scientific << std::setprecision(precision) << fullFitResult->GetCorrelationMatrix()[1][2];
+        
         report << "\nPeak #" << i
                << "\nCentroid: " << fullFitResult->Parameter(centroidIdx)
                << " +/- "
@@ -4795,6 +4809,8 @@ int fit(int const view_low, int const view_high, int const numPeaksRequested, do
                << "\nFWHM: " << fullFitResult->Parameter(sigmaIdx) * SigmaToFWHM
                << " +/- "
                << fullFitResult->Error(sigmaIdx) * SigmaToFWHM
+               << "\nCentroid-FWHM covariance: " << centroidFWHMCovariance.str()
+               << "\nCentroid-sigma correlation: " << centroidSigmaCorrelation.str()
                << "\nAmplitude: " << fullFitResult->Parameter(amplitudeIdx)
                << " +/- "
                << fullFitResult->Error(amplitudeIdx)
