@@ -2866,7 +2866,18 @@ int plot_x(
     }
     else if (fileType == FileType::ROOT) {
         auto handler = new ROOTHandler();
-        result = handler->plot_root(path, objectName, branchName, nbins, xmin, xmax, doPostProcessing, sigmaFactor);
+        result = handler->plot_root(
+            path,
+            objectName,
+            branchName,
+            nbins,
+            xmin,
+            xmax,
+            doPostProcessing,
+            sigmaFactor,
+            lowerDiscriminator,
+            channelOffset
+        );
         gSession->set_handler(handler);
     }
     else {
