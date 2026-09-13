@@ -222,7 +222,7 @@ void DetectorMaterials::DefineOpticalProperties() {
     // MPTCrystal->AddConstProperty("RESOLUTIONSCALE", 1.); // 1. to start, tune later
     //
     // TEST: Res scale 3.5 = 112.69 FWHM, needs to be 62.25 FWHM to match lab, so seeing if can calc res scale via: 112.69/62.25 = 1.81
-    // MPTCrystal->AddConstProperty("RESOLUTIONSCALE", 1.8);
+    MPTCrystal->AddConstProperty("RESOLUTIONSCALE", 1.8);
     // NOTE: ^^^^ No, not direct conversion at all, 1.8 = ~105.35 FWHM (so ~51% reduction of res scale = 6.5% reduction of FWHM)
     //
     // TODO: RUN SIM WITH RES SCALE = 1
@@ -238,7 +238,7 @@ void DetectorMaterials::DefineOpticalProperties() {
     // sigma = 0.5 * sqrt(n)
     // reduces FWHM even more, from ~105.35 FWHM (at 1.8 res scale), to 91.16 (still at 1.8 res scale)
     //
-    MPTCrystal->AddConstProperty("RESOLUTIONSCALE", 3.5); // NOTE: Miller et al (2024)
+    // MPTCrystal->AddConstProperty("RESOLUTIONSCALE", 3.5); // NOTE: Miller et al (2024)
     // MPTCrystal->AddConstProperty("RESOLUTIONSCALE", 10.); // more gaussian
     // NOTE: A resolution scale of ZERO produces no fluctuation in optical photons generated
     // (sigma = sqrt of mean photons for step * RESOLUTIONSCALE)
