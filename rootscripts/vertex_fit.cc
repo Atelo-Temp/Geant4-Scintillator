@@ -2820,7 +2820,9 @@ int plot_x(
     double const xmin = -1.,
     double const xmax = -1.,
     bool const doPostProcessing = false,
-    double const sigmaFactor = 1.
+    double const sigmaFactor = 1.,
+    double const lowerDiscriminator = -1.,
+    double const channelOffset = 0.
 ) {
     // Instantiate only once in a given plotting session
     if (!gSession) gSession = new PlotSession();
@@ -2969,7 +2971,91 @@ int plot(std::string const userPath, std::string const objectName, std::string c
     return success;
 }
 
-// TODO: doPostProcessing & sigmaFactor overloads
+/*
+ * Overload 6) Post-processing overload
+ * 
+ * NOTE: Only available for TTree, as TH1 object in ROOT file already binned.
+ */
+int plot(
+    std::string const userPath,
+    int const nbins,
+    double const xmin,
+    double const xmax,
+    bool const doPostProcessing,
+    double const sigmaFactor
+) {
+    int const success = plot_x(
+        userPath,
+        "",
+        "",  
+        nbins,
+        xmin,
+        xmax,
+        doPostProcessing,
+        sigmaFactor
+    );
+    return success;
+}
+
+/*
+ * Overload 7) Post-processing and discriminator settings
+ * 
+ * NOTE: Only available for TTree, as TH1 object in ROOT file already binned.
+ */
+int plot(
+    std::string const userPath,
+    int const nbins,
+    double const xmin,
+    double const xmax,
+    bool const doPostProcessing,
+    double const sigmaFactor,
+    double const lowerDiscriminator,
+    double const channelOffset
+) {
+    int const success = plot_x(
+        userPath,
+        "",
+        "",  
+        nbins,
+        xmin,
+        xmax,
+        doPostProcessing,
+        sigmaFactor,
+        lowerDiscriminator,
+        channelOffset
+    );
+    return success;
+}
+
+/*
+ * Overload 8) Resembles replot method, and features user path as the final parameter for quicker adjustment
+ * 
+ * NOTE: Only available for TTree, as TH1 object in ROOT file already binned.
+ */
+int plot(
+    int const nbins,
+    double const xmin,
+    double const xmax,
+    bool const doPostProcessing,
+    double const sigmaFactor,
+    double const lowerDiscriminator,
+    double const channelOffset,
+    std::string const userPath
+) {
+    int const success = plot_x(
+        userPath,
+        "",
+        "",  
+        nbins,
+        xmin,
+        xmax,
+        doPostProcessing,
+        sigmaFactor,
+        lowerDiscriminator,
+        channelOffset
+    );
+    return success;
+}
 
 /*
  * ...
